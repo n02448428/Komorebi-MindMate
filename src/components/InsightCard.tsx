@@ -15,11 +15,38 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(insight.quote);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(insight.quote);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = insight.quote;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          // Show the text in an alert as last resort
+          alert(`Copy this text: "${insight.quote}"`);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
     } catch (error) {
       console.error('Failed to copy:', error);
+      // Show the text in an alert as fallback
+      alert(`Copy this text: "${insight.quote}"`);
     }
   };
 
@@ -27,43 +54,78 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
     setDownloading(true);
     try {
       const element = document.getElementById(`insight-card-${insight.id}`);
-      if (element) {
-        // Wait a moment for any animations or transitions to complete
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const canvas = await html2canvas(element, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          allowTaint: true,
-          foreignObjectRendering: true,
-          logging: false,
-          // Remove fixed width/height to let html2canvas determine optimal size
-          onclone: (clonedDoc) => {
-            // Ensure all styles are properly applied in the cloned document
-            const clonedElement = clonedDoc.getElementById(`insight-card-${insight.id}`);
-            if (clonedElement) {
-              // Force a repaint to ensure all styles are applied
-              clonedElement.style.transform = 'translateZ(0)';
-            }
-          }
-        });
-        
-        const link = document.createElement('a');
-        link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
+      if (!element) {
+        throw new Error('Card element not found');
       }
+
+      // Wait for any animations to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Create a clone of the element to avoid modifying the original
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.id = `insight-card-clone-${insight.id}`;
+      
+      // Style the clone for better rendering
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '-9999px';
+      clone.style.width = '800px';
+      clone.style.height = '600px';
+      clone.style.transform = 'none';
+      clone.style.zIndex = '-1';
+      
+      // Add to document temporarily
+      document.body.appendChild(clone);
+      
+      // Wait for styles to apply
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const canvas = await html2canvas(clone, {
+        backgroundColor: getBackgroundColor(insight.sceneType, insight.type),
+        scale: 2,
+        width: 800,
+        height: 600,
+        useCORS: true,
+        allowTaint: false,
+        foreignObjectRendering: false,
+        logging: false,
+        imageTimeout: 15000,
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          // Ensure all fonts are loaded
+          const clonedElement = clonedDoc.getElementById(`insight-card-clone-${insight.id}`);
+          if (clonedElement) {
+            // Force font loading
+            clonedElement.style.fontFamily = 'Inter, system-ui, sans-serif';
+            // Ensure background is solid
+            clonedElement.style.background = getBackgroundColor(insight.sceneType, insight.type);
+          }
+        }
+      });
+      
+      // Remove the clone
+      document.body.removeChild(clone);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
     } catch (error) {
       console.error('Failed to download:', error);
-      alert('Failed to download image. Please try again.');
+      alert('Failed to download image. Please try again or check your browser permissions.');
     } finally {
       setDownloading(false);
     }
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
+    if (navigator.share && navigator.canShare) {
       try {
         await navigator.share({
           title: 'Komorebi MindMate Insight',
@@ -71,10 +133,13 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
           url: window.location.origin,
         });
       } catch (error) {
-        console.error('Failed to share:', error);
+        if (error.name !== 'AbortError') {
+          console.error('Failed to share:', error);
+          handleCopy(); // Fallback to copy
+        }
       }
     } else {
-      handleCopy();
+      handleCopy(); // Fallback to copy
     }
   };
 
@@ -87,26 +152,26 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
         id={`insight-card-${insight.id}`}
         className={`relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br ${gradientClass} backdrop-blur-sm border border-white/20 shadow-xl`}
         style={{
-          // Ensure the card has a solid background for html2canvas
-          background: `linear-gradient(to bottom right, ${getGradientColors(insight.sceneType, insight.type)})`
+          // Ensure solid background for html2canvas
+          background: getBackgroundColor(insight.sceneType, insight.type)
         }}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-24 -translate-x-24" />
+          <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-32 translate-x-32" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full translate-y-24 -translate-x-24" />
         </div>
         
         {/* Content */}
-        <div className="relative p-8 h-full flex flex-col justify-between z-10">
+        <div className="relative p-6 md:p-8 h-full flex flex-col justify-between z-10">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className={`w-6 h-6 ${
+              <Sparkles className={`w-5 h-5 md:w-6 md:h-6 ${
                 insight.type === 'morning' ? 'text-amber-600' : 'text-purple-300'
               }`} />
-              <span className={`text-sm font-medium ${
+              <span className={`text-xs md:text-sm font-medium ${
                 insight.type === 'morning' ? 'text-gray-700' : 'text-white/90'
               }`}>
                 {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
@@ -121,16 +186,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
           </div>
 
           {/* Quote */}
-          <div className="flex-1 flex items-center justify-center px-4">
-            <blockquote className={`text-xl md:text-2xl font-medium leading-relaxed text-center ${
+          <div className="flex-1 flex items-center justify-center px-2 md:px-4">
+            <blockquote className={`text-lg md:text-xl lg:text-2xl font-medium leading-relaxed text-center ${
               insight.type === 'morning' ? 'text-gray-800' : 'text-white'
-            } drop-shadow-sm`}>
+            } drop-shadow-sm max-w-full`}>
               "{insight.quote}"
             </blockquote>
           </div>
 
           {/* Footer */}
-          <div className={`text-sm text-center ${
+          <div className={`text-xs md:text-sm text-center ${
             insight.type === 'morning' ? 'text-gray-600' : 'text-white/70'
           }`}>
             {insight.createdAt.toLocaleDateString([], {
@@ -150,8 +215,9 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 hover:scale-105`}
-          title="Copy to clipboard"
+          } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
+          title="Copy quote to clipboard"
+          aria-label="Copy quote to clipboard"
         >
           {copied ? (
             <Check className="w-5 h-5" />
@@ -167,8 +233,9 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100`}
-          title="Download image"
+          } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/30`}
+          title="Download as image"
+          aria-label="Download insight card as image"
         >
           {downloading ? (
             <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -183,8 +250,9 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 hover:scale-105`}
+          } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
           title="Share insight"
+          aria-label="Share insight"
         >
           <Share2 className="w-5 h-5" />
         </button>
@@ -193,36 +261,36 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
   );
 };
 
-// Helper function to get solid gradient colors for html2canvas
-const getGradientColors = (scene: string, timeOfDay: 'morning' | 'evening'): string => {
-  const gradients = {
+// Helper function to get solid background colors for html2canvas
+const getBackgroundColor = (scene: string, timeOfDay: 'morning' | 'evening'): string => {
+  const backgrounds = {
     ocean: {
-      morning: 'rgba(219, 234, 254, 0.2), rgba(147, 197, 253, 0.2)',
-      evening: 'rgba(30, 27, 75, 0.3), rgba(88, 28, 135, 0.3)'
+      morning: 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)',
+      evening: 'linear-gradient(135deg, #1e1b4b 0%, #581c87 100%)'
     },
     forest: {
-      morning: 'rgba(220, 252, 231, 0.2), rgba(167, 243, 208, 0.2)',
-      evening: 'rgba(20, 83, 45, 0.3), rgba(6, 78, 59, 0.3)'
+      morning: 'linear-gradient(135deg, #dcfce7 0%, #a7f3d0 100%)',
+      evening: 'linear-gradient(135deg, #14532d 0%, #064e3b 100%)'
     },
     desert: {
-      morning: 'rgba(254, 243, 199, 0.2), rgba(253, 224, 71, 0.2)',
-      evening: 'rgba(154, 52, 18, 0.3), rgba(88, 28, 135, 0.3)'
+      morning: 'linear-gradient(135deg, #fef3c7 0%, #fde047 100%)',
+      evening: 'linear-gradient(135deg, #9a3412 0%, #581c87 100%)'
     },
     mountain: {
-      morning: 'rgba(248, 250, 252, 0.2), rgba(191, 219, 254, 0.2)',
-      evening: 'rgba(17, 24, 39, 0.3), rgba(49, 46, 129, 0.3)'
+      morning: 'linear-gradient(135deg, #f8fafc 0%, #bfdbfe 100%)',
+      evening: 'linear-gradient(135deg, #111827 0%, #312e81 100%)'
     },
     lake: {
-      morning: 'rgba(240, 253, 250, 0.2), rgba(165, 243, 252, 0.2)',
-      evening: 'rgba(30, 58, 138, 0.3), rgba(88, 28, 135, 0.3)'
+      morning: 'linear-gradient(135deg, #f0fdfa 0%, #a5f3fc 100%)',
+      evening: 'linear-gradient(135deg, #1e3a8a 0%, #581c87 100%)'
     },
     meadow: {
-      morning: 'rgba(240, 253, 244, 0.2), rgba(253, 224, 71, 0.2)',
-      evening: 'rgba(6, 78, 59, 0.3), rgba(15, 118, 110, 0.3)'
+      morning: 'linear-gradient(135deg, #f0fdf4 0%, #fde047 100%)',
+      evening: 'linear-gradient(135deg, #064e3b 0%, #0f766e 100%)'
     }
   };
   
-  return gradients[scene as keyof typeof gradients]?.[timeOfDay] || gradients.ocean[timeOfDay];
+  return backgrounds[scene as keyof typeof backgrounds]?.[timeOfDay] || backgrounds.ocean[timeOfDay];
 };
 
 export default InsightCard;
