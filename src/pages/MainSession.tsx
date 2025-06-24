@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
-import { getSceneForSession, getNextScene, getSceneDisplayName } from '../utils/sceneUtils';
+import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
 import { aiChatService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff } from 'lucide-react';
+import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -112,6 +112,14 @@ const MainSession: React.FC = () => {
     const nextScene = getNextScene(currentScene, sessionType);
     setCurrentScene(nextScene);
     localStorage.setItem('current-scene', nextScene);
+  };
+
+  const handleRandomScene = () => {
+    const availableScenes = getAllScenesForSession(sessionType);
+    const otherScenes = availableScenes.filter(scene => scene !== currentScene);
+    const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
+    setCurrentScene(randomScene);
+    localStorage.setItem('current-scene', randomScene);
   };
 
   const toggleVideoBackground = () => {
@@ -452,17 +460,31 @@ const MainSession: React.FC = () => {
             </button>
             
             {videoEnabled && (
-              <button
-                onClick={handleNextScene}
-                title={`Next scene (${getSceneDisplayName(currentScene)})`}
-                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                  sessionType === 'morning'
-                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <SkipForward className="w-5 h-5" />
-              </button>
+              <>
+                <button
+                  onClick={handleNextScene}
+                  title={`Next scene (${getSceneDisplayName(currentScene)})`}
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <SkipForward className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={handleRandomScene}
+                  title="Random scene"
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Shuffle className="w-5 h-5" />
+                </button>
+              </>
             )}
           </div>
 

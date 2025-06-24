@@ -28,20 +28,35 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
     try {
       const element = document.getElementById(`insight-card-${insight.id}`);
       if (element) {
+        // Wait a moment for any animations or transitions to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const canvas = await html2canvas(element, {
           backgroundColor: null,
           scale: 2,
-          width: 800,
-          height: 600,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: true,
+          logging: false,
+          // Remove fixed width/height to let html2canvas determine optimal size
+          onclone: (clonedDoc) => {
+            // Ensure all styles are properly applied in the cloned document
+            const clonedElement = clonedDoc.getElementById(`insight-card-${insight.id}`);
+            if (clonedElement) {
+              // Force a repaint to ensure all styles are applied
+              clonedElement.style.transform = 'translateZ(0)';
+            }
+          }
         });
         
         const link = document.createElement('a');
         link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL();
+        link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
       }
     } catch (error) {
       console.error('Failed to download:', error);
+      alert('Failed to download image. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -70,7 +85,11 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       {/* Downloadable Card */}
       <div
         id={`insight-card-${insight.id}`}
-        className={`relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br ${gradientClass} backdrop-blur-sm border border-white/20`}
+        className={`relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br ${gradientClass} backdrop-blur-sm border border-white/20 shadow-xl`}
+        style={{
+          // Ensure the card has a solid background for html2canvas
+          background: `linear-gradient(to bottom right, ${getGradientColors(insight.sceneType, insight.type)})`
+        }}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -80,7 +99,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
         </div>
         
         {/* Content */}
-        <div className="relative p-8 h-full flex flex-col justify-between">
+        <div className="relative p-8 h-full flex flex-col justify-between z-10">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -102,10 +121,10 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
           </div>
 
           {/* Quote */}
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center px-4">
             <blockquote className={`text-xl md:text-2xl font-medium leading-relaxed text-center ${
               insight.type === 'morning' ? 'text-gray-800' : 'text-white'
-            }`}>
+            } drop-shadow-sm`}>
               "{insight.quote}"
             </blockquote>
           </div>
@@ -131,7 +150,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20`}
+          } border border-white/20 hover:scale-105`}
           title="Copy to clipboard"
         >
           {copied ? (
@@ -148,10 +167,14 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 disabled:opacity-50`}
+          } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100`}
           title="Download image"
         >
-          <Download className="w-5 h-5" />
+          {downloading ? (
+            <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <Download className="w-5 h-5" />
+          )}
         </button>
         
         <button
@@ -160,7 +183,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
             insight.type === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20`}
+          } border border-white/20 hover:scale-105`}
           title="Share insight"
         >
           <Share2 className="w-5 h-5" />
@@ -168,6 +191,38 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       </div>
     </div>
   );
+};
+
+// Helper function to get solid gradient colors for html2canvas
+const getGradientColors = (scene: string, timeOfDay: 'morning' | 'evening'): string => {
+  const gradients = {
+    ocean: {
+      morning: 'rgba(219, 234, 254, 0.2), rgba(147, 197, 253, 0.2)',
+      evening: 'rgba(30, 27, 75, 0.3), rgba(88, 28, 135, 0.3)'
+    },
+    forest: {
+      morning: 'rgba(220, 252, 231, 0.2), rgba(167, 243, 208, 0.2)',
+      evening: 'rgba(20, 83, 45, 0.3), rgba(6, 78, 59, 0.3)'
+    },
+    desert: {
+      morning: 'rgba(254, 243, 199, 0.2), rgba(253, 224, 71, 0.2)',
+      evening: 'rgba(154, 52, 18, 0.3), rgba(88, 28, 135, 0.3)'
+    },
+    mountain: {
+      morning: 'rgba(248, 250, 252, 0.2), rgba(191, 219, 254, 0.2)',
+      evening: 'rgba(17, 24, 39, 0.3), rgba(49, 46, 129, 0.3)'
+    },
+    lake: {
+      morning: 'rgba(240, 253, 250, 0.2), rgba(165, 243, 252, 0.2)',
+      evening: 'rgba(30, 58, 138, 0.3), rgba(88, 28, 135, 0.3)'
+    },
+    meadow: {
+      morning: 'rgba(240, 253, 244, 0.2), rgba(253, 224, 71, 0.2)',
+      evening: 'rgba(6, 78, 59, 0.3), rgba(15, 118, 110, 0.3)'
+    }
+  };
+  
+  return gradients[scene as keyof typeof gradients]?.[timeOfDay] || gradients.ocean[timeOfDay];
 };
 
 export default InsightCard;
