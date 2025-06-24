@@ -81,7 +81,7 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const canvas = await html2canvas(clone, {
-        backgroundColor: getBackgroundColor(insight.sceneType, insight.type),
+        backgroundColor: null, // Allow transparency to capture background
         scale: 2,
         width: 800,
         height: 600,
@@ -97,8 +97,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
           if (clonedElement) {
             // Force font loading
             clonedElement.style.fontFamily = 'Inter, system-ui, sans-serif';
-            // Ensure background is solid
-            clonedElement.style.background = getBackgroundColor(insight.sceneType, insight.type);
           }
         }
       });
@@ -151,10 +149,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       <div
         id={`insight-card-${insight.id}`}
         className={`relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br ${gradientClass} backdrop-blur-sm border border-white/20 shadow-xl`}
-        style={{
-          // Ensure solid background for html2canvas
-          background: getBackgroundColor(insight.sceneType, insight.type)
-        }}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
@@ -259,38 +253,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       </div>
     </div>
   );
-};
-
-// Helper function to get solid background colors for html2canvas
-const getBackgroundColor = (scene: string, timeOfDay: 'morning' | 'evening'): string => {
-  const backgrounds = {
-    ocean: {
-      morning: 'linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)',
-      evening: 'linear-gradient(135deg, #1e1b4b 0%, #581c87 100%)'
-    },
-    forest: {
-      morning: 'linear-gradient(135deg, #dcfce7 0%, #a7f3d0 100%)',
-      evening: 'linear-gradient(135deg, #14532d 0%, #064e3b 100%)'
-    },
-    desert: {
-      morning: 'linear-gradient(135deg, #fef3c7 0%, #fde047 100%)',
-      evening: 'linear-gradient(135deg, #9a3412 0%, #581c87 100%)'
-    },
-    mountain: {
-      morning: 'linear-gradient(135deg, #f8fafc 0%, #bfdbfe 100%)',
-      evening: 'linear-gradient(135deg, #111827 0%, #312e81 100%)'
-    },
-    lake: {
-      morning: 'linear-gradient(135deg, #f0fdfa 0%, #a5f3fc 100%)',
-      evening: 'linear-gradient(135deg, #1e3a8a 0%, #581c87 100%)'
-    },
-    meadow: {
-      morning: 'linear-gradient(135deg, #f0fdf4 0%, #fde047 100%)',
-      evening: 'linear-gradient(135deg, #064e3b 0%, #0f766e 100%)'
-    }
-  };
-  
-  return backgrounds[scene as keyof typeof backgrounds]?.[timeOfDay] || backgrounds.ocean[timeOfDay];
 };
 
 export default InsightCard;
