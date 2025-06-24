@@ -9,7 +9,7 @@ export const natureScenes: Record<NatureScene, {
 }> = {
   ocean: {
     name: 'Ocean Waves',
-    videoUrl: 'https://www.pexels.com/video/waves-crashing-on-the-shore-6735144/',
+    videoUrl: 'https://videos.pexels.com/video-files/6735144/6735144-uhd_2560_1440_30fps.mp4',
     description: 'Gentle waves meeting the shore',
     mood: 'calming',
     timePreference: 'both'
