@@ -2,27 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Code, 
-  Navigation, 
-  User, 
-  Settings, 
-  Eye, 
-  X, 
-  ChevronDown,
-  ChevronRight,
-  Home,
-  Sunrise,
-  Moon,
-  Gallery,
-  Palette,
-  Monitor,
-  Smartphone,
-  Tablet,
-  RefreshCw,
-  Bug,
-  Zap
-} from 'lucide-react';
+import { Code, Navigation, User, Settings, Eye, X, ChevronDown, ChevronRight, Home, Sunrise, Moon, GalleryVertical as Gallery, Palette, Monitor, Smartphone, Tablet, RefreshCw, Bug, Zap } from 'lucide-react';
 
 interface DevOverlayProps {
   onRemove: () => void;
