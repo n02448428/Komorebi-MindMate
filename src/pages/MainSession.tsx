@@ -33,10 +33,10 @@ const MainSession: React.FC = () => {
   // Determine which session type to use based on time
   const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
   
-  // Check if user has completed today's session
-  const hasCompletedToday = user ? hasCompletedTodaysSession(
-    sessionType,
-    sessionType === 'morning' ? sessionLimits.lastMorningSession : sessionLimits.lastEveningSession
+  // Check if user has completed BOTH sessions today (only block if both are done)
+  const hasCompletedBothToday = user ? (
+    hasCompletedTodaysSession('morning', sessionLimits.lastMorningSession) &&
+    hasCompletedTodaysSession('evening', sessionLimits.lastEveningSession)
   ) : false;
 
   // Check if session time has expired
@@ -75,13 +75,13 @@ const MainSession: React.FC = () => {
 
   useEffect(() => {
     // Auto-start session if conditions are met
-    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedToday && !isSessionExpired) {
+    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
       const startTime = new Date();
       setSessionStartTime(startTime);
       // Store session start time
       localStorage.setItem('session-start-time', startTime.toISOString());
     }
-  }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedToday, isSessionExpired]);
+  }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedBothToday, isSessionExpired]);
 
   const saveSessionLimits = (limits: SessionLimits) => {
     setSessionLimits(limits);
@@ -209,8 +209,8 @@ const MainSession: React.FC = () => {
     navigate('/settings');
   };
 
-  // Show session limit reached if user has completed today's session
-  if (user && !user.isPro && hasCompletedToday) {
+  // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
+  if (user && !user.isPro && hasCompletedBothToday) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         <NatureVideoBackground 

@@ -20,40 +20,36 @@ export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeO
   const eveningCutoff = 20; // 8 PM - after this, switch to evening even if morning wasn't completed
   
   let period: 'morning' | 'evening' | 'day' | 'night';
-  let isSessionTime = false;
+  let isSessionTime = true; // Always allow sessions if user hasn't had one today
   let nextSessionTime: Date | undefined;
   let greeting: string;
-  let shouldAutoStart = false;
+  let shouldAutoStart = true; // Always auto-start if no session today
   
   if (hour >= morningStart && hour < morningEnd) {
     period = 'morning';
-    isSessionTime = true;
-    shouldAutoStart = true;
     greeting = "Good morning. Let's set a beautiful intention for today.";
   } else if (hour >= morningEnd && hour < eveningStart) {
-    period = 'day';
-    isSessionTime = false;
-    nextSessionTime = addHours(startOfDay(now), eveningStart);
-    greeting = "Your evening reflection will be available at 5 PM.";
+    // During day, but still allow sessions - prefer morning unless it's late
+    period = hour >= 14 ? 'evening' : 'morning'; // After 2 PM, switch to evening mode
+    greeting = period === 'morning' 
+      ? "Let's take a moment to set an intention for the rest of your day."
+      : "Let's pause and reflect on how your day has been unfolding.";
   } else if (hour >= eveningStart && hour < eveningEnd) {
     period = 'evening';
-    isSessionTime = true;
-    shouldAutoStart = true;
     greeting = "Welcome back. Let's reflect on your day together.";
   } else {
-    period = 'night';
-    isSessionTime = false;
-    nextSessionTime = addHours(startOfDay(now), morningStart + 24);
-    greeting = "Rest well. Your morning session will be available at 5 AM.";
+    // Night time - still allow sessions but prefer evening mode
+    period = 'evening';
+    greeting = "Even in the quiet of night, reflection can bring peace. Let's explore what's on your mind.";
   }
   
   // Special case: if it's late in the day (after 8 PM), force evening session
   if (hour >= eveningCutoff) {
-    if (period === 'morning' || period === 'day') {
-      period = 'evening';
-      isSessionTime = true;
-      shouldAutoStart = true;
-      greeting = "It's getting late. Let's reflect on your day together.";
+    period = 'evening';
+    if (hour >= eveningEnd) {
+      greeting = "In these quiet evening hours, let's reflect together on what today has brought you.";
+    } else {
+      greeting = "Welcome back. Let's reflect on your day together.";
     }
   }
   
