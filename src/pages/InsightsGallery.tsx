@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { InsightCard as InsightCardType } from '../types';
+import { InsightCard as InsightCardType, NatureScene } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
+import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
 import { ArrowLeft, Sparkles, Calendar, Filter } from 'lucide-react';
@@ -21,6 +21,10 @@ const InsightsGallery: React.FC = () => {
     const parsedInsights = savedInsights.map((insight: any) => ({
       ...insight,
       createdAt: new Date(insight.createdAt),
+      // Validate and fix sceneType if it's missing or invalid
+      sceneType: insight.sceneType && Object.keys(natureScenes).includes(insight.sceneType) 
+        ? insight.sceneType 
+        : 'ocean' as NatureScene
     }));
     
     // Sort by date (newest first)
