@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Message, InsightCard as InsightCardType, SessionLimits } from '../types';
+import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
+import { getSceneForSession, getNextScene, getSceneDisplayName } from '../utils/sceneUtils';
 import { aiChatService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown, LogIn } from 'lucide-react';
+import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ const MainSession: React.FC = () => {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [currentScene, setCurrentScene] = useState<NatureScene>('ocean');
+  const [videoEnabled, setVideoEnabled] = useState(true);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -27,7 +29,6 @@ const MainSession: React.FC = () => {
   });
 
   const timeOfDay = getTimeOfDay();
-  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
   const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
   
   // Determine which session type to use based on time
@@ -44,6 +45,22 @@ const MainSession: React.FC = () => {
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
   useEffect(() => {
+    // Load settings from localStorage
+    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+    if (savedVideoEnabled !== null) {
+      setVideoEnabled(JSON.parse(savedVideoEnabled));
+    }
+
+    const savedScene = localStorage.getItem('current-scene') as NatureScene;
+    if (savedScene) {
+      setCurrentScene(savedScene);
+    } else {
+      // Set initial scene based on session type
+      const initialScene = getSceneForSession(sessionType);
+      setCurrentScene(initialScene);
+      localStorage.setItem('current-scene', initialScene);
+    }
+
     // Load session limits from localStorage only if user is logged in
     if (user) {
       const savedLimits = localStorage.getItem('session-limits');
@@ -71,7 +88,7 @@ const MainSession: React.FC = () => {
     if (savedStartTime) {
       setSessionStartTime(new Date(savedStartTime));
     }
-  }, [user?.isPro, user]);
+  }, [user?.isPro, user, sessionType]);
 
   useEffect(() => {
     // Auto-start session if conditions are met
@@ -89,6 +106,18 @@ const MainSession: React.FC = () => {
     if (user) {
       localStorage.setItem('session-limits', JSON.stringify(limits));
     }
+  };
+
+  const handleNextScene = () => {
+    const nextScene = getNextScene(currentScene, sessionType);
+    setCurrentScene(nextScene);
+    localStorage.setItem('current-scene', nextScene);
+  };
+
+  const toggleVideoBackground = () => {
+    const newVideoEnabled = !videoEnabled;
+    setVideoEnabled(newVideoEnabled);
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
   };
 
   const handleSendMessage = async (content: string) => {
@@ -213,10 +242,19 @@ const MainSession: React.FC = () => {
   if (user && !user.isPro && hasCompletedBothToday) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        <NatureVideoBackground 
-          scene={currentScene} 
-          timeOfDay={sessionType} 
-        />
+        {videoEnabled && (
+          <NatureVideoBackground 
+            scene={currentScene} 
+            timeOfDay={sessionType} 
+          />
+        )}
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
+          }`} />
+        )}
         
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
@@ -262,10 +300,19 @@ const MainSession: React.FC = () => {
   if (sessionStartTime && isSessionExpired && !sessionComplete) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        <NatureVideoBackground 
-          scene={currentScene} 
-          timeOfDay={sessionType} 
-        />
+        {videoEnabled && (
+          <NatureVideoBackground 
+            scene={currentScene} 
+            timeOfDay={sessionType} 
+          />
+        )}
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
+          }`} />
+        )}
         
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
@@ -368,10 +415,19 @@ const MainSession: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground 
-        scene={currentScene} 
-        timeOfDay={sessionType} 
-      />
+      {videoEnabled && (
+        <NatureVideoBackground 
+          scene={currentScene} 
+          timeOfDay={sessionType} 
+        />
+      )}
+      {!videoEnabled && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${
+          sessionType === 'morning' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
+      )}
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
@@ -381,6 +437,36 @@ const MainSession: React.FC = () => {
           Komorebi
         </div>
         <div className="flex gap-3">
+          {/* Background Controls */}
+          <div className="flex gap-2">
+            <button
+              onClick={toggleVideoBackground}
+              title={videoEnabled ? 'Hide video background' : 'Show video background'}
+              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              {videoEnabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+            
+            {videoEnabled && (
+              <button
+                onClick={handleNextScene}
+                title={`Next scene (${getSceneDisplayName(currentScene)})`}
+                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* User Controls */}
           {!user && (
             <button
               onClick={handleLogin}
@@ -433,6 +519,21 @@ const MainSession: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Scene Indicator */}
+      {videoEnabled && (
+        <div className="absolute bottom-6 left-6 z-50">
+          <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
+            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className={`text-sm font-medium ${
+              sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+            }`}>
+              {getSceneDisplayName(currentScene)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">

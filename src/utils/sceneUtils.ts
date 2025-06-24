@@ -66,6 +66,26 @@ export const getSceneForSession = (
   return availableScenes[Math.floor(Math.random() * availableScenes.length)];
 };
 
+export const getNextScene = (
+  currentScene: NatureScene,
+  sessionType: 'morning' | 'evening'
+): NatureScene => {
+  // Get all scenes that match the session type
+  const availableScenes = Object.entries(natureScenes)
+    .filter(([_, scene]) => 
+      scene.timePreference === sessionType || scene.timePreference === 'both'
+    )
+    .map(([key]) => key as NatureScene);
+  
+  // Find current scene index
+  const currentIndex = availableScenes.indexOf(currentScene);
+  
+  // Get next scene (cycle back to beginning if at end)
+  const nextIndex = (currentIndex + 1) % availableScenes.length;
+  
+  return availableScenes[nextIndex];
+};
+
 export const getSceneGradient = (scene: NatureScene, timeOfDay: 'morning' | 'evening'): string => {
   const gradients = {
     ocean: {
@@ -95,4 +115,16 @@ export const getSceneGradient = (scene: NatureScene, timeOfDay: 'morning' | 'eve
   };
   
   return gradients[scene][timeOfDay];
+};
+
+export const getAllScenesForSession = (sessionType: 'morning' | 'evening'): NatureScene[] => {
+  return Object.entries(natureScenes)
+    .filter(([_, scene]) => 
+      scene.timePreference === sessionType || scene.timePreference === 'both'
+    )
+    .map(([key]) => key as NatureScene);
+};
+
+export const getSceneDisplayName = (scene: NatureScene): string => {
+  return natureScenes[scene].name;
 };
