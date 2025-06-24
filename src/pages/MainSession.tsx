@@ -188,6 +188,14 @@ const MainSession: React.FC = () => {
     navigate('/');
   };
 
+  const handleInsights = () => {
+    navigate('/insights');
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+  };
+
   // Show session limit reached if user has completed today's session
   if (user && !user.isPro && hasCompletedToday) {
     return (
@@ -206,7 +214,7 @@ const MainSession: React.FC = () => {
           </div>
           <div className="flex gap-3">
             <button
-              onClick={() => navigate('/insights')}
+              onClick={handleInsights}
               className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -216,7 +224,7 @@ const MainSession: React.FC = () => {
               <User className="w-5 h-5" />
             </button>
             <button
-              onClick={() => navigate('/settings')}
+              onClick={handleSettings}
               className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -257,7 +265,7 @@ const MainSession: React.FC = () => {
             {user && (
               <>
                 <button
-                  onClick={() => navigate('/insights')}
+                  onClick={handleInsights}
                   className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -267,7 +275,7 @@ const MainSession: React.FC = () => {
                   <User className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => navigate('/settings')}
+                  onClick={handleSettings}
                   className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -389,7 +397,7 @@ const MainSession: React.FC = () => {
           {user && (
             <>
               <button
-                onClick={() => navigate('/insights')}
+                onClick={handleInsights}
                 className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                   sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -399,7 +407,7 @@ const MainSession: React.FC = () => {
                 <User className="w-5 h-5" />
               </button>
               <button
-                onClick={() => navigate('/settings')}
+                onClick={handleSettings}
                 className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                   sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -412,21 +420,6 @@ const MainSession: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Session Timer */}
-      {sessionStartTime && !sessionComplete && !user?.isPro && (
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
-          <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
-            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className={`text-sm font-medium ${
-              sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-            }`}>
-              {formatSessionTimeRemaining(sessionStartTime, sessionTimeLimit)}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
@@ -495,7 +488,7 @@ const MainSession: React.FC = () => {
               </button>
               {user && (
                 <button
-                  onClick={() => navigate('/insights')}
+                  onClick={handleInsights}
                   className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-800'
@@ -528,7 +521,13 @@ const simulateAIResponse = async (
   history: Message[], 
   timeOfDay: 'morning' | 'evening'
 ) => {
-  await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+  // Simulate realistic typing delay based on message length
+  const baseDelay = 800;
+  const lengthDelay = userMessage.length * 20;
+  const randomDelay = Math.random() * 1000;
+  const totalDelay = Math.min(baseDelay + lengthDelay + randomDelay, 3000);
+  
+  await new Promise(resolve => setTimeout(resolve, totalDelay));
 
   const morningResponses = [
     {

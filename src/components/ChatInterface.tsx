@@ -27,7 +27,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,6 +48,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (inputValue.trim() && !isLoading && !disabled) {
       onSendMessage(inputValue.trim());
       setInputValue('');
+      // Reset textarea height
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+      }
     }
   };
 
@@ -58,10 +62,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    
+    // Auto-resize textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    const newHeight = Math.min(textarea.scrollHeight, 120); // Max 120px height
+    textarea.style.height = `${newHeight}px`;
+  };
+
   return (
-    <div className="flex flex-col h-full max-h-[80vh] w-full max-w-2xl mx-auto">
+    <div className="flex flex-col h-full max-h-[85vh] w-full max-w-3xl mx-auto">
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-[400px] backdrop-blur-md bg-white/10 rounded-t-3xl border border-white/20">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 min-h-[400px] backdrop-blur-md bg-white/10 rounded-t-3xl border border-white/20">
         {greeting && messages.length === 0 && (
           <div className="animate-fade-in">
             <ChatMessage
@@ -76,8 +90,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
         
-        {messages.map((message) => (
-          <div key={message.id} className="animate-slide-up">
+        {messages.map((message, index) => (
+          <div 
+            key={message.id} 
+            className="animate-slide-up"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
             <ChatMessage message={message} timeOfDay={timeOfDay} />
           </div>
         ))}
@@ -97,21 +115,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="flex gap-3">
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={placeholder}
-            disabled={disabled || isLoading}
-            className={`flex-1 p-4 rounded-2xl border-0 transition-all duration-200 placeholder-opacity-70 ${
-              timeOfDay === 'morning'
-                ? 'bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30'
-                : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
-            } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed`}
-          />
+        <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+          <div className="flex-1 relative">
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={placeholder}
+              disabled={disabled || isLoading}
+              rows={1}
+              className={`w-full p-4 rounded-2xl border-0 transition-all duration-200 placeholder-opacity-70 resize-none ${
+                timeOfDay === 'morning'
+                  ? 'bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30'
+                  : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
+              } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed`}
+              style={{ 
+                minHeight: '56px',
+                maxHeight: '120px',
+                lineHeight: '1.5'
+              }}
+            />
+            {/* Character count for longer messages */}
+            {inputValue.length > 100 && (
+              <div className={`absolute bottom-2 right-2 text-xs ${
+                timeOfDay === 'morning' ? 'text-gray-500' : 'text-gray-400'
+              }`}>
+                {inputValue.length}
+              </div>
+            )}
+          </div>
+          
           <button
             type="submit"
             disabled={!inputValue.trim() || isLoading || disabled}
@@ -119,7 +153,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               timeOfDay === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                 : 'bg-white/10 hover:bg-white/20 text-white'
-            } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[56px] focus:outline-none focus:ring-2 focus:ring-white/30`}
+            } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[56px] min-h-[56px] focus:outline-none focus:ring-2 focus:ring-white/30`}
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -128,6 +162,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             )}
           </button>
         </form>
+        
+        {/* Helpful hints */}
+        <div className={`text-xs mt-2 text-center ${
+          timeOfDay === 'morning' ? 'text-gray-600' : 'text-gray-400'
+        } opacity-70`}>
+          Press Enter to send • Shift+Enter for new line
+        </div>
       </div>
     </div>
   );
