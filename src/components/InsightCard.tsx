@@ -58,6 +58,28 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       const clone = element.cloneNode(true) as HTMLElement;
       clone.id = `insight-card-clone-${insight.id}`;
       
+      // Remove backdrop-filter properties that cause issues with html2canvas
+      const removeBackdropFilters = (el: HTMLElement) => {
+        el.style.backdropFilter = 'none';
+        el.style.webkitBackdropFilter = 'none';
+        
+        // Remove backdrop-blur classes and replace with solid backgrounds
+        if (el.classList.contains('backdrop-blur-sm')) {
+          el.classList.remove('backdrop-blur-sm');
+          // Add a more opaque background to compensate
+          if (insight.type === 'morning') {
+            el.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
+          } else {
+            el.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
+          }
+        }
+        
+        // Recursively apply to all children
+        Array.from(el.children).forEach(child => {
+          removeBackdropFilters(child as HTMLElement);
+        });
+      };
+      
       // Style the clone for better rendering
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
@@ -66,12 +88,16 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       clone.style.height = '600px';
       clone.style.transform = 'none';
       clone.style.zIndex = '-1';
+      clone.style.fontFamily = 'Inter, system-ui, sans-serif';
+      
+      // Remove problematic backdrop filters
+      removeBackdropFilters(clone);
       
       // Add to document temporarily
       document.body.appendChild(clone);
       
       // Wait for styles to apply
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       const canvas = await html2canvas(clone, {
         scale: 2,
@@ -83,18 +109,28 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
         logging: false,
         imageTimeout: 15000,
         removeContainer: true,
+        backgroundColor: null, // Keep transparent background
         onclone: (clonedDoc) => {
-          // Ensure all fonts are loaded
+          // Ensure all fonts are loaded in the cloned document
           const clonedElement = clonedDoc.getElementById(`insight-card-clone-${insight.id}`);
           if (clonedElement) {
-            // Force font loading
             clonedElement.style.fontFamily = 'Inter, system-ui, sans-serif';
+            // Force all text elements to use the correct font
+            const textElements = clonedElement.querySelectorAll('*');
+            textElements.forEach(el => {
+              (el as HTMLElement).style.fontFamily = 'Inter, system-ui, sans-serif';
+            });
           }
         }
       });
       
       // Remove the clone
       document.body.removeChild(clone);
+      
+      // Verify canvas has content
+      if (canvas.width === 0 || canvas.height === 0) {
+        throw new Error('Canvas is empty');
+      }
       
       // Create download link
       const link = document.createElement('a');
