@@ -15,38 +15,31 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
 
   const handleCopy = async () => {
     try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(insight.quote);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } else {
-        // Fallback for older browsers or non-secure contexts
-        const textArea = document.createElement('textarea');
-        textArea.value = insight.quote;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        
-        try {
-          document.execCommand('copy');
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-          console.error('Fallback copy failed:', err);
-          // Show the text in an alert as last resort
-          alert(`Copy this text: "${insight.quote}"`);
-        } finally {
-          document.body.removeChild(textArea);
-        }
-      }
+      await navigator.clipboard.writeText(insight.quote);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
-      // Show the text in an alert as fallback
-      alert(`Copy this text: "${insight.quote}"`);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = insight.quote;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert(`Copy this text: "${insight.quote}"`);
+      } finally {
+        document.body.removeChild(textArea);
+      }
     }
   };
 
@@ -81,7 +74,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const canvas = await html2canvas(clone, {
-        backgroundColor: null, // Allow transparency to capture background
         scale: 2,
         width: 800,
         height: 600,
