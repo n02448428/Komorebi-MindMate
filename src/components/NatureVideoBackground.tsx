@@ -16,7 +16,6 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
 
   const sceneData = natureScenes[scene];
   const gradientClass = getSceneGradient(scene, timeOfDay);
@@ -32,6 +31,14 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
     const handleLoadedData = () => {
       console.log(`Video loaded successfully: ${scene}`);
       setIsLoaded(true);
+    };
+
+    const handleCanPlay = () => {
+      console.log(`Video can play: ${scene}`);
+      if (!isLoaded) {
+        setIsLoaded(true);
+      }
+      // Attempt to play the video
       video.play().catch((playError) => {
         console.error('Error playing video:', playError);
         // Try to play again after a short delay
@@ -52,42 +59,6 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
       setError(true);
     };
 
-    const handleCanPlay = () => {
-      console.log(`Video can play: ${scene}`);
-      if (!isLoaded) {
-        setIsLoaded(true);
-      }
-    };
-
-    // Add event listeners
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('error', handleError);
-    video.addEventListener('canplay', handleCanPlay);
-
-    // Force video to reload when scene changes
-    if (sceneData.videoUrl !== currentVideoUrl) {
-      console.log(`Loading new video: ${scene} - ${sceneData.videoUrl}`);
-      setCurrentVideoUrl(sceneData.videoUrl);
-      
-      // Set the new source
-      video.src = sceneData.videoUrl;
-      
-      // Force the video element to load the new source
-      video.load();
-    }
-
-    return () => {
-      video.removeEventListener('loadeddata', handleLoadedData);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('canplay', handleCanPlay);
-    };
-  }, [scene, sceneData.videoUrl, currentVideoUrl, isLoaded]);
-
-  // Additional effect to handle video play state
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !isLoaded) return;
-
     const handlePlay = () => {
       console.log(`Video playing: ${scene}`);
     };
@@ -95,19 +66,33 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
     const handlePause = () => {
       console.log(`Video paused: ${scene}`);
       // Try to resume playing if it was paused unexpectedly
-      if (!video.ended) {
-        video.play().catch(console.error);
+      if (!video.ended && !error) {
+        setTimeout(() => {
+          video.play().catch(console.error);
+        }, 100);
       }
     };
 
+    // Add event listeners
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('error', handleError);
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
+    // Force video to reload by setting the source
+    console.log(`Loading video: ${scene} - ${sceneData.videoUrl}`);
+    video.src = sceneData.videoUrl;
+    video.load();
+
     return () => {
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('canplay', handleCanPlay);
+      video.removeEventListener('error', handleError);
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
     };
-  }, [isLoaded, scene]);
+  }, [scene, sceneData.videoUrl]); // Removed isLoaded from dependencies to prevent infinite loop
 
   if (error) {
     // Fallback gradient background
@@ -129,6 +114,7 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
       {/* Video Background */}
       <video
         ref={videoRef}
+        key={sceneData.videoUrl} // Force re-mount when URL changes
         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
@@ -139,7 +125,8 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
         preload="metadata"
         crossOrigin="anonymous"
       >
-        {/* The src is set programmatically in useEffect */}
+        <source src={sceneData.videoUrl} type="video/mp4" />
+        Your browser does not support the video tag.
       </video>
 
       {/* Overlay Gradient */}
