@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Message, InsightCard as InsightCardType, SessionLimits } from '../types';
-import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession } from '../utils/timeUtils';
+import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit, formatSessionTimeRemaining } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import { aiChatService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown } from 'lucide-react';
+import { Settings, User, Crown, Clock, LogIn } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ const MainSession: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -27,34 +28,67 @@ const MainSession: React.FC = () => {
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+  const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
+  
+  // Determine which session type to use based on time
+  const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
   
   // Check if user has completed today's session
-  const hasCompletedToday = hasCompletedTodaysSession(
-    timeOfDay.period === 'morning' ? 'morning' : 'evening',
-    timeOfDay.period === 'morning' ? sessionLimits.lastMorningSession : sessionLimits.lastEveningSession
-  );
+  const hasCompletedToday = user ? hasCompletedTodaysSession(
+    sessionType,
+    sessionType === 'morning' ? sessionLimits.lastMorningSession : sessionLimits.lastEveningSession
+  ) : false;
+
+  // Check if session time has expired
+  const isSessionExpired = sessionStartTime && 
+    (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
   useEffect(() => {
-    // Load session limits from localStorage
-    const savedLimits = localStorage.getItem('session-limits');
-    if (savedLimits) {
-      const parsed = JSON.parse(savedLimits);
+    // Load session limits from localStorage only if user is logged in
+    if (user) {
+      const savedLimits = localStorage.getItem('session-limits');
+      if (savedLimits) {
+        const parsed = JSON.parse(savedLimits);
+        setSessionLimits({
+          ...parsed,
+          lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
+          lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
+          maxMessages: user?.isPro ? 999 : 4,
+        });
+      }
+    } else {
+      // Reset session limits for non-logged in users
       setSessionLimits({
-        ...parsed,
-        lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
-        lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
-        maxMessages: user?.isPro ? 999 : 4,
+        morningCompleted: false,
+        eveningCompleted: false,
+        messagesUsed: 0,
+        maxMessages: 4,
       });
     }
-  }, [user?.isPro]);
+  }, [user?.isPro, user]);
+
+  useEffect(() => {
+    // Auto-start session if conditions are met
+    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedToday && !isSessionExpired) {
+      setSessionStartTime(new Date());
+    }
+  }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedToday, isSessionExpired]);
 
   const saveSessionLimits = (limits: SessionLimits) => {
     setSessionLimits(limits);
-    localStorage.setItem('session-limits', JSON.stringify(limits));
+    // Only save to localStorage if user is logged in
+    if (user) {
+      localStorage.setItem('session-limits', JSON.stringify(limits));
+    }
   };
 
   const handleSendMessage = async (content: string) => {
-    if (isLoading || sessionLimits.messagesUsed >= sessionLimits.maxMessages) return;
+    if (isLoading || sessionLimits.messagesUsed >= sessionLimits.maxMessages || isSessionExpired) return;
+
+    // Start session timer if not already started
+    if (!sessionStartTime) {
+      setSessionStartTime(new Date());
+    }
 
     // Add user message
     const userMessage: Message = {
@@ -75,7 +109,7 @@ const MainSession: React.FC = () => {
 
     try {
       // Simulate AI response for demo (replace with actual API call)
-      const response = await simulateAIResponse(content, newMessagesUsed, messages, timeOfDay.period);
+      const response = await simulateAIResponse(content, newMessagesUsed, messages, sessionType);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -91,16 +125,18 @@ const MainSession: React.FC = () => {
         setSessionComplete(true);
         generateInsightCard([...messages, userMessage, aiMessage]);
         
-        // Mark session as completed
-        const now = new Date();
-        saveSessionLimits({
-          ...sessionLimits,
-          messagesUsed: newMessagesUsed,
-          morningCompleted: timeOfDay.period === 'morning' ? true : sessionLimits.morningCompleted,
-          eveningCompleted: timeOfDay.period === 'evening' ? true : sessionLimits.eveningCompleted,
-          lastMorningSession: timeOfDay.period === 'morning' ? now : sessionLimits.lastMorningSession,
-          lastEveningSession: timeOfDay.period === 'evening' ? now : sessionLimits.lastEveningSession,
-        });
+        // Mark session as completed only if user is logged in
+        if (user) {
+          const now = new Date();
+          saveSessionLimits({
+            ...sessionLimits,
+            messagesUsed: newMessagesUsed,
+            morningCompleted: sessionType === 'morning' ? true : sessionLimits.morningCompleted,
+            eveningCompleted: sessionType === 'evening' ? true : sessionLimits.eveningCompleted,
+            lastMorningSession: sessionType === 'morning' ? now : sessionLimits.lastMorningSession,
+            lastEveningSession: sessionType === 'evening' ? now : sessionLimits.lastEveningSession,
+          });
+        }
       }
     } catch (error) {
       console.error('Error getting AI response:', error);
@@ -119,13 +155,15 @@ const MainSession: React.FC = () => {
   const generateInsightCard = async (sessionMessages: Message[]) => {
     try {
       // Simulate insight generation (replace with actual API call)
-      const insight = await simulateInsightGeneration(sessionMessages, timeOfDay.period, currentScene);
+      const insight = await simulateInsightGeneration(sessionMessages, sessionType, currentScene);
       setInsightCard(insight);
       
-      // Save to localStorage for demo
-      const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
-      existingInsights.push(insight);
-      localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+      // Only save to localStorage if user is logged in
+      if (user) {
+        const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+        existingInsights.push(insight);
+        localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+      }
     } catch (error) {
       console.error('Error generating insight:', error);
     }
@@ -135,6 +173,7 @@ const MainSession: React.FC = () => {
     setMessages([]);
     setSessionComplete(false);
     setInsightCard(null);
+    setSessionStartTime(new Date());
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: 0,
@@ -145,19 +184,23 @@ const MainSession: React.FC = () => {
     navigate('/pro-upgrade');
   };
 
+  const handleLogin = () => {
+    navigate('/');
+  };
+
   // Show session limit reached if user has completed today's session
-  if (!user?.isPro && hasCompletedToday) {
+  if (user && !user.isPro && hasCompletedToday) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         <NatureVideoBackground 
           scene={currentScene} 
-          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+          timeOfDay={sessionType} 
         />
         
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
           <div className={`text-2xl font-bold ${
-            timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
           }`}>
             Komorebi
           </div>
@@ -165,7 +208,7 @@ const MainSession: React.FC = () => {
             <button
               onClick={() => navigate('/insights')}
               className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                timeOfDay.period === 'morning'
+                sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
@@ -175,7 +218,7 @@ const MainSession: React.FC = () => {
             <button
               onClick={() => navigate('/settings')}
               className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                timeOfDay.period === 'morning'
+                sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
@@ -187,70 +230,115 @@ const MainSession: React.FC = () => {
 
         <SessionLimitReached
           nextSessionTime={getNextAvailableSession()}
-          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'}
+          timeOfDay={sessionType}
           onUpgrade={handleUpgrade}
         />
       </div>
     );
   }
 
-  // Show session not available message
-  if (!timeOfDay.isSessionTime) {
+  // Show session expired message
+  if (sessionStartTime && isSessionExpired && !sessionComplete) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         <NatureVideoBackground 
           scene={currentScene} 
-          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+          timeOfDay={sessionType} 
         />
         
         {/* Header */}
         <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
           <div className={`text-2xl font-bold ${
-            timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
           }`}>
             Komorebi
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={() => navigate('/insights')}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                timeOfDay.period === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-            >
-              <User className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => navigate('/settings')}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                timeOfDay.period === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            {user && (
+              <>
+                <button
+                  onClick={() => navigate('/insights')}
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => navigate('/settings')}
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Settings className="w-5 h-5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         <div className="flex items-center justify-center min-h-screen p-8">
           <div className="text-center">
-            <h2 className={`text-3xl font-semibold mb-4 ${
-              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ${
+              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            } border border-white/20`}>
+              <Clock className={`w-10 h-10 ${
+                sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+              }`} />
+            </div>
+            
+            <h2 className={`text-2xl font-semibold mb-4 ${
+              sessionType === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
-              {timeOfDay.greeting}
+              Session Time Expired
             </h2>
-            {timeOfDay.nextSessionTime && (
-              <p className={`text-lg ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-              }`}>
-                Next session available at {timeOfDay.nextSessionTime.toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
+            
+            <p className={`text-lg mb-6 ${
+              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              Your {sessionTimeLimit}-minute session has ended.
+            </p>
+
+            {!user?.isPro && (
+              <div className={`p-6 rounded-2xl backdrop-blur-sm mb-8 ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              } border border-white/20 max-w-md mx-auto`}>
+                <Crown className={`w-8 h-8 mx-auto mb-3 ${
+                  sessionType === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                }`} />
+                <h3 className={`text-lg font-semibold mb-2 ${
+                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Want longer sessions?
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Upgrade to Pro for 1-hour sessions and unlimited conversations.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
             )}
+            
+            <button
+              onClick={handleNewSession}
+              className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              Start New Session
+            </button>
           </div>
         </div>
       </div>
@@ -261,22 +349,35 @@ const MainSession: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden">
       <NatureVideoBackground 
         scene={currentScene} 
-        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+        timeOfDay={sessionType} 
       />
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
         <div className={`text-2xl font-bold ${
-          timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+          sessionType === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
           Komorebi
         </div>
         <div className="flex gap-3">
-          {!user?.isPro && (
+          {!user && (
+            <button
+              onClick={handleLogin}
+              className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              <span className="text-sm font-medium">Sign In</span>
+            </button>
+          )}
+          {user && !user.isPro && (
             <button
               onClick={handleUpgrade}
               className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 ${
-                timeOfDay.period === 'morning'
+                sessionType === 'morning'
                   ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                   : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
               }`}
@@ -285,52 +386,94 @@ const MainSession: React.FC = () => {
               <span className="text-sm font-medium">Pro</span>
             </button>
           )}
-          <button
-            onClick={() => navigate('/insights')}
-            className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-              timeOfDay.period === 'morning'
-                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-          >
-            <User className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => navigate('/settings')}
-            className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-              timeOfDay.period === 'morning'
-                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          {user && (
+            <>
+              <button
+                onClick={() => navigate('/insights')}
+                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <User className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => navigate('/settings')}
+                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Session Timer */}
+      {sessionStartTime && !sessionComplete && !user?.isPro && (
+        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
+          <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
+            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className={`text-sm font-medium ${
+              sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+            }`}>
+              {formatSessionTimeRemaining(sessionStartTime, sessionTimeLimit)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
         {!sessionComplete ? (
-          <ChatInterface
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            isLoading={isLoading}
-            greeting={timeOfDay.greeting}
-            timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'}
-            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
-          />
+          <div className="w-full">
+            <ChatInterface
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+              greeting={timeOfDay.greeting}
+              timeOfDay={sessionType}
+              messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+            />
+            
+            {/* Login prompt for non-logged in users */}
+            {!user && messages.length > 0 && (
+              <div className="mt-6 text-center">
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    Sign in to save your insights and track your progress
+                  </p>
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Sign In to Save
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-full max-w-2xl mx-auto">
             {insightCard && (
               <div className="animate-fade-in">
                 <div className="text-center mb-8">
                   <h2 className={`text-3xl font-semibold mb-4 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
-                    Your {timeOfDay.period === 'morning' ? 'Morning' : 'Evening'} Insight
+                    Your {sessionType === 'morning' ? 'Morning' : 'Evening'} Insight
                   </h2>
                   <p className={`text-lg ${
-                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
                   }`}>
                     A reflection from our conversation
                   </p>
@@ -343,23 +486,33 @@ const MainSession: React.FC = () => {
               <button
                 onClick={handleNewSession}
                 className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                  timeOfDay.period === 'morning'
+                  sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                     : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}
               >
                 New Session
               </button>
-              <button
-                onClick={() => navigate('/insights')}
-                className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                View All Insights
-              </button>
+              {user && (
+                <button
+                  onClick={() => navigate('/insights')}
+                  className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  View All Insights
+                </button>
+              )}
+              {!user && (
+                <button
+                  onClick={handleLogin}
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Sign In to Save Insights
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -373,7 +526,7 @@ const simulateAIResponse = async (
   userMessage: string, 
   messageCount: number, 
   history: Message[], 
-  timeOfDay: 'morning' | 'evening' | 'day' | 'night'
+  timeOfDay: 'morning' | 'evening'
 ) => {
   await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
@@ -422,7 +575,7 @@ const simulateAIResponse = async (
 // Simulate insight generation for demo
 const simulateInsightGeneration = async (
   messages: Message[], 
-  type: 'morning' | 'evening' | 'day' | 'night',
+  type: 'morning' | 'evening',
   sceneType: any
 ): Promise<InsightCardType> => {
   await new Promise(resolve => setTimeout(resolve, 1500));
@@ -449,7 +602,7 @@ const simulateInsightGeneration = async (
   return {
     id: Date.now().toString(),
     quote: randomInsight,
-    type: type === 'morning' ? 'morning' : 'evening',
+    type,
     sessionId: Date.now().toString(),
     createdAt: new Date(),
     sceneType,

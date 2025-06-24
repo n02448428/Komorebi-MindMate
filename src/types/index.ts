@@ -28,6 +28,8 @@ export interface ChatSession {
   createdAt: Date;
   completed: boolean;
   sceneType: NatureScene;
+  startTime?: Date;
+  endTime?: Date;
 }
 
 export interface InsightCard {
@@ -67,10 +69,13 @@ export interface SessionLimits {
   lastEveningSession?: Date;
   messagesUsed: number;
   maxMessages: number;
+  sessionStartTime?: Date;
 }
 
 export interface TimeOfDay {
   period: 'morning' | 'evening' | 'day' | 'night';
   isSessionTime: boolean;
   nextSessionTime?: Date;
+  greeting: string;
+  shouldAutoStart: boolean;
 }

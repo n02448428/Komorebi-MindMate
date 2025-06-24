@@ -5,6 +5,7 @@ export interface TimeOfDay {
   isSessionTime: boolean;
   nextSessionTime?: Date;
   greeting: string;
+  shouldAutoStart: boolean;
 }
 
 export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeOfDay => {
@@ -16,15 +17,18 @@ export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeO
   const morningEnd = 11; // 11 AM
   const eveningStart = 17; // 5 PM
   const eveningEnd = 23; // 11 PM
+  const eveningCutoff = 20; // 8 PM - after this, switch to evening even if morning wasn't completed
   
   let period: 'morning' | 'evening' | 'day' | 'night';
   let isSessionTime = false;
   let nextSessionTime: Date | undefined;
   let greeting: string;
+  let shouldAutoStart = false;
   
   if (hour >= morningStart && hour < morningEnd) {
     period = 'morning';
     isSessionTime = true;
+    shouldAutoStart = true;
     greeting = "Good morning. Let's set a beautiful intention for today.";
   } else if (hour >= morningEnd && hour < eveningStart) {
     period = 'day';
@@ -34,6 +38,7 @@ export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeO
   } else if (hour >= eveningStart && hour < eveningEnd) {
     period = 'evening';
     isSessionTime = true;
+    shouldAutoStart = true;
     greeting = "Welcome back. Let's reflect on your day together.";
   } else {
     period = 'night';
@@ -42,11 +47,22 @@ export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeO
     greeting = "Rest well. Your morning session will be available at 5 AM.";
   }
   
+  // Special case: if it's late in the day (after 8 PM), force evening session
+  if (hour >= eveningCutoff) {
+    if (period === 'morning' || period === 'day') {
+      period = 'evening';
+      isSessionTime = true;
+      shouldAutoStart = true;
+      greeting = "It's getting late. Let's reflect on your day together.";
+    }
+  }
+  
   return {
     period,
     isSessionTime,
     nextSessionTime,
-    greeting
+    greeting,
+    shouldAutoStart
   };
 };
 
@@ -88,4 +104,22 @@ export const formatTimeUntilNext = (nextTime: Date): string => {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
+};
+
+export const getSessionTimeLimit = (isPro: boolean): number => {
+  // Return time limit in minutes
+  return isPro ? 60 : 15;
+};
+
+export const formatSessionTimeRemaining = (startTime: Date, timeLimit: number): string => {
+  const now = new Date();
+  const elapsed = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+  const remaining = Math.max(0, timeLimit - elapsed);
+  
+  if (remaining === 0) return "Time's up";
+  if (remaining < 60) return `${remaining}m remaining`;
+  
+  const hours = Math.floor(remaining / 60);
+  const minutes = remaining % 60;
+  return `${hours}h ${minutes}m remaining`;
 };
