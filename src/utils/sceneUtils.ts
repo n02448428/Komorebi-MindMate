@@ -16,35 +16,35 @@ export const natureScenes: Record<NatureScene, {
   },
   forest: {
     name: 'Forest Canopy',
-    videoUrl: 'https://player.vimeo.com/external/195913085.sd.mp4?s=7c12c7c0c0e7f0c0c0c0c0c0c0c0c0c0c0c0c0c0&profile_id=139',
+    videoUrl: 'https://videos.pexels.com/video-files/30039186/12886404_1920_1080_60fps.mp4',
     description: 'Sunlight filtering through trees',
     mood: 'grounding',
     timePreference: 'morning'
   },
   desert: {
     name: 'Desert Dunes',
-    videoUrl: 'https://player.vimeo.com/external/195913086.sd.mp4?s=8d13d8d0d0e8f0d0d0d0d0d0d0d0d0d0d0d0d0d0&profile_id=139',
+    videoUrl: 'https://videos.pexels.com/video-files/29660258/12759696_2560_1440_60fps.mp4',
     description: 'Rolling sand dunes under vast sky',
     mood: 'peaceful',
     timePreference: 'both'
   },
   mountain: {
     name: 'Mountain Vista',
-    videoUrl: 'https://player.vimeo.com/external/195913087.sd.mp4?s=9e14e9e0e0f9f0e0e0e0e0e0e0e0e0e0e0e0e0e0&profile_id=139',
+    videoUrl: 'https://videos.pexels.com/video-files/4288020/4288020-uhd_2560_1440_24fps.mp4',
     description: 'Majestic peaks and flowing clouds',
     mood: 'energizing',
     timePreference: 'morning'
   },
   lake: {
     name: 'Serene Lake',
-    videoUrl: 'https://player.vimeo.com/external/195913088.sd.mp4?s=af15faf0f0faf0f0f0f0f0f0f0f0f0f0f0f0f0f0&profile_id=139',
+    videoUrl: 'https://videos.pexels.com/video-files/27868037/12249511_2560_1440_24fps.mp4',
     description: 'Still waters reflecting the sky',
     mood: 'peaceful',
     timePreference: 'evening'
   },
   meadow: {
     name: 'Wildflower Meadow',
-    videoUrl: 'https://player.vimeo.com/external/195913089.sd.mp4?s=bf16fbf0f0fbf0f0f0f0f0f0f0f0f0f0f0f0f0f0&profile_id=139',
+    videoUrl: 'https://videos.pexels.com/video-files/32347280/13800782_2048_1080_30fps.mp4',
     description: 'Gentle breeze through wildflowers',
     mood: 'calming',
     timePreference: 'both'
