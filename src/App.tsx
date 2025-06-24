@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
-import MorningSession from './pages/MorningSession';
-import EveningSession from './pages/EveningSession';
+import MainSession from './pages/MainSession';
 import InsightsGallery from './pages/InsightsGallery';
+import ProUpgrade from './pages/ProUpgrade';
 import Settings from './pages/Settings';
-import DevOverlay from './components/DevOverlay';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -19,20 +17,15 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Navigate to="/morning" /> : <LandingPage />} />
-      <Route path="/morning" element={
-        <ProtectedRoute>
-          <MorningSession />
-        </ProtectedRoute>
-      } />
-      <Route path="/evening" element={
-        <ProtectedRoute>
-          <EveningSession />
-        </ProtectedRoute>
-      } />
+      <Route path="/" element={user ? <MainSession /> : <LandingPage />} />
       <Route path="/insights" element={
         <ProtectedRoute>
           <InsightsGallery />
+        </ProtectedRoute>
+      } />
+      <Route path="/pro-upgrade" element={
+        <ProtectedRoute>
+          <ProUpgrade />
         </ProtectedRoute>
       } />
       <Route path="/settings" element={
@@ -45,18 +38,11 @@ const AppRoutes: React.FC = () => {
 };
 
 function App() {
-  const [showDevOverlay, setShowDevOverlay] = useState(true);
-
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <Router>
-          <AppRoutes />
-          {showDevOverlay && (
-            <DevOverlay onRemove={() => setShowDevOverlay(false)} />
-          )}
-        </Router>
-      </ThemeProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
     </AuthProvider>
   );
 }

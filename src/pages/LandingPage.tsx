@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { Sunrise, Moon, Sparkles, Heart, Brain, Target } from 'lucide-react';
+import { Sparkles, Play, ArrowRight, Check } from 'lucide-react';
+import NatureVideoBackground from '../components/NatureVideoBackground';
 
 const LandingPage: React.FC = () => {
   const { login, isLoading } = useAuth();
-  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,208 +30,177 @@ const LandingPage: React.FC = () => {
     }
   };
 
+  const features = [
+    'AI-powered conversations that adapt to your mood',
+    'Beautiful nature scenes for immersive reflection',
+    'Personalized insight cards you can save and share',
+    'Morning intentions and evening reflections',
+    'Private, secure, and completely confidential'
+  ];
+
   return (
-    <div className={`min-h-screen transition-all duration-500 ${
-      theme === 'morning' 
-        ? 'bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50' 
-        : 'bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900'
-    }`}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            {theme === 'morning' ? (
-              <Sunrise className="w-8 h-8 text-orange-500" />
-            ) : (
-              <Moon className="w-8 h-8 text-blue-300" />
-            )}
-            <h1 className={`text-4xl font-bold ${
-              theme === 'morning' ? 'text-gray-800' : 'text-white'
-            }`}>
-              Komorebi MindMate
-            </h1>
-            <Sparkles className={`w-8 h-8 ${
-              theme === 'morning' ? 'text-yellow-500' : 'text-purple-300'
-            }`} />
-          </div>
-          <p className={`text-xl ${
-            theme === 'morning' ? 'text-gray-600' : 'text-gray-300'
-          }`}>
-            Your daily companion for mindful reflection and growth
-          </p>
-        </header>
+    <div className="min-h-screen relative overflow-hidden">
+      <NatureVideoBackground scene="ocean" timeOfDay="morning" />
+      
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-8 h-8 text-amber-500" />
+          <span className="text-2xl font-bold text-gray-800">Komorebi</span>
+        </div>
+        
+        {!showLogin && (
+          <button
+            onClick={() => setShowLogin(true)}
+            className="px-4 py-2 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 border border-white/20"
+          >
+            Sign In
+          </button>
+        )}
+      </div>
 
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left Side - Features */}
-          <div className="space-y-8">
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-full ${
-                  theme === 'morning' ? 'bg-orange-100' : 'bg-blue-800'
-                }`}>
-                  <Sunrise className={`w-6 h-6 ${
-                    theme === 'morning' ? 'text-orange-600' : 'text-blue-300'
-                  }`} />
-                </div>
-                <div>
-                  <h3 className={`text-xl font-semibold mb-2 ${
-                    theme === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    Morning Intentions
-                  </h3>
-                  <p className={`${
-                    theme === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    Start each day with purpose. Set intentions, practice gratitude, and align with your goals.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-full ${
-                  theme === 'morning' ? 'bg-purple-100' : 'bg-purple-800'
-                }`}>
-                  <Moon className={`w-6 h-6 ${
-                    theme === 'morning' ? 'text-purple-600' : 'text-purple-300'
-                  }`} />
-                </div>
-                <div>
-                  <h3 className={`text-xl font-semibold mb-2 ${
-                    theme === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    Evening Reflection
-                  </h3>
-                  <p className={`${
-                    theme === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    End your day with mindful reflection. Celebrate wins, learn from challenges, and prepare for tomorrow.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-full ${
-                  theme === 'morning' ? 'bg-green-100' : 'bg-green-800'
-                }`}>
-                  <Brain className={`w-6 h-6 ${
-                    theme === 'morning' ? 'text-green-600' : 'text-green-300'
-                  }`} />
-                </div>
-                <div>
-                  <h3 className={`text-xl font-semibold mb-2 ${
-                    theme === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    Insights & Growth
-                  </h3>
-                  <p className={`${
-                    theme === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    Track patterns, discover insights, and watch your personal growth unfold over time.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Login Form */}
-          <div className={`p-8 rounded-2xl shadow-xl ${
-            theme === 'morning' 
-              ? 'bg-white/80 backdrop-blur-sm' 
-              : 'bg-gray-800/80 backdrop-blur-sm'
-          }`}>
-            <div className="text-center mb-6">
-              <h2 className={`text-2xl font-bold mb-2 ${
-                theme === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                Welcome Back
-              </h2>
-              <p className={`${
-                theme === 'morning' ? 'text-gray-600' : 'text-gray-300'
-              }`}>
-                Sign in to continue your mindfulness journey
+      {/* Main Content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+        {!showLogin ? (
+          /* Landing Content */
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-8">
+              <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6 leading-tight">
+                Your AI companion for
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
+                  mindful reflection
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Experience the gentle art of self-discovery through conversations with AI, 
+                surrounded by the calming beauty of nature.
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  theme === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full p-3 rounded-lg border transition-colors ${
-                    theme === 'morning'
-                      ? 'border-gray-300 bg-white text-gray-900 focus:border-orange-500 focus:ring-orange-500'
-                      : 'border-gray-600 bg-gray-700 text-white focus:border-blue-500 focus:ring-blue-500'
-                  }`}
-                  placeholder="Enter your email"
-                  required
-                />
+            {/* Features */}
+            <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Morning Intentions</h3>
+                <p className="text-gray-700">
+                  Start each day with clarity and purpose through gentle AI-guided conversations.
+                </p>
               </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  theme === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full p-3 rounded-lg border transition-colors ${
-                    theme === 'morning'
-                      ? 'border-gray-300 bg-white text-gray-900 focus:border-orange-500 focus:ring-orange-500'
-                      : 'border-gray-600 bg-gray-700 text-white focus:border-blue-500 focus:ring-blue-500'
-                  }`}
-                  placeholder="Enter your password"
-                  required
-                />
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Evening Reflections</h3>
+                <p className="text-gray-700">
+                  Wind down with thoughtful reflection on your day's experiences and insights.
+                </p>
               </div>
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Insight Cards</h3>
+                <p className="text-gray-700">
+                  Receive beautiful, shareable cards with personalized wisdom from your sessions.
+                </p>
+              </div>
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Nature Immersion</h3>
+                <p className="text-gray-700">
+                  Reflect surrounded by stunning nature scenes that enhance your mindful experience.
+                </p>
+              </div>
+            </div>
 
-              {error && (
-                <div className="p-3 rounded-lg bg-red-100 border border-red-300 text-red-700 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full p-3 rounded-lg font-medium transition-colors ${
-                  theme === 'morning'
-                    ? 'bg-orange-500 hover:bg-orange-600 text-white'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </button>
-            </form>
-
-            <div className="mt-6 pt-6 border-t border-gray-300">
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={handleQuickLogin}
                 disabled={isLoading}
-                className={`w-full p-3 rounded-lg font-medium transition-colors ${
-                  theme === 'morning'
-                    ? 'bg-gray-100 hover:bg-gray-200 text-gray-800'
-                    : 'bg-gray-700 hover:bg-gray-600 text-white'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50"
               >
-                Quick Login (Demo)
+                <Play className="w-5 h-5" />
+                {isLoading ? 'Starting...' : 'Try Demo'}
               </button>
-              <p className={`text-xs text-center mt-2 ${
-                theme === 'morning' ? 'text-gray-500' : 'text-gray-400'
-              }`}>
-                Use dev@example.com / password for demo access
-              </p>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="px-8 py-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 border border-white/20"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mt-6">
+              Free to try • No credit card required • Private & secure
+            </p>
+          </div>
+        ) : (
+          /* Login Form */
+          <div className="w-full max-w-md mx-auto">
+            <div className="backdrop-blur-md bg-white/20 rounded-3xl p-8 border border-white/20">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  Welcome to Komorebi
+                </h2>
+                <p className="text-gray-700">
+                  Sign in to begin your mindful journey
+                </p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Signing In...' : 'Sign In'}
+                </button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-white/20">
+                <button
+                  onClick={handleQuickLogin}
+                  disabled={isLoading}
+                  className="w-full p-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Quick Demo Access
+                </button>
+                <p className="text-xs text-center mt-2 text-gray-600">
+                  Try the experience with demo@komorebi.app
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowLogin(false)}
+                className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
+              >
+                ← Back to landing page
+              </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
