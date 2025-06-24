@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Message, InsightCard as InsightCardType, SessionLimits } from '../types';
-import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit, formatSessionTimeRemaining } from '../utils/timeUtils';
+import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import { aiChatService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown, Clock, LogIn } from 'lucide-react';
+import { Settings, User, Crown, LogIn } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -71,6 +71,8 @@ const MainSession: React.FC = () => {
     // Auto-start session if conditions are met
     if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedToday && !isSessionExpired) {
       setSessionStartTime(new Date());
+      // Store session start time
+      localStorage.setItem('session-start-time', new Date().toISOString());
     }
   }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedToday, isSessionExpired]);
 
@@ -87,7 +89,9 @@ const MainSession: React.FC = () => {
 
     // Start session timer if not already started
     if (!sessionStartTime) {
-      setSessionStartTime(new Date());
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      localStorage.setItem('session-start-time', startTime.toISOString());
     }
 
     // Add user message
@@ -173,7 +177,9 @@ const MainSession: React.FC = () => {
     setMessages([]);
     setSessionComplete(false);
     setInsightCard(null);
-    setSessionStartTime(new Date());
+    const startTime = new Date();
+    setSessionStartTime(startTime);
+    localStorage.setItem('session-start-time', startTime.toISOString());
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: 0,
@@ -206,7 +212,7 @@ const MainSession: React.FC = () => {
         />
         
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+        <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
           <div className={`text-2xl font-bold ${
             sessionType === 'morning' ? 'text-gray-800' : 'text-white'
           }`}>
@@ -215,7 +221,7 @@ const MainSession: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={handleInsights}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
@@ -225,7 +231,7 @@ const MainSession: React.FC = () => {
             </button>
             <button
               onClick={handleSettings}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
@@ -255,7 +261,7 @@ const MainSession: React.FC = () => {
         />
         
         {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+        <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
           <div className={`text-2xl font-bold ${
             sessionType === 'morning' ? 'text-gray-800' : 'text-white'
           }`}>
@@ -266,7 +272,7 @@ const MainSession: React.FC = () => {
               <>
                 <button
                   onClick={handleInsights}
-                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -276,7 +282,7 @@ const MainSession: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSettings}
-                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -294,7 +300,7 @@ const MainSession: React.FC = () => {
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ${
               sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
             } border border-white/20`}>
-              <Clock className={`w-10 h-10 ${
+              <Settings className={`w-10 h-10 ${
                 sessionType === 'morning' ? 'text-gray-700' : 'text-white'
               }`} />
             </div>
@@ -361,7 +367,7 @@ const MainSession: React.FC = () => {
       />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <div className={`text-2xl font-bold ${
           sessionType === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
@@ -371,7 +377,7 @@ const MainSession: React.FC = () => {
           {!user && (
             <button
               onClick={handleLogin}
-              className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
@@ -384,7 +390,7 @@ const MainSession: React.FC = () => {
           {user && !user.isPro && (
             <button
               onClick={handleUpgrade}
-              className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                   : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
@@ -398,7 +404,7 @@ const MainSession: React.FC = () => {
             <>
               <button
                 onClick={handleInsights}
-                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                   sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                     : 'bg-white/10 hover:bg-white/20 text-white'
@@ -408,7 +414,7 @@ const MainSession: React.FC = () => {
               </button>
               <button
                 onClick={handleSettings}
-                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                   sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                     : 'bg-white/10 hover:bg-white/20 text-white'
