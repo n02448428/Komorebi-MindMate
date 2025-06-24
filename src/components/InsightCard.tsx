@@ -63,15 +63,9 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
         el.style.backdropFilter = 'none';
         el.style.webkitBackdropFilter = 'none';
         
-        // Remove backdrop-blur classes and replace with solid backgrounds
+        // Remove backdrop-blur classes
         if (el.classList.contains('backdrop-blur-sm')) {
           el.classList.remove('backdrop-blur-sm');
-          // Add a more opaque background to compensate
-          if (insight.type === 'morning') {
-            el.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-          } else {
-            el.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-          }
         }
         
         // Recursively apply to all children
@@ -81,12 +75,10 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       };
       
       // Style the clone for better rendering
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '-9999px';
-      clone.style.width = '800px';
-      clone.style.height = '600px';
-      clone.style.transform = 'none';
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '0';
+      clone.style.opacity = '0';
       clone.style.zIndex = '-1';
       clone.style.fontFamily = 'Inter, system-ui, sans-serif';
       
@@ -101,15 +93,13 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       
       const canvas = await html2canvas(clone, {
         scale: 2,
-        width: 800,
-        height: 600,
         useCORS: true,
         allowTaint: false,
         foreignObjectRendering: false,
         logging: false,
         imageTimeout: 15000,
         removeContainer: true,
-        backgroundColor: null, // Keep transparent background
+        backgroundColor: '#FFFFFF', // White background for debugging
         onclone: (clonedDoc) => {
           // Ensure all fonts are loaded in the cloned document
           const clonedElement = clonedDoc.getElementById(`insight-card-clone-${insight.id}`);
