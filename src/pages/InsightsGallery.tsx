@@ -42,6 +42,10 @@ const InsightsGallery: React.FC = () => {
   const morningCount = insights.filter(i => i.type === 'morning').length;
   const eveningCount = insights.filter(i => i.type === 'evening').length;
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NatureVideoBackground 
@@ -50,10 +54,10 @@ const InsightsGallery: React.FC = () => {
       />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <button
-          onClick={() => navigate('/')}
-          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+          onClick={handleBack}
+          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
             timeOfDay.period === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
@@ -189,7 +193,7 @@ const InsightsGallery: React.FC = () => {
                 Complete your first session to see insights here.
               </p>
               <button
-                onClick={() => navigate('/')}
+                onClick={handleBack}
                 className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm ${
                   timeOfDay.period === 'morning'
                     ? 'bg-amber-500 hover:bg-amber-600 text-white'

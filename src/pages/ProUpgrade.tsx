@@ -81,6 +81,10 @@ const ProUpgrade: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       <NatureVideoBackground 
@@ -89,10 +93,10 @@ const ProUpgrade: React.FC = () => {
       />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <button
-          onClick={() => navigate('/')}
-          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+          onClick={handleBack}
+          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
             timeOfDay.period === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
