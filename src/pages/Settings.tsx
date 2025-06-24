@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTimeOfDay, getSessionTimeLimit, formatSessionTimeRemaining } from '../utils/timeUtils';
+import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Clock } from 'lucide-react';
+import { ArrowLeft, User, Crown, Shield, LogOut, Trash2 } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -12,12 +12,6 @@ const Settings: React.FC = () => {
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
-  const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
-
-  // Get current session info
-  const sessionStartTime = localStorage.getItem('session-start-time') 
-    ? new Date(localStorage.getItem('session-start-time')!) 
-    : null;
 
   const handleLogout = () => {
     logout();
@@ -28,7 +22,6 @@ const Settings: React.FC = () => {
     if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
       localStorage.removeItem('insight-cards');
       localStorage.removeItem('session-limits');
-      localStorage.removeItem('session-start-time');
       alert('All data has been cleared.');
     }
   };
@@ -45,10 +38,10 @@ const Settings: React.FC = () => {
       />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <button
           onClick={handleBack}
-          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
             timeOfDay.period === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
@@ -69,36 +62,6 @@ const Settings: React.FC = () => {
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-8 px-6">
         <div className="max-w-2xl mx-auto space-y-6">
-          {/* Session Timer (only show if session is active) */}
-          {sessionStartTime && !user?.isPro && (
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <div className="flex items-center gap-3 mb-4">
-                <Clock className={`w-6 h-6 ${
-                  timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
-                }`} />
-                <h2 className={`text-xl font-semibold ${
-                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Current Session
-                </h2>
-              </div>
-              <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm text-center ${
-                timeOfDay.period === 'morning'
-                  ? 'bg-white/20 text-gray-700'
-                  : 'bg-white/10 text-gray-300'
-              }`}>
-                <div className="text-2xl font-bold mb-1">
-                  {formatSessionTimeRemaining(sessionStartTime, sessionTimeLimit)}
-                </div>
-                <div className="text-sm opacity-70">
-                  Session time remaining
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Profile Section */}
           <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
@@ -151,20 +114,6 @@ const Settings: React.FC = () => {
                   }`}>
                     {user?.isPro ? 'Pro Plan' : 'Free Plan'}
                   </span>
-                </div>
-              </div>
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                }`}>
-                  Session Limit
-                </label>
-                <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-white/20 text-gray-700'
-                    : 'bg-white/10 text-gray-300'
-                }`}>
-                  {user?.isPro ? 'Unlimited (1 hour per session)' : '15 minutes per session'}
                 </div>
               </div>
               {!user?.isPro && (

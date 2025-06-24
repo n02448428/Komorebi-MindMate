@@ -57,7 +57,7 @@ const InsightsGallery: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <button
           onClick={handleBack}
-          className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
             timeOfDay.period === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
