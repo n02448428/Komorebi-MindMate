@@ -38,9 +38,12 @@ const AppRoutes: React.FC = () => {
 };
 
 function App() {
+  // Get the base name from the environment or use the repository name
+  const basename = import.meta.env.BASE_URL;
+
   return (
     <AuthProvider>
-      <Router>
+      <Router basename={basename}>
         <AppRoutes />
       </Router>
     </AuthProvider>
