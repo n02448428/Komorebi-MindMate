@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
-import { aiChatService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
@@ -670,6 +669,7 @@ const generateDynamicAIResponse = async (
   
   // Generate contextual response based on analysis
   const response = generateContextualResponse(messageAnalysis, messageCount, timeOfDay, history);
+  const response = generateContextualResponse(messageAnalysis, messageCount, timeOfDay);
   
   return response;
 };
@@ -712,7 +712,7 @@ const analyzeUserMessage = (message: string, history: Message[]) => {
 };
 
 // Generate contextual response based on analysis
-const generateContextualResponse = (analysis: any, messageCount: number, timeOfDay: 'morning' | 'evening', history: Message[]) => {
+const generateContextualResponse = (analysis: any, messageCount: number, timeOfDay: 'morning' | 'evening') => {
   const { emotionalTone, themes } = analysis;
   
   // Crisis/urgent responses take priority

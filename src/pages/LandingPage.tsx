@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Play, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 
 const LandingPage: React.FC = () => {
@@ -29,14 +29,6 @@ const LandingPage: React.FC = () => {
       setError('Quick login failed. Please try again.');
     }
   };
-
-  const features = [
-    'AI-powered conversations that adapt to your mood',
-    'Beautiful nature scenes for immersive reflection',
-    'Personalized insight cards you can save and share',
-    'Morning intentions and evening reflections',
-    'Private, secure, and completely confidential'
-  ];
 
   return (
     <div className="min-h-screen relative overflow-hidden">
