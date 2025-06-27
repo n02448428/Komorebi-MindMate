@@ -61,7 +61,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       // Remove backdrop-filter properties that cause issues with html2canvas
       const removeBackdropFilters = (el: HTMLElement) => {
         el.style.backdropFilter = 'none';
-        el.style.webkitBackdropFilter = 'none';
         
         // Remove backdrop-blur classes and replace with solid backgrounds
         if (el.classList.contains('backdrop-blur-sm')) {
@@ -151,15 +150,17 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
   };
 
   const handleShare = async () => {
-    if (navigator.share && navigator.canShare) {
+    const shareData = {
+      title: 'Komorebi MindMate Insight',
+      text: insight.quote,
+      url: window.location.origin,
+    };
+    
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
       try {
-        await navigator.share({
-          title: 'Komorebi MindMate Insight',
-          text: insight.quote,
-          url: window.location.origin,
-        });
+        await navigator.share(shareData);
       } catch (error) {
-        if (error.name !== 'AbortError') {
+        if ((error as Error).name !== 'AbortError') {
           console.error('Failed to share:', error);
           handleCopy(); // Fallback to copy
         }
