@@ -5,13 +5,12 @@ import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import { subscriptionService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { Crown, Check, Sparkles, Zap, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
+import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string>('monthly');
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
