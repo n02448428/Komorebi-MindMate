@@ -668,7 +668,6 @@ const generateDynamicAIResponse = async (
   const messageAnalysis = analyzeUserMessage(userMessage, history);
   
   // Generate contextual response based on analysis
-  const response = generateContextualResponse(messageAnalysis, messageCount, timeOfDay, history);
   const response = generateContextualResponse(messageAnalysis, messageCount, timeOfDay);
   
   return response;
