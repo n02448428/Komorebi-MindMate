@@ -45,7 +45,30 @@ const InsightCard: React.FC<InsightCardProps> = ({
 
   const sceneData = natureScenes[insight.sceneType];
 
-  // Calculate dynamic drag bounds and card scale based on viewport
+  // Calculate responsive scale based on viewport size
+  const getResponsiveScale = () => {
+    if (!isExpanded) return 1;
+    
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+    
+    // Calculate scale to fit within 90% of viewport while maintaining aspect ratio
+    const cardAspectRatio = 2/3; // width/height
+    const maxWidth = viewport.width * 0.9;
+    const maxHeight = viewport.height * 0.9;
+    
+    // Calculate scale based on which constraint is more limiting
+    const scaleByWidth = maxWidth / 400; // 400px is base card width
+    const scaleByHeight = maxHeight / 600; // 600px is base card height
+    
+    const scale = Math.min(scaleByWidth, scaleByHeight, 1.5); // Cap at 1.5x
+    
+    return Math.max(scale, 0.8); // Minimum scale of 0.8
+  };
+
+  // Calculate dynamic drag bounds based on viewport and card scale
   useEffect(() => {
     if (!isExpanded) return;
 
@@ -55,10 +78,12 @@ const InsightCard: React.FC<InsightCardProps> = ({
         height: window.innerHeight
       };
 
+      const scale = getResponsiveScale();
+      const cardWidth = 400 * scale;
+      const cardHeight = 600 * scale;
+      
       // Calculate bounds to keep card visible with some margin
       const margin = 50;
-      const cardWidth = 400; // Approximate card width when scaled
-      const cardHeight = 600; // Approximate card height when scaled
 
       setDragBounds({
         left: -(viewport.width / 2 - cardWidth / 2 - margin),
@@ -199,22 +224,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
     }
   };
 
-  // Calculate responsive scale based on viewport size
-  const getResponsiveScale = () => {
-    if (!isExpanded) return 1;
-    
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-    
-    // Base scale for different screen sizes
-    if (viewport.width < 640) return 0.9; // Small mobile
-    if (viewport.width < 768) return 1.0; // Large mobile
-    if (viewport.width < 1024) return 1.1; // Tablet
-    return 1.2; // Desktop
-  };
-
   return (
     <div className={className}>
       {/* Close button for expanded view */}
@@ -228,7 +237,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
         </button>
       )}
 
-      {/* Trading Card */}
+      {/* Trading Card Container */}
       <motion.div
         ref={cardRef}
         id={`insight-card-${insight.id}`}
@@ -245,9 +254,13 @@ const InsightCard: React.FC<InsightCardProps> = ({
         className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden transition-all duration-300 ${
           isExpanded 
             ? 'cursor-grab active:cursor-grabbing' 
-            : 'cursor-pointer hover:scale-105 hover:shadow-2xl'
+            : 'cursor-pointer insight-card'
         }`}
-        whileHover={!isExpanded ? { scale: 1.05, rotateY: 5 } : {}}
+        whileHover={!isExpanded ? { 
+          scale: 1.05, 
+          rotateY: 5,
+          transition: { type: "spring", stiffness: 300, damping: 30 }
+        } : {}}
         animate={isExpanded ? { scale: getResponsiveScale() } : { scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
@@ -269,24 +282,15 @@ const InsightCard: React.FC<InsightCardProps> = ({
         {/* Holographic Foil Effect (only when expanded) */}
         {isExpanded && (
           <motion.div
-            className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
+            className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none holographic"
             style={{
-              background: `radial-gradient(circle at ${holographicX}% ${holographicY}%, 
-                #ff0080 0%, #ff8c00 16%, #40e0d0 32%, #9370db 48%, #00ff7f 64%, #ffd700 80%, #ff0080 100%)`,
-              backgroundSize: '200% 200%',
+              backgroundPosition: `${holographicX}% ${holographicY}%`,
             }}
           />
         )}
 
-        {/* Content Container with Conditional Parallax */}
-        <motion.div 
-          className="relative h-full flex flex-col justify-between p-6"
-          style={isExpanded ? { 
-            x: parallaxX, 
-            y: parallaxY,
-            transformStyle: 'preserve-3d'
-          } : {}}
-        >
+        {/* Content Container */}
+        <div className="relative h-full flex flex-col justify-between p-6">
           {/* Header */}
           <div className="text-center">
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
@@ -304,19 +308,12 @@ const InsightCard: React.FC<InsightCardProps> = ({
           {/* Quote Section */}
           <div className="flex-1 flex items-center justify-center">
             <div className="relative max-w-full">
-              {/* Quote Background with Conditional Parallax */}
-              <motion.div 
-                className={`absolute inset-0 rounded-2xl backdrop-blur-md border border-white/30 ${
-                  insight.type === 'morning' 
-                    ? 'bg-white/60' 
-                    : 'bg-white/50'
-                }`}
-                style={isExpanded ? { 
-                  x: quoteParallaxX, 
-                  y: quoteParallaxY,
-                  transformStyle: 'preserve-3d'
-                } : {}}
-              />
+              {/* Quote Background */}
+              <div className={`absolute inset-0 rounded-2xl backdrop-blur-md border border-white/30 ${
+                insight.type === 'morning' 
+                  ? 'bg-white/60' 
+                  : 'bg-white/50'
+              }`} />
               
               {/* Quote Content */}
               <div className="relative p-6">
@@ -341,17 +338,16 @@ const InsightCard: React.FC<InsightCardProps> = ({
               })}
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Shine Effect (enhanced when expanded) */}
+        {/* Shine Effect */}
         <div 
-          className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none ${
-            isExpanded ? 'opacity-60' : 'opacity-40'
+          className={`absolute inset-0 pointer-events-none ${
+            isExpanded ? 'animate-shine' : ''
           }`}
           style={{
             background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
-            transform: isExpanded ? 'translateX(100%)' : 'translateX(-100%)',
-            transition: 'transform 2s ease-in-out',
+            opacity: isExpanded ? 0.6 : 0.4,
           }}
         />
 
@@ -359,8 +355,8 @@ const InsightCard: React.FC<InsightCardProps> = ({
         {isExpanded && (
           <div className={`absolute inset-0 rounded-2xl pointer-events-none ${
             insight.type === 'morning'
-              ? 'shadow-[0_0_30px_rgba(245,158,11,0.3)]'
-              : 'shadow-[0_0_30px_rgba(147,51,234,0.3)]'
+              ? 'rarity-legendary'
+              : 'rarity-epic'
           }`} />
         )}
       </motion.div>

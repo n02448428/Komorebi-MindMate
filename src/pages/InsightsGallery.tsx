@@ -243,7 +243,7 @@ const InsightsGallery: React.FC = () => {
           >
             <motion.div
               layoutId={`card-${selectedCard.id}`}
-              className="max-w-lg w-full relative"
+              className="max-w-[90vw] max-h-[90vh] w-full relative"
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               initial={false}
             >
