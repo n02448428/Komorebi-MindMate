@@ -806,7 +806,7 @@ const MainSession: React.FC = () => {
                   }`}
                   title="Hide controls"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </motion.div>
@@ -828,7 +828,7 @@ const MainSession: React.FC = () => {
                 }`}
                 title="Show controls"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
             </motion.div>
           )}
