@@ -303,7 +303,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
         <div className="relative h-full flex flex-col justify-between p-6">
           {/* Header */}
           <div className="text-center">
-            <div className="text-xs font-medium mb-2 text-white/80">
+            <div className="text-lg font-bold mb-2 text-white">
               Komorebi
             </div>
             <div className="text-xs font-medium mb-3 text-white/70">
