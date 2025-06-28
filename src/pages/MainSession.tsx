@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
-import NatureVideoBackground from '../components/NatureVideoBackground';
+import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
@@ -14,6 +14,7 @@ import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkl
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
@@ -237,6 +238,9 @@ const MainSession: React.FC = () => {
       // Use Supabase AI service for insight generation
       const response = await aiChatService.generateInsightCard(sessionMessages, sessionType);
       
+      // Capture current video frame if video is enabled
+      const videoStillUrl = videoEnabled ? videoBackgroundRef.current?.captureFrame() : null;
+      
       const insight: InsightCardType = {
         id: Date.now().toString(),
         quote: response.quote,
@@ -244,6 +248,7 @@ const MainSession: React.FC = () => {
         sessionId: Date.now().toString(),
         createdAt: new Date(),
         sceneType: currentScene,
+        videoStillUrl: videoStillUrl || undefined,
       };
       
       setInsightCard(insight);
@@ -303,6 +308,7 @@ const MainSession: React.FC = () => {
       <div className="min-h-screen relative overflow-hidden">
         {videoEnabled && (
           <NatureVideoBackground 
+            ref={videoBackgroundRef}
             scene={currentScene} 
             timeOfDay={sessionType} 
           />
@@ -361,6 +367,7 @@ const MainSession: React.FC = () => {
       <div className="min-h-screen relative overflow-hidden">
         {videoEnabled && (
           <NatureVideoBackground 
+            ref={videoBackgroundRef}
             scene={currentScene} 
             timeOfDay={sessionType} 
           />
@@ -476,6 +483,7 @@ const MainSession: React.FC = () => {
     <div className="min-h-screen relative overflow-hidden">
       {videoEnabled && (
         <NatureVideoBackground 
+          ref={videoBackgroundRef}
           scene={currentScene} 
           timeOfDay={sessionType} 
         />
