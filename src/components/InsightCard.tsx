@@ -303,6 +303,9 @@ const InsightCard: React.FC<InsightCardProps> = ({
         <div className="relative h-full flex flex-col justify-between p-6">
           {/* Header */}
           <div className="text-center">
+            <div className="text-xs font-medium mb-2 text-white/80">
+              Komorebi
+            </div>
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
               insight.type === 'morning' 
                 ? 'bg-amber-500/20 text-amber-800' 
@@ -338,9 +341,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
 
           {/* Footer */}
           <div className="text-center">
-            <div className={`text-sm font-medium ${
-              insight.type === 'morning' ? 'text-amber-700' : 'text-purple-700'
-            }`}>
+            <div className="text-sm font-medium text-white">
               {insight.createdAt.toLocaleDateString([], {
                 month: 'long',
                 day: 'numeric',
