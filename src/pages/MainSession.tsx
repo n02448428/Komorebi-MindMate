@@ -637,7 +637,7 @@ const MainSession: React.FC = () => {
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         {/* Title */}
         <AnimatePresence>
-          {!showControls && (
+          {showControls && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -819,7 +819,7 @@ const MainSession: React.FC = () => {
         <div className="w-full">
           {/* Session Type Display */}
           <AnimatePresence>
-            {!showControls && (
+            {showControls && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -859,7 +859,7 @@ const MainSession: React.FC = () => {
 
           {/* Insight Generation Button */}
           <AnimatePresence>
-            {showGenerateInsightButton && !showControls && (
+            {showGenerateInsightButton && showControls && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -894,7 +894,7 @@ const MainSession: React.FC = () => {
 
           {/* Display Latest Insight Card */}
           <AnimatePresence>
-            {insightCard && !showControls && (
+            {insightCard && showControls && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -923,7 +923,7 @@ const MainSession: React.FC = () => {
           
           {/* Login prompt for non-logged in users */}
           <AnimatePresence>
-            {!user && messages.length > 1 && !showControls && ( // Show after greeting + at least one user message
+            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
