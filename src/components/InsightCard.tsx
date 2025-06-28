@@ -45,32 +45,10 @@ const InsightCard: React.FC<InsightCardProps> = ({
 
   const sceneData = natureScenes[insight.sceneType];
 
-  // Calculate responsive scale based on viewport size
-  const getResponsiveScale = () => {
-    if (!isExpanded) return 1;
-    
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-    
-    // Calculate scale to fit within 90% of viewport while maintaining aspect ratio
-    const cardAspectRatio = 2/3; // width/height
-    const maxWidth = viewport.width * 0.9;
-    const maxHeight = viewport.height * 0.9;
-    
-    // Calculate scale based on which constraint is more limiting
-    const scaleByWidth = maxWidth / 400; // 400px is base card width
-    const scaleByHeight = maxHeight / 600; // 600px is base card height
-    
-    const scale = Math.min(scaleByWidth, scaleByHeight, 1.5); // Cap at 1.5x
-    
-    return Math.max(scale, 0.8); // Minimum scale of 0.8
-  };
-
   // Calculate dynamic drag bounds based on viewport and card scale
   useEffect(() => {
     if (!isExpanded) return;
+    if (!cardRef.current) return;
 
     const updateBounds = () => {
       const viewport = {
@@ -78,9 +56,9 @@ const InsightCard: React.FC<InsightCardProps> = ({
         height: window.innerHeight
       };
 
-      const scale = getResponsiveScale();
-      const cardWidth = 400 * scale;
-      const cardHeight = 600 * scale;
+      const rect = cardRef.current!.getBoundingClientRect();
+      const cardWidth = rect.width;
+      const cardHeight = rect.height;
       
       // Calculate bounds to keep card visible with some margin
       const margin = 50;
@@ -251,7 +229,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
           rotateY,
           transformStyle: 'preserve-3d',
         } : {}}
-        className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative w-full h-full rounded-2xl overflow-hidden transition-all duration-300 ${
           isExpanded 
             ? 'cursor-grab active:cursor-grabbing' 
             : 'cursor-pointer insight-card'
@@ -261,7 +239,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
           rotateY: 5,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         } : {}}
-        animate={isExpanded ? { scale: getResponsiveScale() } : { scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Background Image */}
