@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles } from 'lucide-react';
-import { getSceneGradient } from '../utils/sceneUtils';
+import { Share2, Download, Copy, Check, Sparkles, Star, Diamond, Crown, Zap } from 'lucide-react';
+import { getSceneGradient, natureScenes } from '../utils/sceneUtils';
 import html2canvas from 'html2canvas';
 
 interface InsightCardProps {
@@ -9,9 +9,58 @@ interface InsightCardProps {
   className?: string;
 }
 
+// Rarity system for cards
+const getRarity = (cardId: string): { level: string; color: string; icon: any; border: string } => {
+  const hash = cardId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const rarityLevel = hash % 100;
+  
+  if (rarityLevel < 5) {
+    return {
+      level: 'Legendary',
+      color: 'from-yellow-400 via-orange-500 to-red-500',
+      icon: Crown,
+      border: 'border-yellow-400/80 shadow-yellow-400/50'
+    };
+  } else if (rarityLevel < 15) {
+    return {
+      level: 'Epic',
+      color: 'from-purple-400 via-pink-500 to-purple-600',
+      icon: Diamond,
+      border: 'border-purple-400/80 shadow-purple-400/50'
+    };
+  } else if (rarityLevel < 35) {
+    return {
+      level: 'Rare',
+      color: 'from-blue-400 via-cyan-500 to-blue-600',
+      icon: Star,
+      border: 'border-blue-400/80 shadow-blue-400/50'
+    };
+  } else {
+    return {
+      level: 'Common',
+      color: 'from-gray-300 via-gray-400 to-gray-500',
+      icon: Sparkles,
+      border: 'border-gray-400/80 shadow-gray-400/50'
+    };
+  }
+};
+
+// Generate unique card number
+const getCardNumber = (cardId: string, type: 'morning' | 'evening'): string => {
+  const hash = cardId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const prefix = type === 'morning' ? 'KM' : 'KE';
+  const number = (hash % 999 + 1).toString().padStart(3, '0');
+  return `${prefix}-${number}`;
+};
+
 const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) => {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  const rarity = getRarity(insight.id);
+  const cardNumber = getCardNumber(insight.id, insight.type);
+  const sceneData = natureScenes[insight.sceneType];
+  const gradientClass = getSceneGradient(insight.sceneType, insight.type);
 
   const handleCopy = async () => {
     try {
@@ -58,39 +107,15 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       const clone = element.cloneNode(true) as HTMLElement;
       clone.id = `insight-card-clone-${insight.id}`;
       
-      // Remove backdrop-filter properties that cause issues with html2canvas
-      const removeBackdropFilters = (el: HTMLElement) => {
-        el.style.backdropFilter = 'none';
-        
-        // Remove backdrop-blur classes and replace with solid backgrounds
-        if (el.classList.contains('backdrop-blur-sm')) {
-          el.classList.remove('backdrop-blur-sm');
-          // Add a more opaque background to compensate
-          if (insight.type === 'morning') {
-            el.style.backgroundColor = 'rgba(255, 255, 255, 0.4)';
-          } else {
-            el.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-          }
-        }
-        
-        // Recursively apply to all children
-        Array.from(el.children).forEach(child => {
-          removeBackdropFilters(child as HTMLElement);
-        });
-      };
-      
       // Style the clone for better rendering
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
       clone.style.top = '-9999px';
-      clone.style.width = '800px';
-      clone.style.height = '600px';
+      clone.style.width = '400px';
+      clone.style.height = '560px'; // Trading card aspect ratio
       clone.style.transform = 'none';
       clone.style.zIndex = '-1';
       clone.style.fontFamily = 'Inter, system-ui, sans-serif';
-      
-      // Remove problematic backdrop filters
-      removeBackdropFilters(clone);
       
       // Add to document temporarily
       document.body.appendChild(clone);
@@ -100,40 +125,23 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       
       const canvas = await html2canvas(clone, {
         scale: 2,
-        width: 800,
-        height: 600,
+        width: 400,
+        height: 560,
         useCORS: true,
         allowTaint: false,
         foreignObjectRendering: false,
         logging: false,
         imageTimeout: 15000,
         removeContainer: true,
-        backgroundColor: null, // Keep transparent background
-        onclone: (clonedDoc) => {
-          // Ensure all fonts are loaded in the cloned document
-          const clonedElement = clonedDoc.getElementById(`insight-card-clone-${insight.id}`);
-          if (clonedElement) {
-            clonedElement.style.fontFamily = 'Inter, system-ui, sans-serif';
-            // Force all text elements to use the correct font
-            const textElements = clonedElement.querySelectorAll('*');
-            textElements.forEach(el => {
-              (el as HTMLElement).style.fontFamily = 'Inter, system-ui, sans-serif';
-            });
-          }
-        }
+        backgroundColor: null,
       });
       
       // Remove the clone
       document.body.removeChild(clone);
       
-      // Verify canvas has content
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error('Canvas is empty');
-      }
-      
       // Create download link
       const link = document.createElement('a');
-      link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
+      link.download = `komorebi-card-${cardNumber}-${insight.createdAt.toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       
       // Trigger download
@@ -151,8 +159,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
 
   const handleShare = async () => {
     const shareData = {
-      title: 'Komorebi MindMate Insight',
-      text: insight.quote,
+      title: `Komorebi ${rarity.level} Card #${cardNumber}`,
+      text: `"${insight.quote}" - Collected from ${insight.type === 'morning' ? 'Morning Intentions' : 'Evening Reflections'}`,
       url: window.location.origin,
     };
     
@@ -162,72 +170,172 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           console.error('Failed to share:', error);
-          handleCopy(); // Fallback to copy
+          handleCopy();
         }
       }
     } else {
-      handleCopy(); // Fallback to copy
+      handleCopy();
     }
   };
 
-  const gradientClass = getSceneGradient(insight.sceneType, insight.type);
+  const RarityIcon = rarity.icon;
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
-      {/* Downloadable Card */}
+    <div className={`relative ${className}`}>
+      {/* Trading Card */}
       <div
         id={`insight-card-${insight.id}`}
-        className={`relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gradient-to-br ${gradientClass} backdrop-blur-sm border border-white/20 shadow-xl`}
+        className={`relative w-full aspect-[5/7] rounded-2xl overflow-hidden border-4 ${rarity.border} shadow-2xl transform-gpu`}
+        style={{
+          background: `linear-gradient(135deg, ${insight.type === 'morning' ? '#fef3c7, #fed7aa' : '#c7d2fe, #ddd6fe'})`,
+        }}
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-32 translate-x-32" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full translate-y-24 -translate-x-24" />
-        </div>
+        {/* Holographic Effect Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 opacity-60" />
+        <div className={`absolute inset-0 bg-gradient-to-r ${rarity.color} opacity-10`} />
         
-        {/* Content */}
-        <div className="relative p-6 md:p-8 h-full flex flex-col justify-between z-10">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className={`w-5 h-5 md:w-6 md:h-6 ${
-                insight.type === 'morning' ? 'text-amber-600' : 'text-purple-300'
-              }`} />
-              <span className={`text-xs md:text-sm font-medium ${
-                insight.type === 'morning' ? 'text-gray-700' : 'text-white/90'
-              }`}>
-                {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
-              </span>
+        {/* Background Scene Integration */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-30`} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+        }} />
+        
+        {/* Card Border Design */}
+        <div className="absolute inset-2 border-2 border-white/30 rounded-xl" />
+        <div className="absolute inset-4 border border-white/20 rounded-lg" />
+        
+        {/* Top Section */}
+        <div className="absolute top-0 left-0 right-0 p-4">
+          <div className="flex justify-between items-start">
+            {/* Card Number */}
+            <div className={`px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border border-white/30 ${
+              insight.type === 'morning' ? 'bg-amber-500/20 text-amber-800' : 'bg-purple-500/20 text-purple-800'
+            }`}>
+              #{cardNumber}
             </div>
             
-            <div className={`text-xs ${
-              insight.type === 'morning' ? 'text-gray-600' : 'text-white/70'
-            }`}>
-              Komorebi MindMate
+            {/* Rarity Indicator */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border border-white/30 bg-gradient-to-r ${rarity.color} text-white`}>
+              <RarityIcon className="w-3 h-3" />
+              {rarity.level}
             </div>
           </div>
-
-          {/* Quote */}
-          <div className="flex-1 flex items-center justify-center px-2 md:px-4">
-            <blockquote className={`text-lg md:text-xl lg:text-2xl font-medium leading-relaxed text-center ${
-              insight.type === 'morning' ? 'text-gray-800' : 'text-white'
-            } drop-shadow-sm max-w-full`}>
-              "{insight.quote}"
-            </blockquote>
-          </div>
-
-          {/* Footer */}
-          <div className={`text-xs md:text-sm text-center ${
-            insight.type === 'morning' ? 'text-gray-600' : 'text-white/70'
-          }`}>
-            {insight.createdAt.toLocaleDateString([], {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
-            })}
+          
+          {/* Title */}
+          <div className="mt-3 text-center">
+            <h3 className={`text-lg font-bold ${
+              insight.type === 'morning' ? 'text-amber-800' : 'text-purple-800'
+            }`}>
+              {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
+            </h3>
+            <div className={`text-xs font-medium mt-1 ${
+              insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
+            }`}>
+              {sceneData.name}
+            </div>
           </div>
         </div>
+
+        {/* Center Quote Section */}
+        <div className="absolute inset-0 flex items-center justify-center p-6 pt-20 pb-16">
+          <div className="relative">
+            {/* Quote Background */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${
+              insight.type === 'morning' 
+                ? 'from-white/40 to-amber-100/40' 
+                : 'from-white/40 to-purple-100/40'
+            } rounded-2xl backdrop-blur-sm border border-white/40 shadow-lg`} />
+            
+            {/* Quote Content */}
+            <div className="relative p-4">
+              <div className={`text-3xl font-bold mb-2 ${
+                insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
+              }`}>
+                "
+              </div>
+              <blockquote className={`text-sm font-medium leading-relaxed text-center ${
+                insight.type === 'morning' ? 'text-gray-800' : 'text-gray-800'
+              } px-2`}>
+                {insight.quote}
+              </blockquote>
+              <div className={`text-3xl font-bold mt-2 text-right ${
+                insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
+              }`}>
+                "
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <div className="flex justify-between items-end">
+            {/* Date */}
+            <div className={`text-xs font-medium ${
+              insight.type === 'morning' ? 'text-amber-700' : 'text-purple-700'
+            }`}>
+              {insight.createdAt.toLocaleDateString([], {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </div>
+            
+            {/* Komorebi Branding */}
+            <div className={`flex items-center gap-1 text-xs font-bold ${
+              insight.type === 'morning' ? 'text-amber-700' : 'text-purple-700'
+            }`}>
+              <Sparkles className="w-3 h-3" />
+              KOMOREBI
+            </div>
+          </div>
+          
+          {/* Stats Bar */}
+          <div className="mt-2 flex justify-center">
+            <div className={`flex items-center gap-3 px-3 py-1 rounded-full text-xs backdrop-blur-sm border border-white/30 ${
+              insight.type === 'morning' ? 'bg-amber-500/20 text-amber-800' : 'bg-purple-500/20 text-purple-800'
+            }`}>
+              <div className="flex items-center gap-1">
+                <Zap className="w-3 h-3" />
+                <span>Wisdom</span>
+              </div>
+              <div className="w-px h-3 bg-current opacity-30" />
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3" />
+                <span>{insight.type === 'morning' ? 'Intent' : 'Reflect'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Corner Decorations */}
+        <div className="absolute top-2 left-2">
+          <div className={`w-6 h-6 border-l-2 border-t-2 rounded-tl-lg ${
+            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
+          }`} />
+        </div>
+        <div className="absolute top-2 right-2">
+          <div className={`w-6 h-6 border-r-2 border-t-2 rounded-tr-lg ${
+            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
+          }`} />
+        </div>
+        <div className="absolute bottom-2 left-2">
+          <div className={`w-6 h-6 border-l-2 border-b-2 rounded-bl-lg ${
+            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
+          }`} />
+        </div>
+        <div className="absolute bottom-2 right-2">
+          <div className={`w-6 h-6 border-r-2 border-b-2 rounded-br-lg ${
+            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
+          }`} />
+        </div>
+
+        {/* Premium Shine Effect */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 pointer-events-none" 
+             style={{
+               background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)',
+               animation: 'shine 3s ease-in-out infinite'
+             }} />
       </div>
 
       {/* Action Buttons */}
@@ -257,8 +365,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
           } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/30`}
-          title="Download as image"
-          aria-label="Download insight card as image"
+          title="Download trading card"
+          aria-label="Download insight card as trading card image"
         >
           {downloading ? (
             <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -274,8 +382,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
           } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
-          title="Share insight"
-          aria-label="Share insight"
+          title="Share trading card"
+          aria-label="Share insight trading card"
         >
           <Share2 className="w-5 h-5" />
         </button>
