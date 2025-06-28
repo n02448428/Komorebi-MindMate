@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { NatureScene } from '../types';
 import { natureScenes, getSceneGradient } from '../utils/sceneUtils';
 
