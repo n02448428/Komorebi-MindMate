@@ -541,7 +541,7 @@ const MainSession: React.FC = () => {
             <h2 className={`text-2xl font-semibold mb-4 ${
               sessionType === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
-              Session Time Expired
+              Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
             </h2>
             
             <p className={`text-lg mb-6 ${
