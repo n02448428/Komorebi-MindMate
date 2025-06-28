@@ -24,15 +24,15 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ timeOfDay }) => {
           : 'bg-black/20 text-white'
       }`}>
         <div className="flex space-x-1">
-          <div className={`w-2 h-2 rounded-full animate-pulse ${
+          <div className={`w-2 h-2 rounded-full ${
             timeOfDay === 'morning' ? 'bg-gray-500' : 'bg-gray-400'
-          }`} style={{ animationDelay: '0ms' }}></div>
-          <div className={`w-2 h-2 rounded-full animate-pulse ${
+          }`}></div>
+          <div className={`w-2 h-2 rounded-full ${
             timeOfDay === 'morning' ? 'bg-gray-500' : 'bg-gray-400'
-          }`} style={{ animationDelay: '150ms' }}></div>
-          <div className={`w-2 h-2 rounded-full animate-pulse ${
+          }`}></div>
+          <div className={`w-2 h-2 rounded-full ${
             timeOfDay === 'morning' ? 'bg-gray-500' : 'bg-gray-400'
-          }`} style={{ animationDelay: '300ms' }}></div>
+          }`}></div>
         </div>
       </div>
     </div>
