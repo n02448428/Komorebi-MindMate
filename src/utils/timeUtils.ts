@@ -8,8 +8,6 @@ export interface TimeOfDay {
   shouldAutoStart: boolean;
 }
 
-export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeOfDay => {
-}
 export const getTimeOfDay = (): TimeOfDay => {
   const now = new Date();
   const hour = now.getHours();
