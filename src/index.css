@@ -2,19 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom animations for trading card effects */
-@keyframes shine {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  50% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(300%) translateY(300%) rotate(45deg);
-  }
-}
-
 /* Trading card hover effects */
 .insight-card {
   transition: all 0.3s ease;
@@ -23,31 +10,6 @@
 .insight-card:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-}
-
-/* Holographic foil effect */
-.holographic {
-  background: linear-gradient(
-    45deg,
-    #ff0080 0%,
-    #ff8c00 16%,
-    #40e0d0 32%,
-    #9370db 48%,
-    #00ff7f 64%,
-    #ffd700 80%,
-    #ff0080 100%
-  );
-  background-size: 200% 200%;
-  animation: holographic-shift 3s ease-in-out infinite;
-}
-
-@keyframes holographic-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
 }
 
 /* Premium gradient text */

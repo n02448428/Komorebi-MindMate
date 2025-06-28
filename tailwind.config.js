@@ -15,8 +15,6 @@ export default {
         'slide-up': 'slideUp 0.3s ease-out',
         'pulse-gentle': 'pulseGentle 2s ease-in-out infinite',
         'typing': 'typing 1s ease-in-out infinite',
-        'shine': 'shine 3s ease-in-out infinite',
-        'holographic-shift': 'holographic-shift 3s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -34,15 +32,6 @@ export default {
         typing: {
           '0%, 50%': { opacity: '1' },
           '51%, 100%': { opacity: '0.3' },
-        },
-        shine: {
-          '0%': { transform: 'translateX(-100%) translateY(-100%) rotate(45deg)' },
-          '50%': { transform: 'translateX(100%) translateY(100%) rotate(45deg)' },
-          '100%': { transform: 'translateX(300%) translateY(300%) rotate(45deg)' },
-        },
-        'holographic-shift': {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
         },
       },
       colors: {

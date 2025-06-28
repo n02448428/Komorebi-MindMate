@@ -290,9 +290,11 @@ const InsightCard: React.FC<InsightCardProps> = ({
         {/* Holographic Foil Effect (only when expanded) */}
         {isExpanded && (
           <motion.div
-            className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none holographic"
+            className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
             style={{
               backgroundPosition: `${holographicX}% ${holographicY}%`,
+              background: 'linear-gradient(45deg, #ff0080 0%, #ff8c00 16%, #40e0d0 32%, #9370db 48%, #00ff7f 64%, #ffd700 80%, #ff0080 100%)',
+              backgroundSize: '200% 200%',
             }}
           />
         )}
@@ -350,12 +352,10 @@ const InsightCard: React.FC<InsightCardProps> = ({
 
         {/* Shine Effect */}
         <div 
-          className={`absolute inset-0 pointer-events-none ${
-            isExpanded ? 'animate-shine' : ''
-          }`}
+          className="absolute inset-0 pointer-events-none"
           style={{
             background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
-            opacity: isExpanded ? 0.6 : 0.4,
+            opacity: 0.3,
           }}
         />
 
