@@ -71,9 +71,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh] w-full max-w-3xl mx-auto">
+    <div className="flex flex-col h-full max-h-[85vh] w-full max-w-full sm:max-w-xl md:max-w-3xl mx-auto">
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 min-h-[400px] backdrop-blur-md bg-white/10 rounded-t-3xl border border-white/20">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 min-h-[50vh] sm:min-h-[400px] backdrop-blur-md bg-white/10 rounded-t-3xl border border-white/20">
         {messages.map((message, index) => (
           <div 
             key={message.id} 

@@ -714,23 +714,8 @@ const MainSession: React.FC = () => {
         </div>
       </div>
 
-      {/* Scene Indicator */}
-      {videoEnabled && (
-        <div className="absolute bottom-6 left-6 z-50">
-          <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
-            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className={`text-sm font-medium ${
-              sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-            }`}>
-              {getSceneDisplayName(currentScene)}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+      <div className="relative z-10 pt-28 pb-8 px-6 min-h-[calc(100vh-100px)]">
         <div className="w-full">
           {/* Session Type Display */}
           <div className="text-center mb-6">
@@ -825,8 +810,22 @@ const MainSession: React.FC = () => {
             </div>
           )}
 
-          {/* New Session Button */}
-          <div className="mt-8 text-center">
+          {/* Scene Indicator and New Session Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8 mb-8">
+            {/* Scene Indicator */}
+            {videoEnabled && (
+              <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              }`}>
+                <div className={`text-sm font-medium ${
+                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                }`}>
+                  {getSceneDisplayName(currentScene)}
+                </div>
+              </div>
+            )}
+
+            {/* New Session Button */}
             <button
               onClick={handleNewSession}
               className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
