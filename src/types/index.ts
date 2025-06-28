@@ -41,8 +41,6 @@ export interface InsightCard {
   shared?: boolean;
   sceneType: NatureScene;
   imageUrl?: string;
-  rarity?: 'Common' | 'Rare' | 'Epic' | 'Legendary';
-  cardNumber?: string;
 }
 
 export interface AIResponse {

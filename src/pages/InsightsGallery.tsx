@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { InsightCard as InsightCardType, NatureScene } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
@@ -11,6 +12,7 @@ const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
+  const [selectedCard, setSelectedCard] = useState<InsightCardType | null>(null);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
@@ -169,9 +171,16 @@ const InsightsGallery: React.FC = () => {
           {filteredInsights.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredInsights.map((insight) => (
-                <div key={insight.id} className="animate-fade-in">
+                <motion.div 
+                  key={insight.id} 
+                  layoutId={`card-${insight.id}`}
+                  className="animate-fade-in cursor-pointer"
+                  onClick={() => setSelectedCard(insight)}
+                  whileHover={{ y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
                   <InsightCard insight={insight} />
-                </div>
+                </motion.div>
               ))}
             </div>
           ) : (
@@ -206,6 +215,36 @@ const InsightsGallery: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Full-Screen Card Display */}
+      <AnimatePresence>
+        {selectedCard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-8"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setSelectedCard(null);
+              }
+            }}
+          >
+            <motion.div
+              layoutId={`card-${selectedCard.id}`}
+              className="max-w-lg w-full"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <InsightCard 
+                insight={selectedCard} 
+                isExpanded={true}
+                onClose={() => setSelectedCard(null)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

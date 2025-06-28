@@ -1,66 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles, Star, Diamond, Crown, Zap } from 'lucide-react';
-import { getSceneGradient, natureScenes } from '../utils/sceneUtils';
+import { Share2, Download, Copy, Check, Sparkles } from 'lucide-react';
+import { natureScenes } from '../utils/sceneUtils';
 import html2canvas from 'html2canvas';
 
 interface InsightCardProps {
   insight: InsightCardType;
   className?: string;
+  isExpanded?: boolean;
+  onClose?: () => void;
 }
 
-// Rarity system for cards
-const getRarity = (cardId: string): { level: string; color: string; icon: any; border: string } => {
-  const hash = cardId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const rarityLevel = hash % 100;
-  
-  if (rarityLevel < 5) {
-    return {
-      level: 'Legendary',
-      color: 'from-yellow-400 via-orange-500 to-red-500',
-      icon: Crown,
-      border: 'border-yellow-400/80 shadow-yellow-400/50'
-    };
-  } else if (rarityLevel < 15) {
-    return {
-      level: 'Epic',
-      color: 'from-purple-400 via-pink-500 to-purple-600',
-      icon: Diamond,
-      border: 'border-purple-400/80 shadow-purple-400/50'
-    };
-  } else if (rarityLevel < 35) {
-    return {
-      level: 'Rare',
-      color: 'from-blue-400 via-cyan-500 to-blue-600',
-      icon: Star,
-      border: 'border-blue-400/80 shadow-blue-400/50'
-    };
-  } else {
-    return {
-      level: 'Common',
-      color: 'from-gray-300 via-gray-400 to-gray-500',
-      icon: Sparkles,
-      border: 'border-gray-400/80 shadow-gray-400/50'
-    };
-  }
-};
-
-// Generate unique card number
-const getCardNumber = (cardId: string, type: 'morning' | 'evening'): string => {
-  const hash = cardId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const prefix = type === 'morning' ? 'KM' : 'KE';
-  const number = (hash % 999 + 1).toString().padStart(3, '0');
-  return `${prefix}-${number}`;
-};
-
-const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) => {
+const InsightCard: React.FC<InsightCardProps> = ({ 
+  insight, 
+  className = '', 
+  isExpanded = false,
+  onClose 
+}) => {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const rarity = getRarity(insight.id);
-  const cardNumber = getCardNumber(insight.id, insight.type);
+  // Motion values for mouse tracking
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Transform mouse position to rotation values
+  const rotateX = useTransform(mouseY, [-150, 150], [15, -15]);
+  const rotateY = useTransform(mouseX, [-150, 150], [-15, 15]);
+
+  // Holographic effect transforms
+  const holographicX = useTransform(mouseX, [-150, 150], [0, 100]);
+  const holographicY = useTransform(mouseY, [-150, 150], [0, 100]);
+
+  // Parallax effect transforms
+  const parallaxX = useTransform(mouseX, [-150, 150], [-5, 5]);
+  const parallaxY = useTransform(mouseY, [-150, 150], [-5, 5]);
+
   const sceneData = natureScenes[insight.sceneType];
-  const gradientClass = getSceneGradient(insight.sceneType, insight.type);
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isExpanded || !cardRef.current) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    mouseX.set(event.clientX - centerX);
+    mouseY.set(event.clientY - centerY);
+  };
+
+  const handleMouseLeave = () => {
+    if (!isExpanded) return;
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
   const handleCopy = async () => {
     try {
@@ -69,7 +64,6 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
-      // Fallback for older browsers
       const textArea = document.createElement('textarea');
       textArea.value = insight.quote;
       textArea.style.position = 'fixed';
@@ -100,58 +94,46 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
         throw new Error('Card element not found');
       }
 
-      // Wait for any animations to complete
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Create a clone of the element to avoid modifying the original
       const clone = element.cloneNode(true) as HTMLElement;
       clone.id = `insight-card-clone-${insight.id}`;
       
-      // Style the clone for better rendering
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
       clone.style.top = '-9999px';
       clone.style.width = '400px';
-      clone.style.height = '560px'; // Trading card aspect ratio
+      clone.style.height = '600px';
       clone.style.transform = 'none';
       clone.style.zIndex = '-1';
-      clone.style.fontFamily = 'Inter, system-ui, sans-serif';
       
-      // Add to document temporarily
       document.body.appendChild(clone);
       
-      // Wait for styles to apply
       await new Promise(resolve => setTimeout(resolve, 200));
       
       const canvas = await html2canvas(clone, {
         scale: 2,
         width: 400,
-        height: 560,
+        height: 600,
         useCORS: true,
         allowTaint: false,
-        foreignObjectRendering: false,
         logging: false,
-        imageTimeout: 15000,
-        removeContainer: true,
         backgroundColor: null,
       });
       
-      // Remove the clone
       document.body.removeChild(clone);
       
-      // Create download link
       const link = document.createElement('a');
-      link.download = `komorebi-card-${cardNumber}-${insight.createdAt.toISOString().split('T')[0]}.png`;
+      link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       
-      // Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
     } catch (error) {
       console.error('Failed to download:', error);
-      alert('Failed to download image. Please try again or check your browser permissions.');
+      alert('Failed to download image. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -159,8 +141,8 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
 
   const handleShare = async () => {
     const shareData = {
-      title: `Komorebi ${rarity.level} Card #${cardNumber}`,
-      text: `"${insight.quote}" - Collected from ${insight.type === 'morning' ? 'Morning Intentions' : 'Evening Reflections'}`,
+      title: 'Komorebi MindMate Insight',
+      text: insight.quote,
       url: window.location.origin,
     };
     
@@ -178,216 +160,177 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight, className = '' }) =>
     }
   };
 
-  const RarityIcon = rarity.icon;
-
   return (
-    <div className={`relative ${className}`}>
+    <div className={className}>
       {/* Trading Card */}
-      <div
+      <motion.div
+        ref={cardRef}
         id={`insight-card-${insight.id}`}
-        className={`relative w-full aspect-[5/7] rounded-2xl overflow-hidden border-4 ${rarity.border} shadow-2xl transform-gpu`}
-        style={{
-          background: `linear-gradient(135deg, ${insight.type === 'morning' ? '#fef3c7, #fed7aa' : '#c7d2fe, #ddd6fe'})`,
-        }}
+        drag={isExpanded}
+        dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={isExpanded ? {
+          rotateX,
+          rotateY,
+          transformStyle: 'preserve-3d',
+        } : {}}
+        className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
+          isExpanded ? 'z-50' : 'hover:scale-105 hover:shadow-2xl'
+        }`}
+        whileHover={!isExpanded ? { scale: 1.05, rotateY: 5 } : {}}
+        animate={isExpanded ? { scale: 1.2 } : { scale: 1 }}
       >
-        {/* Holographic Effect Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-white/10 opacity-60" />
-        <div className={`absolute inset-0 bg-gradient-to-r ${rarity.color} opacity-10`} />
-        
-        {/* Background Scene Integration */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} opacity-30`} />
-        <div className="absolute inset-0" style={{
-          backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)',
-        }} />
-        
-        {/* Card Border Design */}
-        <div className="absolute inset-2 border-2 border-white/30 rounded-xl" />
-        <div className="absolute inset-4 border border-white/20 rounded-lg" />
-        
-        {/* Top Section */}
-        <div className="absolute top-0 left-0 right-0 p-4">
-          <div className="flex justify-between items-start">
-            {/* Card Number */}
-            <div className={`px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border border-white/30 ${
-              insight.type === 'morning' ? 'bg-amber-500/20 text-amber-800' : 'bg-purple-500/20 text-purple-800'
-            }`}>
-              #{cardNumber}
-            </div>
-            
-            {/* Rarity Indicator */}
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border border-white/30 bg-gradient-to-r ${rarity.color} text-white`}>
-              <RarityIcon className="w-3 h-3" />
-              {rarity.level}
-            </div>
-          </div>
-          
-          {/* Title */}
-          <div className="mt-3 text-center">
-            <h3 className={`text-lg font-bold ${
-              insight.type === 'morning' ? 'text-amber-800' : 'text-purple-800'
-            }`}>
-              {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
-            </h3>
-            <div className={`text-xs font-medium mt-1 ${
-              insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
-            }`}>
-              {sceneData.name}
-            </div>
-          </div>
-        </div>
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${sceneData.thumbnailUrl})`,
+          }}
+        />
 
-        {/* Center Quote Section */}
-        <div className="absolute inset-0 flex items-center justify-center p-6 pt-20 pb-16">
-          <div className="relative">
-            {/* Quote Background */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${
+        {/* Background Overlay */}
+        <div className={`absolute inset-0 ${
+          insight.type === 'morning' 
+            ? 'bg-gradient-to-br from-amber-300/40 via-orange-200/30 to-yellow-200/40' 
+            : 'bg-gradient-to-br from-purple-400/40 via-indigo-300/30 to-blue-400/40'
+        }`} />
+
+        {/* Holographic Foil Effect (only when expanded) */}
+        {isExpanded && (
+          <motion.div
+            className="absolute inset-0 opacity-30 mix-blend-overlay pointer-events-none"
+            style={{
+              background: `radial-gradient(circle at ${holographicX}% ${holographicY}%, 
+                #ff0080 0%, #ff8c00 16%, #40e0d0 32%, #9370db 48%, #00ff7f 64%, #ffd700 80%, #ff0080 100%)`,
+              backgroundSize: '200% 200%',
+            }}
+          />
+        )}
+
+        {/* Content Container with Parallax */}
+        <motion.div 
+          className="relative h-full flex flex-col justify-between p-6"
+          style={isExpanded ? { x: parallaxX, y: parallaxY } : {}}
+        >
+          {/* Header */}
+          <div className="text-center">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
               insight.type === 'morning' 
-                ? 'from-white/40 to-amber-100/40' 
-                : 'from-white/40 to-purple-100/40'
-            } rounded-2xl backdrop-blur-sm border border-white/40 shadow-lg`} />
-            
-            {/* Quote Content */}
-            <div className="relative p-4">
-              <div className={`text-3xl font-bold mb-2 ${
-                insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
-              }`}>
-                "
-              </div>
-              <blockquote className={`text-sm font-medium leading-relaxed text-center ${
-                insight.type === 'morning' ? 'text-gray-800' : 'text-gray-800'
-              } px-2`}>
-                {insight.quote}
-              </blockquote>
-              <div className={`text-3xl font-bold mt-2 text-right ${
-                insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
-              }`}>
-                "
+                ? 'bg-amber-500/20 text-amber-800' 
+                : 'bg-purple-500/20 text-purple-800'
+            }`}>
+              <Sparkles className="w-4 h-4" />
+              <span className="text-sm font-medium">
+                {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
+              </span>
+            </div>
+          </div>
+
+          {/* Quote Section */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="relative max-w-full">
+              {/* Quote Background with deeper parallax */}
+              <motion.div 
+                className={`absolute inset-0 rounded-2xl backdrop-blur-md border border-white/30 ${
+                  insight.type === 'morning' 
+                    ? 'bg-white/60' 
+                    : 'bg-white/50'
+                }`}
+                style={isExpanded ? { 
+                  x: useTransform(parallaxX, [0, 5], [0, 2]), 
+                  y: useTransform(parallaxY, [0, 5], [0, 2]) 
+                } : {}}
+              />
+              
+              {/* Quote Content */}
+              <div className="relative p-6">
+                <blockquote className={`text-lg font-medium leading-relaxed text-center ${
+                  insight.type === 'morning' ? 'text-gray-800' : 'text-gray-900'
+                }`}>
+                  "{insight.quote}"
+                </blockquote>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Bottom Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="flex justify-between items-end">
-            {/* Date */}
-            <div className={`text-xs font-medium ${
+          {/* Footer */}
+          <div className="text-center">
+            <div className={`text-sm font-medium ${
               insight.type === 'morning' ? 'text-amber-700' : 'text-purple-700'
             }`}>
               {insight.createdAt.toLocaleDateString([], {
-                month: 'short',
+                month: 'long',
                 day: 'numeric',
                 year: 'numeric'
               })}
             </div>
-            
-            {/* Komorebi Branding */}
-            <div className={`flex items-center gap-1 text-xs font-bold ${
-              insight.type === 'morning' ? 'text-amber-700' : 'text-purple-700'
-            }`}>
-              <Sparkles className="w-3 h-3" />
-              KOMOREBI
-            </div>
           </div>
+        </motion.div>
+
+        {/* Shine Effect */}
+        <div 
+          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 pointer-events-none"
+          style={{
+            background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
+            transform: isExpanded ? 'translateX(100%)' : 'translateX(-100%)',
+            transition: 'transform 2s ease-in-out',
+          }}
+        />
+      </motion.div>
+
+      {/* Action Buttons (only shown when not expanded) */}
+      {!isExpanded && (
+        <div className="flex justify-center gap-3 mt-6">
+          <button
+            onClick={handleCopy}
+            className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
+              insight.type === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
+            title="Copy quote to clipboard"
+            aria-label="Copy quote to clipboard"
+          >
+            {copied ? (
+              <Check className="w-5 h-5" />
+            ) : (
+              <Copy className="w-5 h-5" />
+            )}
+          </button>
           
-          {/* Stats Bar */}
-          <div className="mt-2 flex justify-center">
-            <div className={`flex items-center gap-3 px-3 py-1 rounded-full text-xs backdrop-blur-sm border border-white/30 ${
-              insight.type === 'morning' ? 'bg-amber-500/20 text-amber-800' : 'bg-purple-500/20 text-purple-800'
-            }`}>
-              <div className="flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                <span>Wisdom</span>
-              </div>
-              <div className="w-px h-3 bg-current opacity-30" />
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3" />
-                <span>{insight.type === 'morning' ? 'Intent' : 'Reflect'}</span>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
+              insight.type === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/30`}
+            title="Download as image"
+            aria-label="Download insight card as image"
+          >
+            {downloading ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+          </button>
+          
+          <button
+            onClick={handleShare}
+            className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
+              insight.type === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
+            title="Share insight"
+            aria-label="Share insight"
+          >
+            <Share2 className="w-5 h-5" />
+          </button>
         </div>
-
-        {/* Corner Decorations */}
-        <div className="absolute top-2 left-2">
-          <div className={`w-6 h-6 border-l-2 border-t-2 rounded-tl-lg ${
-            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
-          }`} />
-        </div>
-        <div className="absolute top-2 right-2">
-          <div className={`w-6 h-6 border-r-2 border-t-2 rounded-tr-lg ${
-            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
-          }`} />
-        </div>
-        <div className="absolute bottom-2 left-2">
-          <div className={`w-6 h-6 border-l-2 border-b-2 rounded-bl-lg ${
-            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
-          }`} />
-        </div>
-        <div className="absolute bottom-2 right-2">
-          <div className={`w-6 h-6 border-r-2 border-b-2 rounded-br-lg ${
-            insight.type === 'morning' ? 'border-amber-400' : 'border-purple-400'
-          }`} />
-        </div>
-
-        {/* Premium Shine Effect */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-50 pointer-events-none" 
-             style={{
-               background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%)',
-               animation: 'shine 3s ease-in-out infinite'
-             }} />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-3 mt-6">
-        <button
-          onClick={handleCopy}
-          className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
-            insight.type === 'morning'
-              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-              : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
-          title="Copy quote to clipboard"
-          aria-label="Copy quote to clipboard"
-        >
-          {copied ? (
-            <Check className="w-5 h-5" />
-          ) : (
-            <Copy className="w-5 h-5" />
-          )}
-        </button>
-        
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
-            insight.type === 'morning'
-              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-              : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-white/30`}
-          title="Download trading card"
-          aria-label="Download insight card as trading card image"
-        >
-          {downloading ? (
-            <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <Download className="w-5 h-5" />
-          )}
-        </button>
-        
-        <button
-          onClick={handleShare}
-          className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm ${
-            insight.type === 'morning'
-              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-              : 'bg-white/10 hover:bg-white/20 text-white'
-          } border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30`}
-          title="Share trading card"
-          aria-label="Share insight trading card"
-        >
-          <Share2 className="w-5 h-5" />
-        </button>
-      </div>
+      )}
     </div>
   );
 };

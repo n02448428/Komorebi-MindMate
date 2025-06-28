@@ -3,6 +3,7 @@ import { NatureScene } from '../types';
 export const natureScenes: Record<NatureScene, {
   name: string;
   videoUrl: string;
+  thumbnailUrl: string;
   description: string;
   mood: 'calming' | 'energizing' | 'peaceful' | 'grounding';
   timePreference: 'morning' | 'evening' | 'both';
@@ -10,6 +11,7 @@ export const natureScenes: Record<NatureScene, {
   ocean: {
     name: 'Ocean Waves',
     videoUrl: 'https://videos.pexels.com/video-files/6735144/6735144-uhd_2560_1440_30fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/416978/pexels-photo-416978.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Gentle waves meeting the shore',
     mood: 'calming',
     timePreference: 'both'
@@ -17,6 +19,7 @@ export const natureScenes: Record<NatureScene, {
   forest: {
     name: 'Forest Canopy',
     videoUrl: 'https://videos.pexels.com/video-files/30039186/12886404_1920_1080_60fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/165754/pexels-photo-165754.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Sunlight filtering through trees',
     mood: 'grounding',
     timePreference: 'morning'
@@ -24,6 +27,7 @@ export const natureScenes: Record<NatureScene, {
   desert: {
     name: 'Desert Dunes',
     videoUrl: 'https://videos.pexels.com/video-files/29660258/12759696_2560_1440_60fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/3244513/pexels-photo-3244513.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Rolling sand dunes under vast sky',
     mood: 'peaceful',
     timePreference: 'both'
@@ -31,6 +35,7 @@ export const natureScenes: Record<NatureScene, {
   mountain: {
     name: 'Mountain Vista',
     videoUrl: 'https://videos.pexels.com/video-files/4288020/4288020-uhd_2560_1440_24fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/691668/pexels-photo-691668.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Majestic peaks and flowing clouds',
     mood: 'energizing',
     timePreference: 'morning'
@@ -38,6 +43,7 @@ export const natureScenes: Record<NatureScene, {
   lake: {
     name: 'Serene Lake',
     videoUrl: 'https://videos.pexels.com/video-files/27868037/12249511_2560_1440_24fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/1402850/pexels-photo-1402850.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Still waters reflecting the sky',
     mood: 'peaceful',
     timePreference: 'evening'
@@ -45,6 +51,7 @@ export const natureScenes: Record<NatureScene, {
   meadow: {
     name: 'Wildflower Meadow',
     videoUrl: 'https://videos.pexels.com/video-files/32347280/13800782_2048_1080_30fps.mp4',
+    thumbnailUrl: 'https://images.pexels.com/photos/2909077/pexels-photo-2909077.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Gentle breeze through wildflowers',
     mood: 'calming',
     timePreference: 'both'
