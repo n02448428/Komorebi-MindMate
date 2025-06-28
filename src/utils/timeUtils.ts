@@ -27,29 +27,29 @@ export const getTimeOfDay = (): TimeOfDay => {
   
   if (hour >= morningStart && hour < morningEnd) {
     period = 'morning';
-    greeting = "Good morning. Let's set a beautiful intention for today.";
+    greeting = "Good morning! I'm here to help you start your day with intention and clarity. What's stirring in your heart as this new day begins?";
   } else if (hour >= morningEnd && hour < eveningStart) {
     // During day, but still allow sessions - prefer morning unless it's late
     period = hour >= 14 ? 'evening' : 'morning'; // After 2 PM, switch to evening mode
     greeting = period === 'morning' 
-      ? "Let's take a moment to set an intention for the rest of your day."
-      : "Let's pause and reflect on how your day has been unfolding.";
+      ? "Hello! Let's take a mindful moment to set an intention for the rest of your day. What would you like to focus on?"
+      : "Good afternoon! Let's pause and reflect together on how your day has been unfolding. What's on your mind?";
   } else if (hour >= eveningStart && hour < eveningEnd) {
     period = 'evening';
-    greeting = "Welcome back. Let's reflect on your day together.";
+    greeting = "Good evening! Welcome to this peaceful moment of reflection. How was your day, and what would you like to explore together?";
   } else {
     // Night time - still allow sessions but prefer evening mode
     period = 'evening';
-    greeting = "Even in the quiet of night, reflection can bring peace. Let's explore what's on your mind.";
+    greeting = "Hello there! Even in these quiet nighttime hours, reflection can bring peace and clarity. What's on your mind tonight?";
   }
   
   // Special case: if it's late in the day (after 8 PM), force evening session
   if (hour >= eveningCutoff) {
     period = 'evening';
     if (hour >= eveningEnd) {
-      greeting = "In these quiet evening hours, let's reflect together on what today has brought you.";
+      greeting = "Good evening! In these quiet hours, let's reflect together on what today has brought you. What would you like to explore?";
     } else {
-      greeting = "Welcome back. Let's reflect on your day together.";
+      greeting = "Good evening! Welcome to this peaceful moment of reflection. How was your day, and what would you like to explore together?";
     }
   }
   

@@ -9,18 +9,20 @@ import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle } from 'lucide-react';
+import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionComplete, setSessionComplete] = useState(false);
   const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [currentScene, setCurrentScene] = useState<NatureScene>('ocean');
   const [videoEnabled, setVideoEnabled] = useState(true);
+  const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
+  const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -40,8 +42,8 @@ const MainSession: React.FC = () => {
     hasCompletedTodaysSession(sessionLimits.lastEveningSession)
   ) : false;
 
-  // Check if session time has expired
-  const isSessionExpired = sessionStartTime && 
+  // Check if session time has expired (only for non-Pro users)
+  const isSessionExpired = !user?.isPro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
   useEffect(() => {
@@ -88,6 +90,17 @@ const MainSession: React.FC = () => {
     if (savedStartTime) {
       setSessionStartTime(new Date(savedStartTime));
     }
+
+    // Add initial greeting message if no messages exist
+    if (messages.length === 0) {
+      const greetingMessage: Message = {
+        id: 'greeting',
+        content: timeOfDay.greeting,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+    }
   }, [user?.isPro, user, sessionType]);
 
   useEffect(() => {
@@ -129,7 +142,7 @@ const MainSession: React.FC = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (isLoading || sessionLimits.messagesUsed >= sessionLimits.maxMessages || isSessionExpired) return;
+    if (isLoading || (!user?.isPro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
 
     // Start session timer if not already started
     if (!sessionStartTime) {
@@ -150,17 +163,28 @@ const MainSession: React.FC = () => {
     setIsLoading(true);
 
     const newMessagesUsed = sessionLimits.messagesUsed + 1;
+    const newUserMessagesSinceLastInsight = userMessagesSinceLastInsight + 1;
+    
+    // Update message counts
+    setUserMessagesSinceLastInsight(newUserMessagesSinceLastInsight);
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: newMessagesUsed,
     });
 
+    // Check if we should show the insight generation button (every 5 user messages)
+    if (newUserMessagesSinceLastInsight % 5 === 0 && newUserMessagesSinceLastInsight > 0) {
+      setShowGenerateInsightButton(true);
+    }
+
     try {
-      // Convert messages to conversation history format
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Convert messages to conversation history format (excluding the greeting message)
+      const conversationHistory = messages
+        .filter(msg => msg.id !== 'greeting')
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
 
       // Use Supabase AI chat service
       const response = await aiChatService.sendMessage(content, sessionType, conversationHistory);
@@ -174,24 +198,6 @@ const MainSession: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Check if session should complete
-      if (response.isComplete || newMessagesUsed >= sessionLimits.maxMessages) {
-        setSessionComplete(true);
-        generateInsightCard([...messages, userMessage, aiMessage]);
-        
-        // Mark session as completed only if user is logged in
-        if (user) {
-          const now = new Date();
-          saveSessionLimits({
-            ...sessionLimits,
-            messagesUsed: newMessagesUsed,
-            morningCompleted: sessionType === 'morning' ? true : sessionLimits.morningCompleted,
-            eveningCompleted: sessionType === 'evening' ? true : sessionLimits.eveningCompleted,
-            lastMorningSession: sessionType === 'morning' ? now : sessionLimits.lastMorningSession,
-            lastEveningSession: sessionType === 'evening' ? now : sessionLimits.lastEveningSession,
-          });
-        }
-      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage: Message = {
@@ -203,6 +209,26 @@ const MainSession: React.FC = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateInsightClick = async () => {
+    setIsGeneratingInsight(true);
+    setShowGenerateInsightButton(false);
+    
+    try {
+      // Filter out the greeting message for insight generation
+      const sessionMessages = messages.filter(msg => msg.id !== 'greeting');
+      await generateInsightCard(sessionMessages);
+      
+      // Reset the counter
+      setUserMessagesSinceLastInsight(0);
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      // Re-show the button if there was an error
+      setShowGenerateInsightButton(true);
+    } finally {
+      setIsGeneratingInsight(false);
     }
   };
 
@@ -230,13 +256,22 @@ const MainSession: React.FC = () => {
       }
     } catch (error) {
       console.error('Error generating insight:', error);
+      throw error;
     }
   };
 
   const handleNewSession = () => {
-    setMessages([]);
-    setSessionComplete(false);
+    // Reset to just the greeting message
+    const greetingMessage: Message = {
+      id: 'greeting',
+      content: timeOfDay.greeting,
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages([greetingMessage]);
     setInsightCard(null);
+    setUserMessagesSinceLastInsight(0);
+    setShowGenerateInsightButton(false);
     const startTime = new Date();
     setSessionStartTime(startTime);
     localStorage.setItem('session-start-time', startTime.toISOString());
@@ -321,7 +356,7 @@ const MainSession: React.FC = () => {
   }
 
   // Show session expired message
-  if (sessionStartTime && isSessionExpired && !sessionComplete) {
+  if (sessionStartTime && isSessionExpired) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -575,92 +610,114 @@ const MainSession: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
-        {!sessionComplete ? (
-          <div className="w-full">
-            <ChatInterface
-              messages={messages}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              greeting={timeOfDay.greeting}
-              timeOfDay={sessionType}
-              messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
-            />
-            
-            {/* Login prompt for non-logged in users */}
-            {!user && messages.length > 0 && (
-              <div className="mt-6 text-center">
-                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
-                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                }`}>
-                  <p className={`text-sm mb-3 ${
-                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-                  }`}>
-                    Sign in to save your insights and track your progress
-                  </p>
-                  <button
-                    onClick={handleLogin}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
-                  >
-                    Sign In to Save
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="w-full max-w-2xl mx-auto">
-            {insightCard && (
-              <div className="animate-fade-in">
-                <div className="text-center mb-8">
-                  <h2 className={`text-3xl font-semibold mb-4 ${
-                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    Your {sessionType === 'morning' ? 'Morning' : 'Evening'} Insight
-                  </h2>
-                  <p className={`text-lg ${
-                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    A reflection from our conversation
-                  </p>
-                </div>
-                <InsightCard insight={insightCard} />
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-              <button
-                onClick={handleNewSession}
-                className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                  sessionType === 'morning'
-                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                New Session
-              </button>
-              {user && (
-                <button
-                  onClick={handleInsights}
-                  className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-800'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  View All Insights
-                </button>
-              )}
-              {!user && (
-                <button
-                  onClick={handleLogin}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
-                >
-                  Sign In to Save Insights
-                </button>
-              )}
+        <div className="w-full">
+          {/* Session Type Display */}
+          <div className="text-center mb-6">
+            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Sparkles className={`w-5 h-5 ${
+                sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+              }`} />
+              <span className={`text-lg font-semibold ${
+                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                {sessionType === 'morning' ? 'Morning Intentions' : 'Evening Reflections'}
+              </span>
             </div>
           </div>
-        )}
+
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            timeOfDay={sessionType}
+            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+          />
+
+          {/* Insight Generation Button */}
+          {showGenerateInsightButton && (
+            <div className="mt-6 text-center animate-fade-in">
+              <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              }`}>
+                <p className={`text-sm mb-3 ${
+                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                }`}>
+                  You've shared 5 messages! Ready to capture an insight from our conversation?
+                </p>
+                <button
+                  onClick={handleGenerateInsightClick}
+                  disabled={isGeneratingInsight}
+                  className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
+                    sessionType === 'morning'
+                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Display Latest Insight Card */}
+          {insightCard && (
+            <div className="mt-8 animate-fade-in">
+              <div className="text-center mb-6">
+                <h2 className={`text-2xl font-semibold mb-2 ${
+                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Your Latest Insight
+                </h2>
+                <p className={`text-sm ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  A reflection from our conversation
+                </p>
+              </div>
+              <div className="max-w-lg mx-auto">
+                <InsightCard insight={insightCard} />
+              </div>
+            </div>
+          )}
+          
+          {/* Login prompt for non-logged in users */}
+          {!user && messages.length > 1 && ( // Show after greeting + at least one user message
+            <div className="mt-6 text-center">
+              <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              }`}>
+                <p className={`text-sm mb-3 ${
+                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                }`}>
+                  Sign in to save your insights and track your progress
+                </p>
+                <button
+                  onClick={handleLogin}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Sign In to Save
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* New Session Button */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={handleNewSession}
+              className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              Start Fresh Session
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
