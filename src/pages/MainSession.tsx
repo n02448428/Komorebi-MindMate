@@ -4,16 +4,19 @@ import { Crown, User, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ChatInterface from '../components/ChatInterface';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { getTimeBasedGreeting, getSessionType } from '../utils/timeUtils';
+import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 
 const MainSession: React.FC = () => {
   const { user } = useAuth();
   const [showHeader, setShowHeader] = useState(true);
   const [sessionType, setSessionType] = useState<'morning' | 'evening'>('morning');
+  const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    setSessionType(getSessionType());
+    const timeOfDay = getTimeOfDay();
+    setSessionType(timeOfDay.period === 'morning' || timeOfDay.period === 'day' ? 'morning' : 'evening');
+    setGreeting(timeOfDay.greeting);
   }, []);
 
   const handleInsights = () => {
@@ -44,7 +47,7 @@ const MainSession: React.FC = () => {
                       sessionType === 'morning' ? 'text-gray-800' : 'text-white'
                     }`}
                   >
-                    {getTimeBasedGreeting()}
+                    {greeting}
                   </motion.h1>
                 </div>
 
