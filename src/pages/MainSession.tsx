@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
@@ -155,8 +156,14 @@ const MainSession: React.FC = () => {
     });
 
     try {
-      // Use dynamic AI response system
-      const response = await generateDynamicAIResponse(content, newMessagesUsed, messages, sessionType);
+      // Convert messages to conversation history format
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Use Supabase AI chat service
+      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -201,8 +208,18 @@ const MainSession: React.FC = () => {
 
   const generateInsightCard = async (sessionMessages: Message[]) => {
     try {
-      // Simulate insight generation (replace with actual API call)
-      const insight = await simulateInsightGeneration(sessionMessages, sessionType, currentScene);
+      // Use Supabase AI service for insight generation
+      const response = await aiChatService.generateInsightCard(sessionMessages, sessionType);
+      
+      const insight: InsightCardType = {
+        id: Date.now().toString(),
+        quote: response.quote,
+        type: sessionType,
+        sessionId: Date.now().toString(),
+        createdAt: new Date(),
+        sceneType: currentScene,
+      };
+      
       setInsightCard(insight);
       
       // Only save to localStorage if user is logged in
@@ -647,271 +664,6 @@ const MainSession: React.FC = () => {
       </div>
     </div>
   );
-};
-
-// Dynamic AI response system that analyzes user input and provides tailored responses
-const generateDynamicAIResponse = async (
-  userMessage: string, 
-  messageCount: number, 
-  history: Message[], 
-  timeOfDay: 'morning' | 'evening'
-) => {
-  // Simulate realistic typing delay based on message length and complexity
-  const baseDelay = 800;
-  const lengthDelay = userMessage.length * 15;
-  const randomDelay = Math.random() * 1200;
-  const totalDelay = Math.min(baseDelay + lengthDelay + randomDelay, 4000);
-  
-  await new Promise(resolve => setTimeout(resolve, totalDelay));
-
-  // Analyze user message for emotional tone and content
-  const messageAnalysis = analyzeUserMessage(userMessage, history);
-  
-  const response = generateContextualResponse(messageAnalysis, messageCount, timeOfDay);
-  
-  return response;
-};
-
-// Analyze user message for emotional tone, urgency, and content themes
-const analyzeUserMessage = (message: string, history: Message[]) => {
-  const lowerMessage = message.toLowerCase();
-  
-  // Emotional indicators
-  const stressIndicators = ['stressed', 'anxious', 'worried', 'overwhelmed', 'panic', 'scared', 'afraid', 'nervous'];
-  const sadnessIndicators = ['sad', 'depressed', 'down', 'lonely', 'empty', 'hopeless', 'crying', 'tears'];
-  const angerIndicators = ['angry', 'mad', 'furious', 'frustrated', 'irritated', 'annoyed', 'rage'];
-  const positiveIndicators = ['happy', 'excited', 'grateful', 'blessed', 'amazing', 'wonderful', 'great', 'fantastic'];
-  const urgencyIndicators = ['help', 'crisis', 'emergency', 'urgent', 'desperate', 'can\'t cope', 'breaking down'];
-  
-  // Life themes
-  const workThemes = ['work', 'job', 'career', 'boss', 'colleague', 'office', 'meeting', 'deadline', 'project'];
-  const relationshipThemes = ['relationship', 'partner', 'boyfriend', 'girlfriend', 'husband', 'wife', 'family', 'friend'];
-  const healthThemes = ['health', 'sick', 'pain', 'tired', 'exhausted', 'sleep', 'energy', 'doctor'];
-  const goalThemes = ['goal', 'dream', 'ambition', 'future', 'plan', 'hope', 'want', 'wish'];
-  
-  return {
-    emotionalTone: {
-      stress: stressIndicators.some(word => lowerMessage.includes(word)),
-      sadness: sadnessIndicators.some(word => lowerMessage.includes(word)),
-      anger: angerIndicators.some(word => lowerMessage.includes(word)),
-      positive: positiveIndicators.some(word => lowerMessage.includes(word)),
-      urgent: urgencyIndicators.some(word => lowerMessage.includes(word))
-    },
-    themes: {
-      work: workThemes.some(word => lowerMessage.includes(word)),
-      relationships: relationshipThemes.some(word => lowerMessage.includes(word)),
-      health: healthThemes.some(word => lowerMessage.includes(word)),
-      goals: goalThemes.some(word => lowerMessage.includes(word))
-    },
-    messageLength: message.length,
-    questionCount: (message.match(/\?/g) || []).length,
-    conversationContext: history.length
-  };
-};
-
-// Generate contextual response based on analysis
-const generateContextualResponse = (analysis: any, messageCount: number, timeOfDay: 'morning' | 'evening') => {
-  const { emotionalTone, themes } = analysis;
-  
-  // Crisis/urgent responses take priority
-  if (emotionalTone.urgent) {
-    return {
-      message: "I hear that you're going through something really difficult right now. Your feelings are completely valid, and it takes courage to reach out. While I'm here to listen and support you, if you're in immediate crisis, please consider reaching out to a mental health professional or crisis helpline. What's one small thing that might help you feel a bit safer or more grounded right now?",
-      isComplete: false
-    };
-  }
-  
-  // Tailor responses based on emotional tone and themes
-  let response = "";
-  let isComplete = messageCount >= 4;
-  
-  if (timeOfDay === 'morning') {
-    if (emotionalTone.stress || emotionalTone.sadness) {
-      const stressResponses = [
-        "I can hear the weight you're carrying this morning. It's okay to start the day feeling this way - you don't have to be 'on' immediately. What's one very small thing you could do today that might bring you even a tiny bit of comfort?",
-        "Thank you for sharing something so personal with me. When we're struggling, mornings can feel especially heavy. What would it look like to be gentle with yourself today, even if everything else feels hard?",
-        "I'm sitting with you in this difficult moment. Sometimes the bravest thing we can do is simply acknowledge how we're feeling. If today could unfold with just a little more ease than yesterday, what might that look like?"
-      ];
-      response = stressResponses[Math.floor(Math.random() * stressResponses.length)];
-    } else if (emotionalTone.positive) {
-      const positiveResponses = [
-        "I can feel the positive energy in your words! It's beautiful when we start the day with gratitude or excitement. What's contributing most to this good feeling, and how might you nurture it throughout the day?",
-        "Your enthusiasm is wonderful to witness. These moments of joy and appreciation are so precious. What intention could you set today that honors this positive energy you're feeling?",
-        "There's something really special about beginning the day with this kind of openness and positivity. How can you carry this feeling with you as you move through today's experiences?"
-      ];
-      response = positiveResponses[Math.floor(Math.random() * positiveResponses.length)];
-    } else if (themes.work) {
-      const workResponses = [
-        "Work can be such a significant part of our daily experience. Whether it's bringing you energy or draining it, your feelings about it matter. What's your relationship with work telling you about what you need right now?",
-        "I hear you thinking about your work life. It's interesting how our professional experiences can shape our entire day. What would it mean to approach your work today with intention rather than just obligation?",
-        "Work challenges can really affect how we feel about ourselves and our days. What's one thing about your work situation that you have some control over, even if it's small?"
-      ];
-      response = workResponses[Math.floor(Math.random() * workResponses.length)];
-    } else if (themes.relationships) {
-      const relationshipResponses = [
-        "Relationships are at the heart of so much of our human experience. Whether they're bringing you joy or challenge right now, your feelings about them are important. What's your heart telling you about what you need in your connections with others?",
-        "The people in our lives can have such a profound impact on how we feel and see ourselves. What would it look like to approach your relationships today with both openness and healthy boundaries?",
-        "Thank you for sharing about your relationships. These connections shape us in so many ways. What kind of energy do you want to bring to your interactions today?"
-      ];
-      response = relationshipResponses[Math.floor(Math.random() * relationshipResponses.length)];
-    } else {
-      const generalMorningResponses = [
-        "I appreciate you taking this time for reflection this morning. There's something powerful about beginning the day with intention. What's calling for your attention today?",
-        "Thank you for sharing what's on your mind. Morning conversations like this can really set the tone for how we experience our day. What feels most important for you to focus on today?",
-        "I'm grateful you're here, taking this moment for yourself. What would it mean to move through today with a sense of purpose and self-compassion?"
-      ];
-      response = generalMorningResponses[Math.floor(Math.random() * generalMorningResponses.length)];
-    }
-  } else {
-    // Evening responses
-    if (emotionalTone.stress || emotionalTone.sadness) {
-      const eveningStressResponses = [
-        "It sounds like today carried some heavy moments for you. Thank you for trusting me with these feelings. As you prepare to rest, what's one thing from today that you can acknowledge yourself for, even if it feels small?",
-        "I can hear the exhaustion in your words. Some days are just harder than others, and that's part of being human. What would it mean to offer yourself the same compassion you'd give a dear friend right now?",
-        "Today seems to have asked a lot of you. As we reflect together, what's one lesson or insight that might have emerged from the challenges you faced?"
-      ];
-      response = eveningStressResponses[Math.floor(Math.random() * eveningStressResponses.length)];
-    } else if (emotionalTone.positive) {
-      const eveningPositiveResponses = [
-        "I can feel the satisfaction and joy in how you're reflecting on your day. These moments of contentment are so valuable. What made today feel particularly meaningful for you?",
-        "There's something beautiful about ending the day with gratitude and positivity. What aspects of today do you want to carry forward into tomorrow?",
-        "Your positive energy is wonderful to witness. As you look back on today, what are you most proud of or grateful for?"
-      ];
-      response = eveningPositiveResponses[Math.floor(Math.random() * eveningPositiveResponses.length)];
-    } else if (themes.work) {
-      const eveningWorkResponses = [
-        "Work can follow us home in so many ways - sometimes energizing us, sometimes draining us. How are you feeling about the balance between your professional and personal life right now?",
-        "Reflecting on your work day can reveal so much about what matters to you. What did today teach you about your values and priorities?",
-        "As you transition from work mode to personal time, what would help you feel more present and at peace this evening?"
-      ];
-      response = eveningWorkResponses[Math.floor(Math.random() * eveningWorkResponses.length)];
-    } else {
-      const generalEveningResponses = [
-        "Thank you for taking this time to reflect on your day with me. There's wisdom in pausing to process our experiences. What stands out most as you look back on today?",
-        "I appreciate you sharing your thoughts as the day winds down. These evening reflections can be so valuable for our growth. What's your heart telling you about today's journey?",
-        "As we reflect together on your day, what feels most important to acknowledge or release before you rest tonight?"
-      ];
-      response = generalEveningResponses[Math.floor(Math.random() * generalEveningResponses.length)];
-    }
-  }
-  
-  // Final message for session completion
-  if (isComplete) {
-    const completionMessages = timeOfDay === 'morning' 
-      ? [
-          "You've shared so thoughtfully this morning. I can see your wisdom and self-awareness shining through. As you step into your day, remember that you have everything you need within you. Trust yourself, be gentle with yourself, and know that growth happens one moment at a time. ✨",
-          "What a meaningful conversation we've had. Your openness and reflection show such courage and wisdom. Carry this intention with you today - you're exactly where you need to be, and you're doing better than you know. Have a beautiful day. 🌅",
-          "Thank you for this beautiful morning reflection. I can feel your strength and authenticity. Remember that every day is a new opportunity to practice self-compassion and live with intention. You've got this. ✨"
-        ]
-      : [
-          "What a thoughtful way to end your day. Your willingness to reflect and grow is truly inspiring. As you rest tonight, know that you've done enough, you are enough, and tomorrow holds new possibilities. Sleep well. 🌙",
-          "Thank you for sharing your day with me so openly. Your insights and self-awareness are remarkable. Rest knowing that you've navigated today with courage, and tomorrow is a fresh start. Sweet dreams. ✨",
-          "This evening reflection shows such wisdom and growth. You've honored your experiences and feelings today. As you prepare for rest, carry with you the knowledge that you're on a beautiful journey of becoming. Rest well. 🌙"
-        ];
-    
-    response = completionMessages[Math.floor(Math.random() * completionMessages.length)];
-  }
-  
-  return {
-    message: response,
-    isComplete
-  };
-};
-
-// Simulate insight generation for demo
-const simulateInsightGeneration = async (
-  messages: Message[], 
-  type: 'morning' | 'evening',
-  sceneType: any
-): Promise<InsightCardType> => {
-  await new Promise(resolve => setTimeout(resolve, 1500));
-
-  // Analyze conversation for personalized insights
-  const conversationText = messages.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
-  
-  let insight = "";
-  
-  // Generate insights based on conversation content
-  if (conversationText.includes('stress') || conversationText.includes('anxious') || conversationText.includes('overwhelmed')) {
-    const stressInsights = type === 'morning' 
-      ? [
-          "Your awareness of stress is the first step toward managing it with grace.",
-          "Even in challenging moments, you have the strength to find your center.",
-          "Today's difficulties are tomorrow's wisdom in disguise."
-        ]
-      : [
-          "You've carried today's challenges with more resilience than you realize.",
-          "Stress reveals our capacity for growth and adaptation.",
-          "Every difficult day teaches us something valuable about our inner strength."
-        ];
-    insight = stressInsights[Math.floor(Math.random() * stressInsights.length)];
-  } else if (conversationText.includes('grateful') || conversationText.includes('happy') || conversationText.includes('excited')) {
-    const positiveInsights = type === 'morning'
-      ? [
-          "Gratitude is the foundation upon which beautiful days are built.",
-          "Your positive energy is a gift you give to yourself and the world.",
-          "Joy shared in the morning multiplies throughout the day."
-        ]
-      : [
-          "Today's joy is a reminder of life's endless capacity for beauty.",
-          "Gratitude transforms ordinary moments into extraordinary memories.",
-          "Your appreciation for life's gifts illuminates the path forward."
-        ];
-    insight = positiveInsights[Math.floor(Math.random() * positiveInsights.length)];
-  } else if (conversationText.includes('work') || conversationText.includes('career') || conversationText.includes('job')) {
-    const workInsights = type === 'morning'
-      ? [
-          "Your work is an expression of your values and talents.",
-          "Purpose-driven action creates meaning in even the smallest tasks.",
-          "Today's efforts are building tomorrow's opportunities."
-        ]
-      : [
-          "Your professional journey reflects your commitment to growth and contribution.",
-          "Work challenges are invitations to discover new aspects of your capabilities.",
-          "Balance between effort and rest creates sustainable success."
-        ];
-    insight = workInsights[Math.floor(Math.random() * workInsights.length)];
-  } else if (conversationText.includes('relationship') || conversationText.includes('family') || conversationText.includes('friend')) {
-    const relationshipInsights = type === 'morning'
-      ? [
-          "Authentic connections begin with being genuine with yourself.",
-          "Love shared freely returns to us in unexpected ways.",
-          "Today's interactions are opportunities to practice compassion."
-        ]
-      : [
-          "The love you give and receive shapes who you're becoming.",
-          "Relationships teach us as much about ourselves as about others.",
-          "Connection and understanding grow through patient presence."
-        ];
-    insight = relationshipInsights[Math.floor(Math.random() * relationshipInsights.length)];
-  } else {
-    // General insights based on time of day
-    const generalInsights = type === 'morning'
-      ? [
-          "Today is a canvas waiting for your unique brushstrokes of intention.",
-          "Your awareness of this moment is the first step toward meaningful change.",
-          "Small, intentional actions create the foundation for extraordinary days.",
-          "You have everything within you to make today beautiful.",
-          "Clarity comes not from having all the answers, but from asking the right questions."
-        ]
-      : [
-          "Growth happens in the space between challenge and reflection.",
-          "Every experience today was a teacher, even the difficult ones.",
-          "You showed up today, and that itself is worthy of celebration.",
-          "Tomorrow's possibilities are born from today's insights.",
-          "Your journey is uniquely yours, and every step has value."
-        ];
-    insight = generalInsights[Math.floor(Math.random() * generalInsights.length)];
-  }
-
-  return {
-    id: Date.now().toString(),
-    quote: insight,
-    type,
-    sessionId: Date.now().toString(),
-    createdAt: new Date(),
-    sceneType,
-  };
 };
 
 export default MainSession;
