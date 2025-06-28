@@ -8,7 +8,7 @@ export interface TimeOfDay {
   shouldAutoStart: boolean;
 }
 
-export const getTimeOfDay = (): TimeOfDay => {
+export const getTimeOfDay = (userLocation?: { lat: number; lng: number }): TimeOfDay => {
   const now = new Date();
   const hour = now.getHours();
   
@@ -63,6 +63,7 @@ export const getTimeOfDay = (): TimeOfDay => {
 };
 
 export const hasCompletedTodaysSession = (
+  sessionType: 'morning' | 'evening',
   lastSessionDate?: Date
 ): boolean => {
   if (!lastSessionDate) return false;
