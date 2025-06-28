@@ -634,96 +634,176 @@ const MainSession: React.FC = () => {
       )}
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        {/* Regular Mode Header - Full Layout */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 relative">
+        {/* Title Section */}
         <AnimatePresence>
-          {showControls ? (
+          {showControls && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="flex justify-between items-center"
             >
-              {/* Title Section */}
-              <div>
-                <div className={`text-2xl font-bold ${
-                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Komorebi
-                </div>
-                {videoEnabled && (
-                  <div className={`text-sm font-medium mt-0.5 ${
-                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    {getSceneDisplayName(currentScene)}
-                  </div>
-                )}
+              <div className={`text-2xl font-bold ${
+                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Komorebi
               </div>
+              {videoEnabled && (
+                <div className={`text-sm font-medium mt-0.5 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  {getSceneDisplayName(currentScene)}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-              {/* Controls Container */}
-              <div className="flex items-center gap-3">
-                {/* Animated Controls Panel */}
-                <motion.div
-                  initial="visible"
-                  animate="visible"
-                  exit="hidden"
-                  variants={controlsVariants}
-                  className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
-                    sessionType === 'morning' 
-                      ? 'bg-white/20' 
-                      : 'bg-white/10'
+        {/* Controls Panel - Absolutely positioned */}
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+              className={`absolute right-20 top-1/2 -translate-y-1/2 flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                sessionType === 'morning' 
+                  ? 'bg-white/20' 
+                  : 'bg-white/10'
+              }`}
+            >
+              {/* Background Controls */}
+              <div className="flex gap-2">
+                <button
+                  onClick={toggleVideoBackground}
+                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
                   }`}
                 >
-                  {/* Background Controls */}
-                  <div className="flex gap-2">
+                  {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                
+                {videoEnabled && (
+                  <>
                     <button
-                      onClick={toggleVideoBackground}
-                      title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                      onClick={handleNextScene}
+                      title="Next scene"
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
                     >
-                      {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <SkipForward className="w-4 h-4" />
                     </button>
                     
-                    {videoEnabled && (
-                      <>
-                        <button
-                          onClick={handleNextScene}
-                          title="Next scene"
-                          className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                            sessionType === 'morning'
-                              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                              : 'bg-white/10 hover:bg-white/20 text-white'
-                          }`}
-                        >
-                          <SkipForward className="w-4 h-4" />
-                        </button>
-                        
-                        <button
-                          onClick={handleRandomScene}
-                          title="Random scene"
-                          className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                            sessionType === 'morning'
-                              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                              : 'bg-white/10 hover:bg-white/20 text-white'
-                          }`}
-                        >
-                          <Shuffle className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
+                    <button
+                      onClick={handleRandomScene}
+                      title="Random scene"
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
 
-                  {/* Separator */}
-                  <div className={`w-px h-6 ${
-                    sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                  }`} />
+              {/* Separator */}
+              <div className={`w-px h-6 ${
+                sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+              }`} />
 
-                  {/* Session Controls */}
+              {/* Session Controls */}
+              <button
+                onClick={handleNewSession}
+                title="Start fresh session"
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
+              {/* Separator */}
+              <div className={`w-px h-6 ${
+                sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+              }`} />
+
+              {/* User Controls */}
+              {!user && (
+                <button
+                  onClick={handleLogin}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <LogIn className="w-3 h-3" />
+                  <span className="text-xs font-medium">Sign In</span>
+                </button>
+              )}
+              
+              {user && !user.isPro && (
+                <button
+                  onClick={handleUpgrade}
+                sessionType === 'morning' 
+                  ? 'bg-white/20' 
+                  : 'bg-white/10'
+              }`}
+            >
+              {/* Background Controls */}
+              <div className="flex gap-2">
+                <button
+                  onClick={toggleVideoBackground}
+                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                
+                {videoEnabled && (
+                  <>
+                    <button
+                      onClick={handleNextScene}
+                      title="Next scene"
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <SkipForward className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={handleRandomScene}
+                      title="Random scene"
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
                   <button
                     onClick={handleNewSession}
                     title="Start fresh session"
@@ -809,15 +889,243 @@ const MainSession: React.FC = () => {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Separator */}
+              <div className={`w-px h-6 ${
+                sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+              }`} />
+
+              {/* Session Controls */}
+              <button
+                onClick={handleNewSession}
+                title="Start fresh session"
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
+              {/* Separator */}
+              <div className={`w-px h-6 ${
+                sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+              }`} />
+
+              {/* User Controls */}
+              {!user && (
+                <button
+                  onClick={handleLogin}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <LogIn className="w-3 h-3" />
+                  <span className="text-xs font-medium">Sign In</span>
+                </button>
+              )}
+              
+              {user && !user.isPro && (
+                <button
+                  onClick={handleUpgrade}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                      : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                  }`}
+                >
+                  <Crown className="w-3 h-3" />
+                  <span className="text-xs font-medium">Pro</span>
+                </button>
+              )}
+
+              {user && (
+                <>
+                  <button
+                    onClick={handleInsights}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleSettings}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                </>
+              )}
             </motion.div>
-          ) : (
-            /* Immersive Mode Header - Only Toggle Button on Top Right */
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-end"
+          )}
+        </AnimatePresence>
+
+        {/* Universal Toggle Button - Always Visible */}
+        <button
+          onClick={() => setShowControls(!showControls)}
+          className={`absolute right-6 top-1/2 -translate-y-1/2 p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+            sessionType === 'morning'
+              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              : 'bg-white/10 hover:bg-white/20 text-white'
+          }`}
+          title={showControls ? 'Hide controls' : 'Show controls'}
+        >
+          {showControls ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 pt-28 pb-8 px-6 min-h-[calc(100vh-100px)]">
+        <div className="w-full">
+          {/* Session Type Display */}
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="text-center mb-6"
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Komorebi
+                </div>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <Sparkles className={`w-5 h-5 ${
+                    sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+                  }`} />
+                  <span className={`text-lg font-semibold ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            timeOfDay={sessionType}
+            isImmersive={!showControls}
+            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+          />
+
+          {/* Insight Generation Button */}
+          <AnimatePresence>
+            {showGenerateInsightButton && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 text-center animate-fade-in"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                  </p>
+                  <button
+                    onClick={handleGenerateInsightClick}
+                    disabled={isGeneratingInsight}
+                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Display Latest Insight Card */}
+          <AnimatePresence>
+            {insightCard && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-8 animate-fade-in"
+              >
+                <div className="text-center mb-6">
+                  <h2 className={`text-2xl font-semibold mb-2 ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </h2>
+                  <p className={`text-sm ${
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    A reflection from our conversation
+                  </p>
+                </div>
+                <div className="max-w-lg mx-auto">
+                  <InsightCard insight={insightCard} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Login prompt for non-logged in users */}
+          <AnimatePresence>
+            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 text-center"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    Sign in to save your insights and track your progress
+                  </p>
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Sign In to Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MainSession;
             >
               <button
                 onClick={() => setShowControls(!showControls)}
