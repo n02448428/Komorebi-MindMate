@@ -347,6 +347,11 @@ const InsightCard: React.FC<InsightCardProps> = ({
                 year: 'numeric'
               })}
             </div>
+            <div className={`text-xs mt-1 opacity-70 ${
+              insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
+            }`}>
+              {sceneData.name}
+            </div>
           </div>
         </div>
 

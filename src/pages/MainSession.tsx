@@ -611,10 +611,19 @@ const MainSession: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
-        <div className={`text-2xl font-bold ${
-          sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-        }`}>
-          Komorebi
+        <div>
+          <div className={`text-2xl font-bold ${
+            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+          }`}>
+            Komorebi
+          </div>
+          {videoEnabled && (
+            <div className={`text-sm font-medium mt-0.5 ${
+              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              {getSceneDisplayName(currentScene)}
+            </div>
+          )}
         </div>
         <div className="flex gap-3">
           {/* Background Controls */}
@@ -810,22 +819,8 @@ const MainSession: React.FC = () => {
             </div>
           )}
 
-          {/* Scene Indicator and New Session Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8 mb-8">
-            {/* Scene Indicator */}
-            {videoEnabled && (
-              <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
-                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-              }`}>
-                <div className={`text-sm font-medium ${
-                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-                }`}>
-                  {getSceneDisplayName(currentScene)}
-                </div>
-              </div>
-            )}
-
-            {/* New Session Button */}
+          {/* New Session Actions */}
+          <div className="flex justify-center mt-8 mb-8">
             <button
               onClick={handleNewSession}
               className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
