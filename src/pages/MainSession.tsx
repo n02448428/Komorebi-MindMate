@@ -35,8 +35,8 @@ const MainSession: React.FC = () => {
   
   // Check if user has completed BOTH sessions today (only block if both are done)
   const hasCompletedBothToday = user ? (
-    hasCompletedTodaysSession('morning', sessionLimits.lastMorningSession) &&
-    hasCompletedTodaysSession('evening', sessionLimits.lastEveningSession)
+    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
+    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
   ) : false;
 
   // Check if session time has expired
