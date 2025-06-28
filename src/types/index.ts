@@ -40,6 +40,7 @@ export interface InsightCard {
   createdAt: Date;
   shared?: boolean;
   sceneType: NatureScene;
+  videoStillUrl?: string;
   imageUrl?: string;
 }
 

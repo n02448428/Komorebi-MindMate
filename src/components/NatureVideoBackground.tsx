@@ -1,6 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { NatureScene } from '../types';
 import { natureScenes, getSceneGradient } from '../utils/sceneUtils';
+
+export interface NatureVideoBackgroundRef {
+  captureFrame: () => string | null;
+}
 
 interface NatureVideoBackgroundProps {
   scene: NatureScene;
@@ -8,17 +12,54 @@ interface NatureVideoBackgroundProps {
   className?: string;
 }
 
-const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
+const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBackgroundProps>(({
   scene,
   timeOfDay,
   className = ''
-}) => {
+}, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
   const sceneData = natureScenes[scene];
   const gradientClass = getSceneGradient(scene, timeOfDay);
+
+  // Expose captureFrame method through ref
+  useImperativeHandle(ref, () => ({
+    captureFrame: (): string | null => {
+      if (!videoRef.current || !isLoaded || error) {
+        console.warn('Video not ready for frame capture');
+        return null;
+      }
+
+      try {
+        const video = videoRef.current;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          console.error('Failed to get canvas context');
+          return null;
+        }
+
+        // Set canvas dimensions to match video
+        canvas.width = video.videoWidth || 800;
+        canvas.height = video.videoHeight || 600;
+
+        // Draw current video frame to canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to data URL (JPEG for smaller file size)
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        console.log('Successfully captured video frame');
+        
+        return dataUrl;
+      } catch (error) {
+        console.error('Error capturing video frame:', error);
+        return null;
+      }
+    }
+  }));
 
   useEffect(() => {
     const video = videoRef.current;
@@ -153,6 +194,8 @@ const NatureVideoBackground: React.FC<NatureVideoBackgroundProps> = ({
       )}
     </div>
   );
-};
+});
+
+NatureVideoBackground.displayName = 'NatureVideoBackground';
 
 export default NatureVideoBackground;
