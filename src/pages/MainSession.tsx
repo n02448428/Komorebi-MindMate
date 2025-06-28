@@ -669,14 +669,14 @@ const MainSession: React.FC = () => {
                   animate="visible"
                   exit="hidden"
                   variants={controlsVariants}
-                  className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 max-w-[calc(100vw-120px)] overflow-x-auto ${
+                  className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
                     sessionType === 'morning' 
                       ? 'bg-white/20' 
                       : 'bg-white/10'
                   }`}
                 >
                   {/* Background Controls */}
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-2">
                     <button
                       onClick={toggleVideoBackground}
                       title={videoEnabled ? 'Hide video background' : 'Show video background'}
@@ -719,7 +719,7 @@ const MainSession: React.FC = () => {
                   </div>
 
                   {/* Separator */}
-                  <div className={`w-px h-6 flex-shrink-0 ${
+                  <div className={`w-px h-6 ${
                     sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
                   }`} />
 
@@ -727,7 +727,7 @@ const MainSession: React.FC = () => {
                   <button
                     onClick={handleNewSession}
                     title="Start fresh session"
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex-shrink-0 ${
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -737,7 +737,7 @@ const MainSession: React.FC = () => {
                   </button>
 
                   {/* Separator */}
-                  <div className={`w-px h-6 flex-shrink-0 ${
+                  <div className={`w-px h-6 ${
                     sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
                   }`} />
 
@@ -745,7 +745,7 @@ const MainSession: React.FC = () => {
                   {!user && (
                     <button
                       onClick={handleLogin}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer flex-shrink-0 ${
+                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
@@ -759,7 +759,7 @@ const MainSession: React.FC = () => {
                   {user && !user.isPro && (
                     <button
                       onClick={handleUpgrade}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer flex-shrink-0 ${
+                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                           : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
@@ -774,7 +774,7 @@ const MainSession: React.FC = () => {
                     <>
                       <button
                         onClick={handleInsights}
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex-shrink-0 ${
+                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
@@ -784,7 +784,7 @@ const MainSession: React.FC = () => {
                       </button>
                       <button
                         onClick={handleSettings}
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex-shrink-0 ${
+                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
@@ -799,7 +799,7 @@ const MainSession: React.FC = () => {
                 {/* Toggle Button */}
                 <button
                   onClick={() => setShowControls(!showControls)}
-                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] flex-shrink-0 ${
+                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
