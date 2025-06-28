@@ -221,7 +221,7 @@ const InsightsGallery: React.FC = () => {
         {selectedCard && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            className="max-w-xl w-full"
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-8"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}

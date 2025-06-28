@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles } from 'lucide-react';
+import { Share2, Download, Copy, Check, Sparkles, X } from 'lucide-react';
 import { natureScenes } from '../utils/sceneUtils';
 import html2canvas from 'html2canvas';
 
@@ -20,34 +20,58 @@ const InsightCard: React.FC<InsightCardProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [dragBounds, setDragBounds] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Motion values for mouse tracking
+  // Motion values for mouse tracking (only active when expanded)
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Transform mouse position to rotation values
+  // Transform mouse position to rotation values (only when expanded)
   const rotateX = useTransform(mouseY, [-150, 150], [15, -15]);
   const rotateY = useTransform(mouseX, [-150, 150], [-15, 15]);
 
-  // Holographic effect transforms
+  // Holographic effect transforms (only when expanded)
   const holographicX = useTransform(mouseX, [-150, 150], [0, 100]);
   const holographicY = useTransform(mouseY, [-150, 150], [0, 100]);
 
-  // Parallax effect transforms
+  // Parallax effect transforms (only when expanded)
   const parallaxX = useTransform(mouseX, [-150, 150], [-5, 5]);
   const parallaxY = useTransform(mouseY, [-150, 150], [-5, 5]);
 
+  // Subtle parallax for quote background (only when expanded)
+  const quoteParallaxX = useTransform(mouseX, [-150, 150], [-2, 2]);
+  const quoteParallaxY = useTransform(mouseY, [-150, 150], [-2, 2]);
+
   const sceneData = natureScenes[insight.sceneType];
-  
-  // Debug log for background image selection
-  console.log('InsightCard background selection:', {
-    insightId: insight.id,
-    hasVideoStill: !!insight.videoStillUrl,
-    videoStillLength: insight.videoStillUrl?.length,
-    thumbnailUrl: sceneData.thumbnailUrl,
-    selectedUrl: insight.videoStillUrl || sceneData.thumbnailUrl
-  });
+
+  // Calculate dynamic drag bounds and card scale based on viewport
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const updateBounds = () => {
+      const viewport = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+
+      // Calculate bounds to keep card visible with some margin
+      const margin = 50;
+      const cardWidth = 400; // Approximate card width when scaled
+      const cardHeight = 600; // Approximate card height when scaled
+
+      setDragBounds({
+        left: -(viewport.width / 2 - cardWidth / 2 - margin),
+        right: viewport.width / 2 - cardWidth / 2 - margin,
+        top: -(viewport.height / 2 - cardHeight / 2 - margin),
+        bottom: viewport.height / 2 - cardHeight / 2 - margin
+      });
+    };
+
+    updateBounds();
+    window.addEventListener('resize', updateBounds);
+    return () => window.removeEventListener('resize', updateBounds);
+  }, [isExpanded]);
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isExpanded || !cardRef.current) return;
@@ -108,6 +132,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
       const clone = element.cloneNode(true) as HTMLElement;
       clone.id = `insight-card-clone-${insight.id}`;
       
+      // Style the clone for optimal rendering
       clone.style.position = 'absolute';
       clone.style.left = '-9999px';
       clone.style.top = '-9999px';
@@ -116,8 +141,13 @@ const InsightCard: React.FC<InsightCardProps> = ({
       clone.style.transform = 'none';
       clone.style.zIndex = '-1';
       
-      document.body.appendChild(clone);
+      // Remove any motion transforms for clean capture
+      const motionElements = clone.querySelectorAll('[style*="transform"]');
+      motionElements.forEach(el => {
+        (el as HTMLElement).style.transform = 'none';
+      });
       
+      document.body.appendChild(clone);
       await new Promise(resolve => setTimeout(resolve, 200));
       
       const canvas = await html2canvas(clone, {
@@ -169,14 +199,42 @@ const InsightCard: React.FC<InsightCardProps> = ({
     }
   };
 
+  // Calculate responsive scale based on viewport size
+  const getResponsiveScale = () => {
+    if (!isExpanded) return 1;
+    
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+    
+    // Base scale for different screen sizes
+    if (viewport.width < 640) return 0.9; // Small mobile
+    if (viewport.width < 768) return 1.0; // Large mobile
+    if (viewport.width < 1024) return 1.1; // Tablet
+    return 1.2; // Desktop
+  };
+
   return (
     <div className={className}>
+      {/* Close button for expanded view */}
+      {isExpanded && onClose && (
+        <button
+          onClick={onClose}
+          className="fixed top-6 right-6 z-[110] p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-all duration-200"
+          aria-label="Close expanded view"
+        >
+          <X className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Trading Card */}
       <motion.div
         ref={cardRef}
         id={`insight-card-${insight.id}`}
         drag={isExpanded}
-        dragConstraints={{ left: -200, right: 200, top: -200, bottom: 200 }}
+        dragConstraints={isExpanded ? dragBounds : false}
+        dragElastic={0.1}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={isExpanded ? {
@@ -184,11 +242,14 @@ const InsightCard: React.FC<InsightCardProps> = ({
           rotateY,
           transformStyle: 'preserve-3d',
         } : {}}
-        className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
-          isExpanded ? 'z-50' : 'hover:scale-105 hover:shadow-2xl'
+        className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden transition-all duration-300 ${
+          isExpanded 
+            ? 'cursor-grab active:cursor-grabbing' 
+            : 'cursor-pointer hover:scale-105 hover:shadow-2xl'
         }`}
         whileHover={!isExpanded ? { scale: 1.05, rotateY: 5 } : {}}
-        animate={isExpanded ? { scale: 1.2 } : { scale: 1 }}
+        animate={isExpanded ? { scale: getResponsiveScale() } : { scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Background Image */}
         <div 
@@ -217,10 +278,14 @@ const InsightCard: React.FC<InsightCardProps> = ({
           />
         )}
 
-        {/* Content Container with Parallax */}
+        {/* Content Container with Conditional Parallax */}
         <motion.div 
           className="relative h-full flex flex-col justify-between p-6"
-          style={isExpanded ? { x: parallaxX, y: parallaxY } : {}}
+          style={isExpanded ? { 
+            x: parallaxX, 
+            y: parallaxY,
+            transformStyle: 'preserve-3d'
+          } : {}}
         >
           {/* Header */}
           <div className="text-center">
@@ -239,7 +304,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
           {/* Quote Section */}
           <div className="flex-1 flex items-center justify-center">
             <div className="relative max-w-full">
-              {/* Quote Background with deeper parallax */}
+              {/* Quote Background with Conditional Parallax */}
               <motion.div 
                 className={`absolute inset-0 rounded-2xl backdrop-blur-md border border-white/30 ${
                   insight.type === 'morning' 
@@ -247,8 +312,9 @@ const InsightCard: React.FC<InsightCardProps> = ({
                     : 'bg-white/50'
                 }`}
                 style={isExpanded ? { 
-                  x: useTransform(parallaxX, [0, 5], [0, 2]), 
-                  y: useTransform(parallaxY, [0, 5], [0, 2]) 
+                  x: quoteParallaxX, 
+                  y: quoteParallaxY,
+                  transformStyle: 'preserve-3d'
                 } : {}}
               />
               
@@ -277,15 +343,26 @@ const InsightCard: React.FC<InsightCardProps> = ({
           </div>
         </motion.div>
 
-        {/* Shine Effect */}
+        {/* Shine Effect (enhanced when expanded) */}
         <div 
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-40 pointer-events-none"
+          className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent pointer-events-none ${
+            isExpanded ? 'opacity-60' : 'opacity-40'
+          }`}
           style={{
             background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
             transform: isExpanded ? 'translateX(100%)' : 'translateX(-100%)',
             transition: 'transform 2s ease-in-out',
           }}
         />
+
+        {/* Premium border glow effect when expanded */}
+        {isExpanded && (
+          <div className={`absolute inset-0 rounded-2xl pointer-events-none ${
+            insight.type === 'morning'
+              ? 'shadow-[0_0_30px_rgba(245,158,11,0.3)]'
+              : 'shadow-[0_0_30px_rgba(147,51,234,0.3)]'
+          }`} />
+        )}
       </motion.div>
 
       {/* Action Buttons (only shown when not expanded) */}
