@@ -81,7 +81,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
     return () => window.removeEventListener('resize', updateBounds);
   }, [isExpanded]);
 
-      
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isExpanded || !cardRef.current) return;
 
@@ -245,6 +244,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
           rotateY: 5,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         } : {}}
+        animate={isExpanded ? { scale: getResponsiveScale() } : { scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Background Image */}
