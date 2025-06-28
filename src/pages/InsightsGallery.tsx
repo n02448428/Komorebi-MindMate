@@ -171,16 +171,25 @@ const InsightsGallery: React.FC = () => {
           {filteredInsights.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredInsights.map((insight) => (
-                <motion.div 
-                  key={insight.id} 
-                  layoutId={`card-${insight.id}`}
-                  className="animate-fade-in cursor-pointer"
-                  onClick={() => setSelectedCard(insight)}
-                  whileHover={{ y: -4 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                >
-                  <InsightCard insight={insight} />
-                </motion.div>
+                selectedCard?.id === insight.id ? (
+                  // Placeholder to maintain grid layout when card is expanded
+                  <div 
+                    key={`placeholder-${insight.id}`}
+                    className="aspect-[2/3] rounded-2xl opacity-0"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <motion.div 
+                    key={insight.id} 
+                    layoutId={`card-${insight.id}`}
+                    className="animate-fade-in cursor-pointer"
+                    onClick={() => setSelectedCard(insight)}
+                    whileHover={{ y: -4 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <InsightCard insight={insight} />
+                  </motion.div>
+                )
               ))}
             </div>
           ) : (
