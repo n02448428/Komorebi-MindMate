@@ -45,52 +45,35 @@ const InsightCard: React.FC<InsightCardProps> = ({
 
   const sceneData = natureScenes[insight.sceneType];
 
-  // Calculate responsive scale based on viewport size
-  const getResponsiveScale = () => {
-    if (!isExpanded) return 1;
-    
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
-    
-    // Calculate scale to fit within 90% of viewport while maintaining aspect ratio
-    const cardAspectRatio = 2/3; // width/height
-    const maxWidth = viewport.width * 0.9;
-    const maxHeight = viewport.height * 0.9;
-    
-    // Calculate scale based on which constraint is more limiting
-    const scaleByWidth = maxWidth / 400; // 400px is base card width
-    const scaleByHeight = maxHeight / 600; // 600px is base card height
-    
-    const scale = Math.min(scaleByWidth, scaleByHeight, 1.5); // Cap at 1.5x
-    
-    return Math.max(scale, 0.8); // Minimum scale of 0.8
-  };
-
   // Calculate dynamic drag bounds based on viewport and card scale
   useEffect(() => {
     if (!isExpanded) return;
 
     const updateBounds = () => {
+      if (!cardRef.current) return;
+      
       const viewport = {
         width: window.innerWidth,
         height: window.innerHeight
       };
 
-      const scale = getResponsiveScale();
-      const cardWidth = 400 * scale;
-      const cardHeight = 600 * scale;
-      
-      // Calculate bounds to keep card visible with some margin
-      const margin = 50;
+      // Use actual rendered dimensions after a short timeout to ensure layout is complete
+      setTimeout(() => {
+        if (!cardRef.current) return;
+        
+        const cardWidth = cardRef.current.offsetWidth;
+        const cardHeight = cardRef.current.offsetHeight;
+        
+        // Calculate bounds to keep card visible with some margin
+        const margin = 50;
 
-      setDragBounds({
-        left: -(viewport.width / 2 - cardWidth / 2 - margin),
-        right: viewport.width / 2 - cardWidth / 2 - margin,
-        top: -(viewport.height / 2 - cardHeight / 2 - margin),
-        bottom: viewport.height / 2 - cardHeight / 2 - margin
-      });
+        setDragBounds({
+          left: -(viewport.width / 2 - cardWidth / 2 - margin),
+          right: viewport.width / 2 - cardWidth / 2 - margin,
+          top: -(viewport.height / 2 - cardHeight / 2 - margin),
+          bottom: viewport.height / 2 - cardHeight / 2 - margin
+        });
+      }, 100);
     };
 
     updateBounds();
@@ -98,6 +81,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
     return () => window.removeEventListener('resize', updateBounds);
   }, [isExpanded]);
 
+      
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isExpanded || !cardRef.current) return;
 
@@ -261,7 +245,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
           rotateY: 5,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         } : {}}
-        animate={isExpanded ? { scale: getResponsiveScale() } : { scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         {/* Background Image */}
