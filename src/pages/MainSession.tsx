@@ -636,28 +636,29 @@ const MainSession: React.FC = () => {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         {/* Title */}
-        <motion.div
-          animate={{
-            opacity: showControls ? 0.3 : 1,
-          }}
-          transition={{ duration: 0.3 }}
-          className={`transition-all duration-300 ${
-            showControls ? 'pointer-events-none' : ''
-          }`}
-        >
-          <div className={`text-2xl font-bold ${
-            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-          }`}>
-            Komorebi
-          </div>
-          {videoEnabled && (
-            <div className={`text-sm font-medium mt-0.5 ${
-              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-            }`}>
-              {getSceneDisplayName(currentScene)}
-            </div>
+        <AnimatePresence>
+          {!showControls && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className={`text-2xl font-bold ${
+                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Komorebi
+              </div>
+              {videoEnabled && (
+                <div className={`text-sm font-medium mt-0.5 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  {getSceneDisplayName(currentScene)}
+                </div>
+              )}
+            </motion.div>
           )}
-        </motion.div>
+        </AnimatePresence>
 
         {/* Controls Container */}
         <div className="flex items-center gap-3">
@@ -675,7 +676,7 @@ const MainSession: React.FC = () => {
               animate={{ rotate: showControls ? 180 : 0 }}
               transition={{ duration: 0.3 }}
             >
-              {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {showControls ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </motion.div>
           </button>
 
@@ -818,129 +819,141 @@ const MainSession: React.FC = () => {
         </div>
       </div>
 
-      {/* Scene Indicator - becomes less opaque in immersive mode */}
-      {videoEnabled && (
-        <motion.div
-          animate={{
-            opacity: showControls ? 0.3 : 1,
-          }}
-          transition={{ duration: 0.3 }}
-          className={`absolute bottom-6 left-6 z-50 transition-all duration-300 ${
-            showControls ? 'pointer-events-none' : ''
-          }`}
-        >
-          <div className={`px-4 py-2 rounded-2xl backdrop-blur-sm border border-white/20 ${
-            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className={`text-sm font-medium ${
-              sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-            }`}>
-              {getSceneDisplayName(currentScene)}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {/* Main Content */}
       <div className="relative z-10 pt-28 pb-8 px-6 min-h-[calc(100vh-100px)]">
         <div className="w-full">
           {/* Session Type Display */}
-          <div className="text-center mb-6">
-            <div className={`text-sm font-medium mb-1 ${
-              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-            }`}>
-              Komorebi
-            </div>
-            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
-              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <Sparkles className={`w-5 h-5 ${
-                sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
-              }`} />
-              <span className={`text-lg font-semibold ${
-                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-              </span>
-            </div>
-          </div>
+          <AnimatePresence>
+            {!showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="text-center mb-6"
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Komorebi
+                </div>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <Sparkles className={`w-5 h-5 ${
+                    sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+                  }`} />
+                  <span className={`text-lg font-semibold ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             timeOfDay={sessionType}
+            isImmersive={showControls}
             messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Insight Generation Button */}
-          {showGenerateInsightButton && (
-            <div className="mt-6 text-center animate-fade-in">
-              <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
-                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-              }`}>
-                <p className={`text-sm mb-3 ${
-                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+          <AnimatePresence>
+            {showGenerateInsightButton && !showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 text-center animate-fade-in"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
                 }`}>
-                  You've shared 5 messages! Ready to capture an insight from our conversation?
-                </p>
-                <button
-                  onClick={handleGenerateInsightClick}
-                  disabled={isGeneratingInsight}
-                  className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
-                    sessionType === 'morning'
-                      ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
-                </button>
-              </div>
-            </div>
-          )}
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                  </p>
+                  <button
+                    onClick={handleGenerateInsightClick}
+                    disabled={isGeneratingInsight}
+                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Display Latest Insight Card */}
-          {insightCard && (
-            <div className="mt-8 animate-fade-in">
-              <div className="text-center mb-6">
-                <h2 className={`text-2xl font-semibold mb-2 ${
-                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-                </h2>
-                <p className={`text-sm ${
-                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  A reflection from our conversation
-                </p>
-              </div>
-              <div className="max-w-lg mx-auto">
-                <InsightCard insight={insightCard} />
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {insightCard && !showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-8 animate-fade-in"
+              >
+                <div className="text-center mb-6">
+                  <h2 className={`text-2xl font-semibold mb-2 ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </h2>
+                  <p className={`text-sm ${
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    A reflection from our conversation
+                  </p>
+                </div>
+                <div className="max-w-lg mx-auto">
+                  <InsightCard insight={insightCard} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* Login prompt for non-logged in users */}
-          {!user && messages.length > 1 && ( // Show after greeting + at least one user message
-            <div className="mt-6 text-center">
-              <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
-                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-              }`}>
-                <p className={`text-sm mb-3 ${
-                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+          <AnimatePresence>
+            {!user && messages.length > 1 && !showControls && ( // Show after greeting + at least one user message
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 text-center"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
                 }`}>
-                  Sign in to save your insights and track your progress
-                </p>
-                <button
-                  onClick={handleLogin}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
-                >
-                  Sign In to Save
-                </button>
-              </div>
-            </div>
-          )}
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    Sign in to save your insights and track your progress
+                  </p>
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Sign In to Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

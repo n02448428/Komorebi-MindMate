@@ -11,6 +11,7 @@ interface ChatInterfaceProps {
   placeholder?: string;
   disabled?: boolean;
   timeOfDay: 'morning' | 'evening';
+  isImmersive?: boolean;
   messagesRemaining?: number;
 }
 
@@ -21,6 +22,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   placeholder = "Share what's on your mind...",
   disabled = false,
   timeOfDay,
+  isImmersive = false,
   messagesRemaining
 }) => {
   const [inputValue, setInputValue] = useState('');
@@ -71,9 +73,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh] w-full max-w-full sm:max-w-xl md:max-w-3xl mx-auto">
+    <div className={`flex flex-col h-full w-full mx-auto ${
+      isImmersive 
+        ? 'max-h-[100vh] max-w-full' 
+        : 'max-h-[85vh] max-w-full sm:max-w-xl md:max-w-3xl'
+    }`}>
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 min-h-[50vh] sm:min-h-[400px] backdrop-blur-md bg-white/10 rounded-t-3xl border border-white/20">
+      <div className={`flex-1 overflow-y-auto space-y-4 md:space-y-6 backdrop-blur-md bg-white/10 border border-white/20 ${
+        isImmersive 
+          ? 'p-6 min-h-[70vh] rounded-3xl' 
+          : 'p-4 md:p-6 min-h-[50vh] sm:min-h-[400px] rounded-t-3xl'
+      }`}>
         {messages.map((message, index) => (
           <div 
             key={message.id} 
@@ -90,7 +100,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="backdrop-blur-md bg-white/10 rounded-b-3xl border-x border-b border-white/20 p-4">
+      <div className={`backdrop-blur-md bg-white/10 border border-white/20 p-4 ${
+        isImmersive ? 'rounded-3xl mt-4' : 'rounded-b-3xl border-x border-b'
+      }`}>
         {messagesRemaining !== undefined && messagesRemaining <= 2 && (
           <div className={`text-xs text-center mb-3 ${
             timeOfDay === 'morning' ? 'text-amber-700' : 'text-amber-300'
@@ -148,11 +160,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </form>
         
         {/* Helpful hints */}
-        <div className={`text-xs mt-2 text-center ${
-          timeOfDay === 'morning' ? 'text-gray-600' : 'text-gray-400'
-        } opacity-70`}>
-          Press Enter to send • Shift+Enter for new line
-        </div>
+        {!isImmersive && (
+          <div className={`text-xs mt-2 text-center ${
+            timeOfDay === 'morning' ? 'text-gray-600' : 'text-gray-400'
+          } opacity-70`}>
+            Press Enter to send • Shift+Enter for new line
+          </div>
+        )}
       </div>
     </div>
   );
