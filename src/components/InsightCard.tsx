@@ -39,6 +39,15 @@ const InsightCard: React.FC<InsightCardProps> = ({
   const parallaxY = useTransform(mouseY, [-150, 150], [-5, 5]);
 
   const sceneData = natureScenes[insight.sceneType];
+  
+  // Debug log for background image selection
+  console.log('InsightCard background selection:', {
+    insightId: insight.id,
+    hasVideoStill: !!insight.videoStillUrl,
+    videoStillLength: insight.videoStillUrl?.length,
+    thumbnailUrl: sceneData.thumbnailUrl,
+    selectedUrl: insight.videoStillUrl || sceneData.thumbnailUrl
+  });
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!isExpanded || !cardRef.current) return;

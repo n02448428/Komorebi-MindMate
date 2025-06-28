@@ -27,13 +27,26 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
   // Expose captureFrame method through ref
   useImperativeHandle(ref, () => ({
     captureFrame: (): string | null => {
-      if (!videoRef.current || !isLoaded || error) {
-        console.warn('Video not ready for frame capture');
+      const video = videoRef.current;
+      
+      if (!video || error) {
+        console.warn('Video not available for frame capture:', { 
+          hasVideo: !!video, 
+          hasError: error 
+        });
+        return null;
+      }
+      
+      if (!isLoaded || video.readyState < 2) {
+        console.warn('Video not ready for frame capture:', { 
+          isLoaded, 
+          readyState: video.readyState,
+          currentTime: video.currentTime 
+        });
         return null;
       }
 
       try {
-        const video = videoRef.current;
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
@@ -43,15 +56,31 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
         }
 
         // Set canvas dimensions to match video
-        canvas.width = video.videoWidth || 800;
-        canvas.height = video.videoHeight || 600;
+        const width = video.videoWidth || 800;
+        const height = video.videoHeight || 600;
+        
+        canvas.width = width;
+        canvas.height = height;
 
         // Draw current video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, width, height);
 
+        // Verify the canvas has content
+        const imageData = ctx.getImageData(0, 0, Math.min(10, width), Math.min(10, height));
+        const hasContent = imageData.data.some(pixel => pixel !== 0);
+        
+        if (!hasContent) {
+          console.warn('Captured frame appears to be empty');
+        }
+        
         // Convert to data URL (JPEG for smaller file size)
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('Successfully captured video frame');
+        console.log('Successfully captured video frame:', { 
+          width, 
+          height, 
+          dataUrlLength: dataUrl.length,
+          hasContent 
+        });
         
         return dataUrl;
       } catch (error) {
