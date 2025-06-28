@@ -35,14 +35,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
   const holographicX = useTransform(mouseX, [-150, 150], [0, 100]);
   const holographicY = useTransform(mouseY, [-150, 150], [0, 100]);
 
-  // Parallax effect transforms (only when expanded)
-  const parallaxX = useTransform(mouseX, [-150, 150], [-5, 5]);
-  const parallaxY = useTransform(mouseY, [-150, 150], [-5, 5]);
-
-  // Subtle parallax for quote background (only when expanded)
-  const quoteParallaxX = useTransform(mouseX, [-150, 150], [-2, 2]);
-  const quoteParallaxY = useTransform(mouseY, [-150, 150], [-2, 2]);
-
   // Calculate responsive scale for expanded view
   const getResponsiveScale = () => {
     if (!isExpanded) return 1;
