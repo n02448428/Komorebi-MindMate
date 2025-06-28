@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
-import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
@@ -10,6 +9,7 @@ import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/N
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
+import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -445,7 +445,7 @@ const MainSession: React.FC = () => {
           <div className="flex gap-3">
             <button
               onClick={handleInsights}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
@@ -455,7 +455,7 @@ const MainSession: React.FC = () => {
             </button>
             <button
               onClick={handleSettings}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
@@ -506,7 +506,7 @@ const MainSession: React.FC = () => {
               <>
                 <button
                   onClick={handleInsights}
-                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -516,7 +516,7 @@ const MainSession: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSettings}
-                  className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -626,120 +626,119 @@ const MainSession: React.FC = () => {
             </div>
           )}
         </div>
-        
-        <div className="flex items-center gap-2">
-          {/* Mobile Toggle Button */}
+        <div className="flex gap-3">
+          {/* Toggle Controls Button (mobile only) */}
           <button
             onClick={() => setShowControls(!showControls)}
-            className={`md:hidden p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+            className={`md:hidden p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
               sessionType === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                 : 'bg-white/10 hover:bg-white/20 text-white'
             }`}
-            aria-label={showControls ? 'Hide controls' : 'Show controls'}
+            title={showControls ? 'Hide controls' : 'Show controls'}
           >
             {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
 
           {/* Controls Container */}
-          <div className={`${showControls ? 'flex' : 'hidden'} md:flex items-center gap-2 ${
-            showControls ? 'absolute right-6 top-16 p-3 rounded-2xl backdrop-blur-md border border-white/20' : ''
-          } ${
-            showControls ? (sessionType === 'morning' ? 'bg-white/30' : 'bg-black/30') : ''
-          } overflow-x-auto flex-shrink-0`}>
-            
+          <div className={`flex items-center gap-2 md:gap-3 overflow-x-auto ${
+            showControls ? 'flex' : 'hidden'
+          } md:flex ${
+            showControls && sessionType === 'morning' ? 'backdrop-blur-sm bg-white/10 rounded-2xl p-2' :
+            showControls && sessionType === 'evening' ? 'backdrop-blur-sm bg-black/10 rounded-2xl p-2' : ''
+          }`}>
             {/* Background Controls */}
-            <div className="flex gap-1 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0">
               <button
                 onClick={toggleVideoBackground}
                 title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                   sessionType === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                     : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}
               >
-                {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {videoEnabled ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
               
               {videoEnabled && (
                 <>
                   <button
                     onClick={handleNextScene}
-                    title={`Next scene`}
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    title={`Next scene (${getSceneDisplayName(currentScene)})`}
+                    className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <SkipForward className="w-4 h-4" />
+                    <SkipForward className="w-5 h-5" />
                   </button>
                   
                   <button
                     onClick={handleRandomScene}
                     title="Random scene"
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <Shuffle className="w-4 h-4" />
+                    <Shuffle className="w-5 h-5" />
                   </button>
                 </>
               )}
             </div>
 
             {/* User Controls */}
-            <div className="flex gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               {!user && (
                 <button
                   onClick={handleLogin}
-                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer text-xs ${
+                  className={`px-3 py-1 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
                   }`}
                 >
-                  <LogIn className="w-3 h-3" />
-                  <span className="font-medium whitespace-nowrap">Sign In</span>
+                  <LogIn className="w-4 h-4" />
+                  <span className="text-sm font-medium">Sign In</span>
                 </button>
               )}
               {user && !user.isPro && (
                 <button
                   onClick={handleUpgrade}
-                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer text-xs ${
+                  className={`px-3 py-1 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                       : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
                   }`}
                 >
-                  <Crown className="w-3 h-3" />
-                  <span className="font-medium whitespace-nowrap">Pro</span>
+                  <Crown className="w-4 h-4" />
+                  <span className="text-sm font-medium">Pro</span>
                 </button>
               )}
               {user && (
                 <>
                   <button
                     onClick={handleInsights}
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <User className="w-4 h-4" />
+                    <User className="w-5 h-5" />
                   </button>
                   <button
                     onClick={handleSettings}
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-5 h-5" />
                   </button>
                 </>
               )}
@@ -767,7 +766,7 @@ const MainSession: React.FC = () => {
               <span className={`text-lg font-semibold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                Morning Intention
+                {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
               </span>
             </div>
           </div>
