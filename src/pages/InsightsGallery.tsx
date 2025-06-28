@@ -230,8 +230,9 @@ const InsightsGallery: React.FC = () => {
         {selectedCard && (
           <motion.div
             initial={{ opacity: 0 }}
-            className="max-w-xl w-full"
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-8"
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
             onClick={(e) => {
@@ -242,8 +243,9 @@ const InsightsGallery: React.FC = () => {
           >
             <motion.div
               layoutId={`card-${selectedCard.id}`}
-              className="max-w-lg w-full"
+              className="max-w-lg w-full relative"
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={false}
             >
               <InsightCard 
                 insight={selectedCard} 
