@@ -310,7 +310,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
             }`}>
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">
-                {insight.type === 'morning' ? 'Morning Insight' : 'Evening Reflection'}
+                Morning Intention
               </span>
             </div>
           </div>
@@ -347,9 +347,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
                 year: 'numeric'
               })}
             </div>
-            <div className={`text-xs mt-1 opacity-70 ${
-              insight.type === 'morning' ? 'text-amber-600' : 'text-purple-600'
-            }`}>
+            <div className="text-xs mt-1 text-white font-medium">
               {sceneData.name}
             </div>
           </div>

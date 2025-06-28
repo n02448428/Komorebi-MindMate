@@ -728,6 +728,11 @@ const MainSession: React.FC = () => {
         <div className="w-full">
           {/* Session Type Display */}
           <div className="text-center mb-6">
+            <div className={`text-sm font-medium mb-1 ${
+              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              Komorebi
+            </div>
             <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
               sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
@@ -737,7 +742,7 @@ const MainSession: React.FC = () => {
               <span className={`text-lg font-semibold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {sessionType === 'morning' ? 'Morning Intentions' : 'Evening Reflections'}
+                Morning Intention
               </span>
             </div>
           </div>
@@ -784,7 +789,7 @@ const MainSession: React.FC = () => {
                 <h2 className={`text-2xl font-semibold mb-2 ${
                   sessionType === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
-                  Your Latest Insight
+                  Your Morning Intention
                 </h2>
                 <p className={`text-sm ${
                   sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'

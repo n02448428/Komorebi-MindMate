@@ -71,7 +71,7 @@ const InsightsGallery: React.FC = () => {
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
-          Your Insights
+          Your Morning Intentions
         </div>
         
         <div className="w-11" /> {/* Spacer */}
@@ -114,7 +114,7 @@ const InsightsGallery: React.FC = () => {
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Morning Insights
+                Morning Intentions
               </div>
             </div>
 
@@ -132,7 +132,7 @@ const InsightsGallery: React.FC = () => {
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Evening Reflections
+                Morning Intentions
               </div>
             </div>
           </div>
@@ -160,7 +160,7 @@ const InsightsGallery: React.FC = () => {
                             : 'bg-white/10 hover:bg-white/20 text-gray-300')
                     } backdrop-blur-sm`}
                   >
-                    {filterType}
+                    {filterType === 'all' ? 'all' : 'Morning Intention'}
                   </button>
                 ))}
               </div>
@@ -203,12 +203,12 @@ const InsightsGallery: React.FC = () => {
               <h3 className={`text-xl font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {filter === 'all' ? 'No insights yet' : `No ${filter} insights yet`}
+                {filter === 'all' ? 'No intentions yet' : 'No morning intentions yet'}
               </h3>
               <p className={`mb-6 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Complete your first session to see insights here.
+                Complete your first session to see intentions here.
               </p>
               <button
                 onClick={handleBack}
