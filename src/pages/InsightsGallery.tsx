@@ -230,13 +230,7 @@ const InsightsGallery: React.FC = () => {
         {selectedCard && (
           <motion.div
             initial={{ opacity: 0 }}
-            className="relative"
-            style={{
-              width: '400px',
-              height: '600px',
-              maxWidth: '90vw',
-              maxHeight: '90vh',
-            }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-8"
