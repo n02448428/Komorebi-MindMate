@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ChatInterface from '../components/ChatInterface';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeBasedGreeting, getSessionType } from '../utils/timeUtils';
-import { getSceneForTime } from '../utils/sceneUtils';
+import { getSceneForSession } from '../utils/sceneUtils';
 
 const MainSession: React.FC = () => {
   const { user } = useAuth();
@@ -24,7 +24,7 @@ const MainSession: React.FC = () => {
     // Navigate to settings
   };
 
-  const scene = getSceneForTime();
+  const scene = getSceneForSession(sessionType);
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
