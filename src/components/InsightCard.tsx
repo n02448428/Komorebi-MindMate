@@ -306,6 +306,9 @@ const InsightCard: React.FC<InsightCardProps> = ({
             <div className="text-xs font-medium mb-2 text-white/80">
               Komorebi
             </div>
+            <div className="text-xs font-medium mb-3 text-white/70">
+              {sceneData.name}
+            </div>
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
               insight.type === 'morning' 
                 ? 'bg-amber-500/20 text-amber-800' 
@@ -347,9 +350,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
                 day: 'numeric',
                 year: 'numeric'
               })}
-            </div>
-            <div className="text-xs mt-1 text-white font-medium">
-              {sceneData.name}
             </div>
           </div>
         </div>
