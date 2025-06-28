@@ -23,9 +23,9 @@ const ProUpgrade: React.FC = () => {
       period: 'month',
       features: [
         'Unlimited daily sessions',
-        'Advanced AI intentions & personalized guidance',
+        'Advanced AI insights & personalized guidance',
         'All nature scenes unlocked',
-        'Permanent intention history',
+        'Permanent insight history',
         'Custom session themes',
         'Priority support',
       ],
@@ -50,9 +50,9 @@ const ProUpgrade: React.FC = () => {
   ];
 
   const freeFeatures = [
-    'Daily intention sessions',
+    '1 morning + 1 evening session daily',
     '4 AI responses per session',
-    '7-day intention history',
+    '7-day insight history',
     'Basic nature scenes',
   ];
 
@@ -67,7 +67,7 @@ const ProUpgrade: React.FC = () => {
       const result = await subscriptionService.createSubscription(user.id, planId);
       
       if (result.success) {
-        alert('Welcome to Komorebi Pro! 🎉 Enjoy unlimited sessions and deeper intentions.');
+        alert('Welcome to Komorebi Pro! 🎉 Enjoy unlimited sessions and deeper insights.');
         navigate('/');
       } else {
         throw new Error('Subscription failed');
@@ -134,7 +134,7 @@ const ProUpgrade: React.FC = () => {
             <p className={`text-xl ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
             }`}>
-              Experience unlimited conversations and deeper intentions with Komorebi Pro
+              Experience unlimited conversations and deeper insights with Komorebi Pro
             </p>
           </div>
 
@@ -280,7 +280,7 @@ const ProUpgrade: React.FC = () => {
                 <p className={`text-sm ${
                   timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                 }`}>
-                  Set intentions as often as you need without daily limits. Your mental wellness shouldn't have boundaries.
+                  Reflect as often as you need without daily limits. Your mental wellness shouldn't have boundaries.
                 </p>
               </div>
 
@@ -300,7 +300,7 @@ const ProUpgrade: React.FC = () => {
                 <p className={`text-sm ${
                   timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                 }`}>
-                  Advanced AI analysis provides more nuanced and personalized intention guidance for your growth journey.
+                  Advanced AI analysis provides more nuanced and personalized guidance for your growth journey.
                 </p>
               </div>
 

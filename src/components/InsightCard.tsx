@@ -316,7 +316,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
             }`}>
               <Sparkles className="w-4 h-4" />
               <span className="text-sm font-medium">
-                Morning Intention
+                {insight.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
               </span>
             </div>
           </div>
