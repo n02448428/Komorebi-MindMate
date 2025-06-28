@@ -43,6 +43,31 @@ const InsightCard: React.FC<InsightCardProps> = ({
   const quoteParallaxX = useTransform(mouseX, [-150, 150], [-2, 2]);
   const quoteParallaxY = useTransform(mouseY, [-150, 150], [-2, 2]);
 
+  // Calculate responsive scale for expanded view
+  const getResponsiveScale = () => {
+    if (!isExpanded) return 1;
+    
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Base card dimensions (aspect ratio 2:3)
+    const baseWidth = 400;
+    const baseHeight = 600;
+    
+    // Calculate scale to fit viewport with margins
+    const marginX = 100; // Horizontal margin
+    const marginY = 100; // Vertical margin
+    
+    const scaleX = (viewportWidth - marginX) / baseWidth;
+    const scaleY = (viewportHeight - marginY) / baseHeight;
+    
+    // Use the smaller scale to ensure the card fits completely
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Clamp between reasonable bounds
+    return Math.min(Math.max(scale, 0.8), 2.0);
+  };
+
   const sceneData = natureScenes[insight.sceneType];
 
   // Calculate dynamic drag bounds based on viewport and card scale
