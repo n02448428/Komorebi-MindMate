@@ -1,49 +1,100 @@
-Here's the fixed version with added missing brackets and components. I'll add the missing imports and closing brackets:
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './pages/LandingPage';
+import MainSession from './pages/MainSession';
+import InsightsGallery from './pages/InsightsGallery';
+import ChatArchive from './pages/ChatArchive';
+import ProUpgrade from './pages/ProUpgrade';
+import Settings from './pages/Settings';
+import AllInsights from './pages/AllInsights';
 
-At the top, add these missing imports:
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+  
+  return user ? <>{children}</> : <Navigate to="/" replace />;
+}
 
-```javascript
-import { Settings, Crown, LogIn, ChevronLeft, ChevronRight, RefreshCw, User } from 'lucide-react';
-```
+function AppRoutes() {
+  const { user } = useAuth();
 
-And here's the missing section that should go between the Header comment and the Main Content section:
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={user ? <Navigate to="/session" replace /> : <LandingPage />} 
+      />
+      <Route
+        path="/session"
+        element={
+          <ProtectedRoute>
+            <MainSession />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/insights"
+        element={
+          <ProtectedRoute>
+            <InsightsGallery />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/all-insights"
+        element={
+          <ProtectedRoute>
+            <AllInsights />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/archive"
+        element={
+          <ProtectedRoute>
+            <ChatArchive />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/upgrade"
+        element={
+          <ProtectedRoute>
+            <ProUpgrade />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
-```javascript
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
-        <div className="flex items-center justify-end gap-2">
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2"
-              >
-                {/* Scene Controls */}
-                <button
-                  onClick={handleNextScene}
-                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <span className="text-xs font-medium">
-                    {getSceneDisplayName(currentScene)}
-                  </span>
-                </button>
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <AppRoutes />
+        </div>
+      </Router>
+    </AuthProvider>
+  );
+}
 
-                <button
-```
-
-The file should end with these closing brackets:
-
-```javascript
-};
-
-export default MainSession;
-```
-
-These additions complete the component structure and add the missing UI elements for the header section. The component now has proper closure of all brackets and includes all necessary imports.
+export default App;
