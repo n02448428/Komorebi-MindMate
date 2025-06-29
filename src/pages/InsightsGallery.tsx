@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Play, ArrowRight, Star, MessageCircle, Calendar, Crown, Archive } from 'lucide-react';
+import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import UniversalMenu from '../components/UniversalMenu';
+import { Star, MessageCircle, Calendar, Sparkles, Crown, Archive } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
 
@@ -39,13 +40,13 @@ const LandingPage: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
-        {showLogin ? (
-          /* Login Content */
-          <div className="w-full max-w-4xl mx-auto text-center">
-            <div className="mb-12">
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
-                Komorebi
-              </h1>
+          </button>
+        )}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+        <UniversalMenu />
               <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
                 Experience the gentle art of self-discovery through conversations with AI, 
                 surrounded by the calming beauty of nature.
