@@ -6,7 +6,7 @@ import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 
 const ChatArchive: React.FC = () => {
   const navigate = useNavigate();
@@ -24,7 +24,10 @@ const ChatArchive: React.FC = () => {
     const savedSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
     const parsedSessions = savedSessions.map((session: any) => ({
       ...session,
-      createdAt: new Date(session.createdAt),
+      createdAt: (() => {
+        const date = new Date(session.createdAt);
+        return isValid(date) ? date : new Date();
+      })(),
     }));
     
     // Sort by date (newest first)
