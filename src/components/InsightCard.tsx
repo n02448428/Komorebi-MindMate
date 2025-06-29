@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles, X, Pin } from 'lucide-react';
+import { Share2, Download, Copy, Check, Sparkles, X, Star } from 'lucide-react';
 import { natureScenes } from '../utils/sceneUtils';
 import html2canvas from 'html2canvas';
 
@@ -370,26 +370,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
       {/* Action Buttons (only shown when not expanded) */}
       {!isExpanded && (
         <div className="flex justify-center gap-3 mt-6">
-          {/* Pin Button */}
-          {onTogglePin && (
-            <button
-              onClick={() => onTogglePin(insight.id)}
-              className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30 ${
-                insight.isPinned
-                  ? (insight.type === 'morning'
-                      ? 'bg-amber-500/30 text-amber-700 border-amber-400/50'
-                      : 'bg-purple-500/30 text-purple-300 border-purple-400/50')
-                  : (insight.type === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white')
-              }`}
-              title={insight.isPinned ? 'Unpin from favorites' : 'Pin as favorite'}
-              aria-label={insight.isPinned ? 'Unpin from favorites' : 'Pin as favorite'}
-            >
-              <Pin className={`w-5 h-5 ${insight.isPinned ? 'fill-current' : ''}`} />
-            </button>
-          )}
-          
+          {/* Star Button */}
           {onTogglePin && (
             <button
               onClick={() => onTogglePin(insight.id)}
@@ -402,10 +383,10 @@ const InsightCard: React.FC<InsightCardProps> = ({
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white')
               }`}
-              title={insight.isPinned ? 'Unpin from favorites' : 'Pin as favorite'}
-              aria-label={insight.isPinned ? 'Unpin from favorites' : 'Pin as favorite'}
+              title={insight.isPinned ? 'Remove from favorites' : 'Add to favorites'}
+              aria-label={insight.isPinned ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Pin className={`w-5 h-5 ${insight.isPinned ? 'fill-current' : ''}`} />
+              <Star className={`w-5 h-5 ${insight.isPinned ? 'fill-current' : ''}`} />
             </button>
           )}
           
