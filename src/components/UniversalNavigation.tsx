@@ -4,23 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Home, 
-  User, 
-  Settings, 
-  Crown, 
-  LogIn, 
-  Eye, 
-  EyeOff, 
-  SkipForward, 
-  Shuffle, 
-  RefreshCw,
-  Archive,
-  Sparkles,
-  Gallery
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, User, Settings, Crown, LogIn, Eye, EyeOff, SkipForward, Shuffle, RefreshCw, Archive, Sparkles, GalleryVertical as Gallery } from 'lucide-react';
 
 interface UniversalNavigationProps {
   // Video background controls (for MainSession)
