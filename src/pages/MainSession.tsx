@@ -25,7 +25,7 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -683,14 +683,14 @@ const MainSession: React.FC = () => {
                 animate="visible"
                 exit="hidden"
                 variants={controlsVariants}
-                className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                className={`flex flex-col sm:flex-row items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
                   sessionType === 'morning' 
                     ? 'bg-white/20' 
                     : 'bg-white/10'
                 }`}
               >
                 {/* Background Controls */}
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 sm:flex gap-2">
                   <button
                     onClick={toggleVideoBackground}
                     title={videoEnabled ? 'Hide video background' : 'Show video background'}
@@ -733,59 +733,61 @@ const MainSession: React.FC = () => {
                 </div>
 
                 {/* Separator */}
-                <div className={`w-px h-6 ${
+                <div className={`w-full h-px sm:w-px sm:h-6 ${
                   sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
                 }`} />
 
                 {/* Session Controls */}
-                <button
-                  onClick={handleNewSession}
-                  title="Start fresh session"
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-
-                {/* Separator */}
-                <div className={`w-px h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
-
-                {/* User Controls */}
-                {!user && (
+                <div className="grid grid-cols-2 sm:flex gap-2">
                   <button
-                    onClick={handleLogin}
-                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                    onClick={handleNewSession}
+                    title="Start fresh session"
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <LogIn className="w-3 h-3" />
-                    <span className="text-xs font-medium">Sign In</span>
+                    <RefreshCw className="w-4 h-4" />
                   </button>
-                )}
-                
-                {user && !user.isPro && (
-                  <button
-                    onClick={handleUpgrade}
-                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
-                      sessionType === 'morning'
-                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
-                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
-                    }`}
-                  >
-                    <Crown className="w-3 h-3" />
-                    <span className="text-xs font-medium">Pro</span>
-                  </button>
-                )}
+                </div>
 
-                {user && (
-                  <>
+                {/* Separator */}
+                <div className={`w-full h-px sm:w-px sm:h-6 ${
+                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+                }`} />
+
+                {/* User Controls */}
+                <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+                  {!user && (
+                    <button
+                      onClick={handleLogin}
+                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer justify-center ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <LogIn className="w-3 h-3" />
+                      <span className="text-xs font-medium">Sign In</span>
+                    </button>
+                  )}
+                  
+                  {user && !user.isPro && (
+                    <button
+                      onClick={handleUpgrade}
+                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer justify-center ${
+                        sessionType === 'morning'
+                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                          : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                      }`}
+                    >
+                      <Crown className="w-3 h-3" />
+                      <span className="text-xs font-medium">Pro</span>
+                    </button>
+                  )}
+
+                  {user && (
                     <button
                       onClick={handleInsights}
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
@@ -796,6 +798,9 @@ const MainSession: React.FC = () => {
                     >
                       <User className="w-4 h-4" />
                     </button>
+                  )}
+                  
+                  {user && (
                     <button
                       onClick={handleSettings}
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
@@ -806,8 +811,8 @@ const MainSession: React.FC = () => {
                     >
                       <Settings className="w-4 h-4" />
                     </button>
-                  </>
-                )}
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
