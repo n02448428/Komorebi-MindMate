@@ -1,41 +1,64 @@
-Here's the fixed version with added missing brackets and components. I'll add the missing imports and closing brackets:
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Calendar, Clock, Sparkles } from 'lucide-react';
 
-At the top, add these missing imports:
+interface InsightCardProps {
+  title: string;
+  content: string;
+  timestamp: string;
+  sessionType?: 'morning' | 'evening' | 'meditation';
+  onClick?: () => void;
+}
 
-```javascript
-import { Settings, Crown, LogIn, ChevronLeft, ChevronRight, RefreshCw, User } from 'lucide-react';
-```
+const InsightCard: React.FC<InsightCardProps> = ({
+  title,
+  content,
+  timestamp,
+  sessionType = 'morning',
+  onClick
+}) => {
+  const getSessionTypeGradient = () => {
+    switch (sessionType) {
+      case 'morning':
+        return 'from-amber-200/20 via-orange-100/10 to-yellow-200/20';
+      case 'evening':
+        return 'from-purple-900/30 via-indigo-800/20 to-blue-900/30';
+      case 'meditation':
+        return 'from-emerald-200/20 via-teal-100/10 to-cyan-200/20';
+      default:
+        return 'from-blue-200/20 via-cyan-100/10 to-teal-200/20';
+    }
+  };
 
-And here's the missing section that should go between the Header comment and the Main Content section:
-
-```javascript
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
-        <div className="flex items-center justify-end gap-2">
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2"
-              >
-                <button
-```
-
-The file also needs these closing brackets at the very end:
-
-```javascript
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={onClick}
+      className={`p-6 rounded-xl backdrop-blur-sm border border-white/20 bg-gradient-to-br ${getSessionTypeGradient()} cursor-pointer hover:bg-white/10 transition-all duration-200`}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-purple-400" />
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+        </div>
+        <div className="flex items-center gap-1 text-white/60 text-sm">
+          <Clock className="w-4 h-4" />
+          <span>{timestamp}</span>
+        </div>
+      </div>
+      
+      <p className="text-white/80 leading-relaxed mb-4">{content}</p>
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1 text-white/60 text-sm">
+          <Calendar className="w-4 h-4" />
+          <span className="capitalize">{sessionType} session</span>
+        </div>
+      </div>
+    </motion.div>
+  );
 };
 
-export default MainSession;
-```
-
-With these additions, the syntax errors should be resolved and the component should work as intended. The main issues were:
-
-1. Missing imports for Lucide icons
-2. Incomplete header section
-3. Missing closing brackets for the component and export
-
-The file should now be properly structured with all necessary closures and components.
+export default InsightCard;
