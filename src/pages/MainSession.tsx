@@ -502,7 +502,7 @@ const MainSession: React.FC = () => {
         )}
         
         {/* Universal Navigation */}
-        <UniversalNavigation />
+        <UniversalNavigation sessionType={sessionType} />
 
         <SessionLimitReached
           nextSessionTime={getNextAvailableSession()}
@@ -533,7 +533,7 @@ const MainSession: React.FC = () => {
         )}
         
         {/* Universal Navigation */}
-        <UniversalNavigation />
+        <UniversalNavigation sessionType={sessionType} />
 
         <div className="flex items-center justify-center h-screen p-8">
           <div className="text-center">
@@ -618,6 +618,7 @@ const MainSession: React.FC = () => {
       
       {/* Universal Navigation */}
       <UniversalNavigation 
+        sessionType={sessionType}
         videoEnabled={videoEnabled}
         onToggleVideo={toggleVideoBackground}
         onNextScene={handleNextScene}
