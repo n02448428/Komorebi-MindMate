@@ -8,7 +8,7 @@ import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import UniversalNavigation from '../components/UniversalNavigation';
 import InsightCard from '../components/InsightCard';
-import { ArrowLeft, Search, Filter, Sparkles, Sun, Moon, Star, Grid, List } from 'lucide-react';
+import { ArrowLeft, Search, Sparkles } from 'lucide-react';
 
 const AllInsights: React.FC = () => {
   const navigate = useNavigate();
@@ -16,8 +16,6 @@ const AllInsights: React.FC = () => {
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filteredInsights, setFilteredInsights] = useState<InsightCardType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'morning' | 'evening' | 'pinned'>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [expandedInsight, setExpandedInsight] = useState<InsightCardType | null>(null);
   const [deletingInsightId, setDeletingInsightId] = useState<string | null>(null);
 
@@ -49,18 +47,9 @@ const AllInsights: React.FC = () => {
     loadInsights();
   }, []);
 
-  // Filter insights when filter or search query changes
+  // Filter insights when search query changes
   useEffect(() => {
     let filtered = insights;
-    
-    // Apply type filter
-    if (filter === 'morning') {
-      filtered = filtered.filter(insight => insight.type === 'morning');
-    } else if (filter === 'evening') {
-      filtered = filtered.filter(insight => insight.type === 'evening');
-    } else if (filter === 'pinned') {
-      filtered = filtered.filter(insight => insight.isPinned);
-    }
     
     // Apply search filter
     if (searchQuery) {
@@ -71,7 +60,7 @@ const AllInsights: React.FC = () => {
     }
     
     setFilteredInsights(filtered);
-  }, [insights, filter, searchQuery]);
+  }, [insights, searchQuery]);
 
   const handleBack = () => {
     navigate('/insights');
@@ -144,7 +133,7 @@ const AllInsights: React.FC = () => {
         <UniversalNavigation />
 
         {/* Header */}
-        <div className="p-6 flex justify-between items-center pt-20">
+        <div className="p-6 pt-20">
           <button
             onClick={handleBack}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
@@ -156,25 +145,14 @@ const AllInsights: React.FC = () => {
             <ArrowLeft className="w-4 h-4" />
             <span className="text-sm font-medium">Back</span>
           </button>
-
-          <h1 className={`text-2xl font-semibold ${
-            timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-          }`}>
-            All Insights
-          </h1>
-
-          <div className="w-24 opacity-0"> {/* Spacer for flex justification */}
-            &nbsp;
-          </div>
         </div>
 
-        {/* Filters */}
+        {/* Search */}
         <div className="px-6 mb-6">
           <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
-            {/* Search */}
-            <div className="relative mb-4">
+            <div className="relative">
               <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
                 timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-300'
               }`} />
@@ -189,71 +167,6 @@ const AllInsights: React.FC = () => {
                     : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
                 } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30`}
               />
-            </div>
-
-            {/* Filter & View Controls */}
-            <div className="flex flex-wrap justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className={`w-5 h-5 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`} />
-                <div className="flex gap-2 flex-wrap">
-                  {(['all', 'morning', 'evening', 'pinned'] as const).map((filterType) => (
-                    <button
-                      key={filterType}
-                      onClick={() => setFilter(filterType)}
-                      className={`px-3 py-2 rounded-xl font-medium transition-all duration-200 text-sm capitalize ${
-                        filter === filterType
-                          ? (timeOfDay.period === 'morning'
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-purple-600 text-white')
-                          : (timeOfDay.period === 'morning'
-                              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                              : 'bg-white/10 hover:bg-white/20 text-gray-300')
-                      } backdrop-blur-sm flex items-center gap-1`}
-                    >
-                      {filterType === 'morning' && <Sun className="w-3 h-3" />}
-                      {filterType === 'evening' && <Moon className="w-3 h-3" />}
-                      {filterType === 'all' && <Sparkles className="w-3 h-3" />}
-                      {filterType === 'pinned' && <Star className="w-3 h-3" />}
-                      {filterType}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                    viewMode === 'grid'
-                      ? (timeOfDay.period === 'morning'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-purple-600 text-white')
-                      : (timeOfDay.period === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white')
-                  }`}
-                  title="Grid view"
-                >
-                  <Grid className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                    viewMode === 'list'
-                      ? (timeOfDay.period === 'morning'
-                          ? 'bg-amber-500 text-white'
-                          : 'bg-purple-600 text-white')
-                      : (timeOfDay.period === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white')
-                  }`}
-                  title="List view"
-                >
-                  <List className="w-5 h-5" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -275,15 +188,14 @@ const AllInsights: React.FC = () => {
               <p className={`text-sm mb-4 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                {searchQuery || filter !== 'all'
-                  ? 'Try adjusting your search or filter settings'
+                {searchQuery
+                  ? 'Try adjusting your search'
                   : 'Generate your first insight during a reflection session'}
               </p>
               <button
                 onClick={() => {
-                  if (searchQuery || filter !== 'all') {
+                  if (searchQuery) {
                     setSearchQuery('');
-                    setFilter('all');
                   } else {
                     navigate('/session');
                   }
@@ -294,14 +206,11 @@ const AllInsights: React.FC = () => {
                     : 'bg-purple-600 hover:bg-purple-700 text-white'
                 }`}
               >
-                {searchQuery || filter !== 'all' ? 'Clear filters' : 'Start a session'}
+                {searchQuery ? 'Clear search' : 'Start a session'}
               </button>
             </div>
           ) : (
-            <div className={viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'
-              : 'space-y-6'
-            }>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredInsights.map((insight) => (
                 <motion.div
                   key={insight.id}
@@ -310,7 +219,6 @@ const AllInsights: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
-                  className={`${viewMode === 'list' ? 'max-w-lg mx-auto' : ''}`}
                   onClick={() => handleExpandInsight(insight)}
                 >
                   <InsightCard 
