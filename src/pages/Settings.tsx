@@ -4,13 +4,18 @@ import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, Edit3, Check } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, updateUserName, updateUserEmail } = useAuth();
   const [userName, setUserName] = useState(user?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
+  const [nameEditMode, setNameEditMode] = useState(false);
+  const [emailEditMode, setEmailEditMode] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Stabilize timeOfDay and currentScene to prevent background changes while typing
   const [timeOfDay] = useState(() => getTimeOfDay(user?.name));
@@ -34,6 +39,49 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleDownloadAllData = async () => {
+    setIsDownloading(true);
+    
+    try {
+      // Gather all user data
+      const userData = {
+        user: {
+          name: user?.name,
+          email: user?.email,
+          isPro: user?.isPro,
+          exportDate: new Date().toISOString()
+        },
+        insights: JSON.parse(localStorage.getItem('insight-cards') || '[]'),
+        chatSessions: JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]'),
+        sessionLimits: JSON.parse(localStorage.getItem('session-limits') || '{}'),
+        settings: {
+          videoBackgroundEnabled: JSON.parse(localStorage.getItem('video-background-enabled') || 'true'),
+          currentScene: localStorage.getItem('current-scene') || 'ocean'
+        }
+      };
+
+      // Create downloadable content
+      const dataString = JSON.stringify(userData, null, 2);
+      const blob = new Blob([dataString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `komorebi-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download data. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleBack = () => {
     navigate('/');
   };
@@ -49,6 +97,9 @@ const Settings: React.FC = () => {
     e.preventDefault();
     if (updateUserName && user) {
       updateUserName(userName);
+      setNameSaved(true);
+      setNameEditMode(false);
+      setTimeout(() => setNameSaved(false), 3000);
     }
   };
 
@@ -56,7 +107,20 @@ const Settings: React.FC = () => {
     e.preventDefault();
     if (updateUserEmail && user) {
       updateUserEmail(userEmail);
+      setEmailSaved(true);
+      setEmailEditMode(false);
+      setTimeout(() => setEmailSaved(false), 3000);
     }
+  };
+
+  const handleNameEdit = () => {
+    setNameEditMode(true);
+    setNameSaved(false);
+  };
+
+  const handleEmailEdit = () => {
+    setEmailEditMode(true);
+    setEmailSaved(false);
   };
 
   return (
@@ -116,65 +180,127 @@ const Settings: React.FC = () => {
                 </h2>
               </div>
               <div className="space-y-4">
+                {/* Name Field */}
                 <form onSubmit={handleNameSubmit}>
                   <label className={`block text-sm font-medium mb-2 ${
                     timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
                   }`}>
                     Name
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <input
                       type="text"
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       placeholder="Enter your name"
+                      disabled={!nameEditMode}
                       className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
-                        timeOfDay.period === 'morning'
-                          ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
-                          : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
+                        nameEditMode
+                          ? (timeOfDay.period === 'morning'
+                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
+                          : (timeOfDay.period === 'morning'
+                              ? 'bg-white/10 text-gray-700 cursor-not-allowed'
+                              : 'bg-black/10 text-gray-300 cursor-not-allowed')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
                     />
-                    <button
-                      type="submit"
-                      className={`px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+                    {!nameEditMode ? (
+                      <button
+                        type="button"
+                        onClick={handleNameEdit}
+                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                        title="Edit name"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title="Save name"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                    {nameSaved && (
+                      <div className={`px-3 py-2 rounded-xl text-sm font-medium ${
                         timeOfDay.period === 'morning'
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                    >
-                      Save
-                    </button>
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-green-900/50 text-green-300'
+                      } animate-fade-in`}>
+                        Saved!
+                      </div>
+                    )}
                   </div>
                 </form>
 
+                {/* Email Field */}
                 <form onSubmit={handleEmailSubmit}>
                   <label className={`block text-sm font-medium mb-2 ${
                     timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
                   }`}>
                     Email
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <input
                       type="email"
                       value={userEmail}
                       onChange={(e) => setUserEmail(e.target.value)}
                       placeholder="Enter your email"
+                      disabled={!emailEditMode}
                       className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
-                        timeOfDay.period === 'morning'
-                          ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
-                          : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
+                        emailEditMode
+                          ? (timeOfDay.period === 'morning'
+                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
+                          : (timeOfDay.period === 'morning'
+                              ? 'bg-white/10 text-gray-700 cursor-not-allowed'
+                              : 'bg-black/10 text-gray-300 cursor-not-allowed')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
                     />
-                    <button
-                      type="submit"
-                      className={`px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+                    {!emailEditMode ? (
+                      <button
+                        type="button"
+                        onClick={handleEmailEdit}
+                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                        title="Edit email"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-green-500 hover:bg-green-600 text-white'
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title="Save email"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                    {emailSaved && (
+                      <div className={`px-3 py-2 rounded-xl text-sm font-medium ${
                         timeOfDay.period === 'morning'
-                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                          : 'bg-blue-600 hover:bg-blue-700 text-white'
-                      }`}
-                    >
-                      Save
-                    </button>
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-green-900/50 text-green-300'
+                      } animate-fade-in`}>
+                        Saved!
+                      </div>
+                    )}
                   </div>
                 </form>
 
@@ -286,17 +412,44 @@ const Settings: React.FC = () => {
                   We never share your personal reflections with anyone.
                 </div>
               </div>
-              <button 
-                onClick={handleClearData}
-                className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
-                    : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
-                } backdrop-blur-sm`}
-              >
-                <Trash2 className="w-4 h-4" />
-                Clear All Data
-              </button>
+              
+              <div className="grid gap-3">
+                {/* Download All Data Button */}
+                <button 
+                  onClick={handleDownloadAllData}
+                  disabled={isDownloading}
+                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30'
+                      : 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-600/30'
+                  } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isDownloading ? (
+                    <>
+                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Preparing Download...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Download All Data
+                    </>
+                  )}
+                </button>
+
+                {/* Clear All Data Button */}
+                <button 
+                  onClick={handleClearData}
+                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
+                      : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
+                  } backdrop-blur-sm`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear All Data
+                </button>
+              </div>
             </div>
           </div>
 
