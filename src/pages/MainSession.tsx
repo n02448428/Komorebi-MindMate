@@ -663,8 +663,8 @@ const MainSession: React.FC = () => {
       )}
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
-        {/* Title */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-6">
+        {/* Left side - Title (only shown when controls are visible) */}
         <AnimatePresence>
           {showControls && (
             <motion.div
@@ -672,6 +672,7 @@ const MainSession: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
+              className="absolute left-6 top-6"
             >
               <div className={`text-2xl font-bold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
@@ -689,21 +690,8 @@ const MainSession: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Controls Container */}
-        <div className="flex items-center gap-3">
-          {/* Universal Toggle Button */}
-          <button
-            onClick={() => setShowControls(!showControls)}
-            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
-              sessionType === 'morning'
-                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-            title={showControls ? 'Hide controls' : 'Show controls'}
-          >
-            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
-
+        {/* Right side - Controls Container (always positioned on the right) */}
+        <div className="absolute right-6 top-6 flex items-center gap-3">
           {/* Animated Controls Panel */}
           <AnimatePresence>
             {showControls && (
@@ -840,6 +828,19 @@ const MainSession: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Universal Toggle Button - Always positioned in top right */}
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+              sessionType === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+            title={showControls ? 'Hide controls' : 'Show controls'}
+          >
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
