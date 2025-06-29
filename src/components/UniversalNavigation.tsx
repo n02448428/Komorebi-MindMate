@@ -21,7 +21,9 @@ import {
   GalleryVertical as Gallery,
   Video,
   VideoOff,
-  RotateCcw
+  RotateCcw,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface UniversalNavigationProps {
@@ -49,6 +51,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showControls, setShowControls] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const timeOfDay = getTimeOfDay(user?.name);
   
   // Use sessionType prop if provided, otherwise derive from timeOfDay
@@ -78,15 +81,87 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
       : 'bg-white/10 hover:bg-white/20 text-white';
   };
 
+  const getMobileButtonStyle = () => {
+    return currentSessionType === 'morning'
+      ? 'bg-white/30 hover:bg-white/40 text-gray-800 border-white/30'
+      : 'bg-white/20 hover:bg-white/30 text-white border-white/20';
+  };
   // Determine current page for active indicators
   const isHome = location.pathname === '/' || location.pathname === '/session';
   const isInsights = location.pathname === '/insights';
   const isArchive = location.pathname === '/archive';
   const isSettings = location.pathname === '/settings';
 
+  // Mobile menu items in 3x2 grid layout
+  const mobileMenuItems = [
+    // Row 1
+    [
+      {
+        icon: <Home className="w-6 h-6" />,
+        label: 'Home',
+        onClick: () => navigate('/'),
+        isActive: isHome
+      },
+      {
+        icon: <Sparkles className="w-6 h-6" />,
+        label: 'Insights',
+        onClick: () => navigate('/insights'),
+        isActive: isInsights
+      },
+      {
+        icon: <Archive className="w-6 h-6" />,
+        label: 'Archive',
+        onClick: () => navigate('/archive'),
+        isActive: isArchive
+      }
+    ],
+    // Row 2
+    [
+      {
+        icon: <Settings className="w-6 h-6" />,
+        label: 'Settings',
+        onClick: () => navigate('/settings'),
+        isActive: isSettings
+      },
+      ...(user ? [
+        !user.isPro ? {
+          icon: <Crown className="w-6 h-6" />,
+          label: 'Upgrade',
+          onClick: () => navigate('/upgrade'),
+          isActive: false
+        } : null,
+        {
+          icon: <User className="w-6 h-6" />,
+          label: 'Profile',
+          onClick: () => navigate('/insights'),
+          isActive: false
+        }
+      ].filter(Boolean) : [
+        {
+          icon: <LogIn className="w-6 h-6" />,
+          label: 'Sign In',
+          onClick: () => navigate('/'),
+          isActive: false
+        },
+        null // Empty slot
+      ])
+    ].filter(Boolean)
+  ];
   return (
     <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
-      <div className="flex items-center justify-between">
+      {/* Mobile Menu Button - Only visible on mobile */}
+      <div className="md:hidden flex justify-end">
+        <button
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
+          className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+          aria-label="Menu"
+        >
+          {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Desktop Navigation - Hidden on mobile */}
+      <div className="hidden md:flex items-center justify-between">
         {/* Left Side - Home/Back Navigation */}
         <AnimatePresence>
           {showControls && (
@@ -270,6 +345,114 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Mobile Menu Overlay - 3x2 Grid */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+              onClick={() => setShowMobileMenu(false)}
+            />
+            
+            {/* Menu Grid */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed top-20 left-4 right-4 z-50 max-w-sm mx-auto"
+            >
+              <div className={`backdrop-blur-md border border-white/20 rounded-3xl p-6 ${
+                currentSessionType === 'morning' ? 'bg-white/90' : 'bg-black/80'
+              }`}>
+                {/* Grid Container */}
+                <div className="space-y-4">
+                  {mobileMenuItems.map((row, rowIndex) => (
+                    <div key={rowIndex} className="grid grid-cols-3 gap-4">
+                      {row.map((item, itemIndex) => (
+                        item ? (
+                          <button
+                            key={itemIndex}
+                            onClick={() => {
+                              item.onClick();
+                              setShowMobileMenu(false);
+                            }}
+                            className={`flex flex-col items-center justify-center p-4 rounded-2xl backdrop-blur-sm border transition-all duration-200 hover:scale-105 active:scale-95 min-h-[80px] ${
+                              item.isActive 
+                                ? (currentSessionType === 'morning'
+                                    ? 'bg-amber-500/20 border-amber-400/50 text-amber-700'
+                                    : 'bg-purple-500/20 border-purple-400/50 text-purple-300')
+                                : getMobileButtonStyle()
+                            }`}
+                          >
+                            <div className="mb-2">
+                              {item.icon}
+                            </div>
+                            <span className="text-xs font-medium text-center leading-tight">
+                              {item.label}
+                            </span>
+                          </button>
+                        ) : (
+                          <div key={itemIndex} /> // Empty grid cell
+                        )
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Scene Controls for Mobile (if available) */}
+                {(onNextScene || onToggleVideo || onNewSession) && (
+                  <div className="mt-6 pt-4 border-t border-white/20">
+                    <div className="flex justify-center gap-3">
+                      {onToggleVideo && (
+                        <button
+                          onClick={() => {
+                            onToggleVideo();
+                            setShowMobileMenu(false);
+                          }}
+                          className={`p-3 rounded-xl ${getMobileButtonStyle()} border`}
+                          title={videoEnabled ? "Hide video" : "Show video"}
+                        >
+                          {videoEnabled ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+                        </button>
+                      )}
+                      {onNextScene && (
+                        <button
+                          onClick={() => {
+                            onNextScene();
+                            setShowMobileMenu(false);
+                          }}
+                          className={`p-3 rounded-xl ${getMobileButtonStyle()} border`}
+                          title="Next scene"
+                        >
+                          <SkipForward className="w-5 h-5" />
+                        </button>
+                      )}
+                      {onNewSession && (
+                        <button
+                          onClick={() => {
+                            onNewSession();
+                            setShowMobileMenu(false);
+                          }}
+                          className={`p-3 rounded-xl ${getMobileButtonStyle()} border`}
+                          title="New session"
+                        >
+                          <RefreshCw className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
