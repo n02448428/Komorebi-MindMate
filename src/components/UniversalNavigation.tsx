@@ -1,41 +1,20 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Home, 
-  User, 
   Settings, 
   Crown, 
   LogIn, 
-  Eye, 
-  EyeOff, 
-  SkipForward, 
-  Shuffle, 
-  RefreshCw,
-  Archive,
-  Sparkles,
-  Gallery
-} from 'lucide-react';
-
-interface UniversalNavigationProps {
-  // Video background controls (for MainSession)
-  videoEnabled?: boolean;
-  onToggleVideo?: () => void;
+  ChevronLeft, 
+  ChevronRimport { ChevronLeft, ChevronRight, Home, User, Settings, Crown, LogIn, Eye, EyeOff, SkipForward, Shuffle, RefreshCw, Archive, Sparkles, GalleryVertical as Gallery } from 'lucide-react' () => void;
   onNextScene?: () => void;
   onRandomScene?: () => void;
   onNewSession?: () => void;
-  currentScene?: string;
-  
-  // Custom controls for specific pages
-  customControls?: React.ReactNode;
-  
-  // Override default navigation behavior
   onNavigateHome?: () => void;
+  currentScene?: string;
+  sessionType?: 'morning' | 'evening';
 }
 
 const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
@@ -44,282 +23,220 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
   onNextScene,
   onRandomScene,
   onNewSession,
+  onNavigateHome,
   currentScene,
-  customControls,
-  onNavigateHome
+  sessionType
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [showControls, setShowControls] = useState(false);
-
   const timeOfDay = getTimeOfDay(user?.name);
-  const currentSceneName = currentScene;
+  
+  // Use sessionType prop if provided, otherwise derive from timeOfDay
+  const currentSessionType = sessionType || (timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
-  // Determine current page context
-  const pageContext = useMemo(() => {
-    const path = location.pathname;
-    if (path === '/') return 'main';
-    if (path === '/insights') return 'insights';
-    if (path === '/insights-gallery') return 'insights-gallery';
-    if (path === '/chat-archive') return 'chat-archive';
-    if (path === '/settings') return 'settings';
-    if (path === '/pro-upgrade') return 'pro-upgrade';
-    return 'other';
-  }, [location.pathname]);
+  useEffect(() => {
+    const timer = setTimeout(() => setShowControls(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Navigation handlers
-  const navigationHandlers = useMemo(() => ({
-    handleHome: () => {
-      if (onNavigateHome) {
-        onNavigateHome();
-      } else {
-        navigate('/');
-      }
-    },
-    handleInsights: () => navigate('/insights'),
-    handleSettings: () => navigate('/settings'),
-    handleUpgrade: () => navigate('/pro-upgrade'),
-    handleLogin: () => navigate('/'),
-    handleChatArchive: () => navigate('/chat-archive'),
-    handleInsightsGallery: () => navigate('/insights-gallery')
-  }), [navigate, onNavigateHome]);
-
-  // Control button component
-  const ControlButton: React.FC<{
-    onClick: () => void;
-    icon: React.ReactNode;
-    title: string;
-    variant?: 'default' | 'primary';
-  }> = ({ onClick, icon, title, variant = 'default' }) => (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-        variant === 'primary'
-          ? (timeOfDay.period === 'morning'
-              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
-              : 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-300')
-          : (timeOfDay.period === 'morning'
-              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-              : 'bg-white/10 hover:bg-white/20 text-white')
-      }`}
-    >
-      {icon}
-    </button>
-  );
-
-  // Page-specific controls
-  const renderPageControls = () => {
-    switch (pageContext) {
-      case 'main':
-        return (
-          <>
-            {/* Background Controls */}
-            {onToggleVideo && (
-              <div className="flex gap-2">
-                <ControlButton
-                  onClick={onToggleVideo}
-                  icon={videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                />
-                
-                {videoEnabled && onNextScene && (
-                  <ControlButton
-                    onClick={onNextScene}
-                    icon={<SkipForward className="w-4 h-4" />}
-                    title="Next scene"
-                  />
-                )}
-                
-                {videoEnabled && onRandomScene && (
-                  <ControlButton
-                    onClick={onRandomScene}
-                    icon={<Shuffle className="w-4 h-4" />}
-                    title="Random scene"
-                  />
-                )}
-              </div>
-            )}
-
-            {(onToggleVideo || onNewSession) && <Separator />}
-
-            {/* Session Controls */}
-            {onNewSession && (
-              <ControlButton
-                onClick={onNewSession}
-                icon={<RefreshCw className="w-4 h-4" />}
-                title="Start fresh session"
-              />
-            )}
-          </>
-        );
-        
-      case 'insights':
-        return (
-          <div className="flex gap-2">
-            <ControlButton
-              onClick={navigationHandlers.handleInsightsGallery}
-              icon={<Gallery className="w-4 h-4" />}
-              title="All Insights"
-            />
-            <ControlButton
-              onClick={navigationHandlers.handleChatArchive}
-              icon={<Archive className="w-4 h-4" />}
-              title="Chat Archive"
-            />
-          </div>
-        );
-        
-      case 'insights-gallery':
-      case 'chat-archive':
-        return (
-          <ControlButton
-            onClick={navigationHandlers.handleInsights}
-            icon={<User className="w-4 h-4" />}
-            title="Back to Journey"
-          />
-        );
-        
-      default:
-        return null;
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
-  // Separator component
-  const Separator = () => (
-    <div className={`w-px h-6 ${
-      timeOfDay.period === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-    }`} />
-  );
+  const getTextColor = () => {
+    return currentSessionType === 'morning' ? 'text-gray-700' : 'text-white';
+  };
 
-  // Framer Motion variants
-  const controlsVariants = {
-    hidden: {
-      x: '100%',
-      opacity: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    }
+  const getButtonStyle = () => {
+    return currentSessionType === 'morning'
+      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+      : 'bg-white/10 hover:bg-white/20 text-white';
   };
 
   return (
-    <div className="fixed top-6 right-6 z-[60] flex items-center gap-3">
-      {/* Page Title (shown when controls are visible) */}
-      <AnimatePresence>
-        {showControls && pageContext === 'main' && currentSceneName && (
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-            className={`text-sm font-medium ${
-              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-            }`}
-          >
-            {currentSceneName}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Animated Controls Panel */}
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            variants={controlsVariants}
-            className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
-              timeOfDay.period === 'morning' 
-                ? 'bg-white/20' 
-                : 'bg-white/10'
-            }`}
-          >
-            {/* Page-specific controls */}
-            {renderPageControls()}
-            
-            {/* Custom controls */}
-            {customControls}
-            
-            {/* Always show separator before universal controls if there are page controls */}
-            {(renderPageControls() || customControls) && <Separator />}
-
-            {/* Universal Navigation Controls */}
-            <div className="flex gap-2">
-              {/* Home button (if not already on home) */}
-              {pageContext !== 'main' && (
-                <ControlButton
-                  onClick={navigationHandlers.handleHome}
-                  icon={<Home className="w-4 h-4" />}
-                  title="Home"
-                />
-              )}
-
-              {/* User-specific controls */}
-              {!user ? (
-                <ControlButton
-                  onClick={navigationHandlers.handleLogin}
-                  icon={<LogIn className="w-3 h-3" />}
-                  title="Sign In"
-                />
+    <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
+      <div className="flex items-center justify-between">
+        {/* Left Side - Home/Back Navigation */}
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center gap-2"
+            >
+              {onNavigateHome ? (
+                <button
+                  onClick={onNavigateHome}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title="Back to home"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
               ) : (
-                <>
-                  {!user.isPro && pageContext !== 'pro-upgrade' && (
-                    <ControlButton
-                      onClick={navigationHandlers.handleUpgrade}
-                      icon={<Crown className="w-3 h-3" />}
-                      title="Upgrade to Pro"
-                      variant="primary"
-                    />
-                  )}
-                  
-                  {pageContext !== 'insights' && (
-                    <ControlButton
-                      onClick={navigationHandlers.handleInsights}
-                      icon={<User className="w-4 h-4" />}
-                      title="Your Journey"
-                    />
-                  )}
-                  
-                  {pageContext !== 'settings' && (
-                    <ControlButton
-                      onClick={navigationHandlers.handleSettings}
-                      icon={<Settings className="w-4 h-4" />}
-                      title="Settings"
-                    />
-                  )}
-                </>
+                <button
+                  onClick={() => navigate('/')}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title="Home"
+                >
+                  <Home className="w-5 h-5" />
+                </button>
               )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Universal Toggle Button - Always visible in top right */}
-      <button
-        onClick={() => setShowControls(!showControls)}
-        className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-          timeOfDay.period === 'morning'
-            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-            : 'bg-white/10 hover:bg-white/20 text-white'
-        }`}
-        title={showControls ? 'Hide menu' : 'Show menu'}
-      >
-        {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </button>
+              <button
+                onClick={() => navigate('/insights')}
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                title="Insights Gallery"
+              >
+                <Sparkles className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={() => navigate('/archive')}
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                title="Chat Archive"
+              >
+                <Archive className="w-5 h-5" />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Center - Scene Controls (only show if we have scene controls) */}
+        <AnimatePresence>
+          {showControls && (currentScene || onNextScene) && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="flex items-center gap-2"
+            >
+              {currentScene && (
+                <div className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 ${getButtonStyle()}`}>
+                  <span className="text-xs font-medium">{currentScene}</span>
+                </div>
+              )}
+
+              {onNextScene && (
+                <button
+                  onClick={onNextScene}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title="Next scene"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+
+              {onRandomScene && (
+                <button
+                  onClick={onRandomScene}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title="Random scene"
+                >
+                  <Shuffle className="w-4 h-4" />
+                </button>
+              )}
+
+              {onToggleVideo && (
+                <button
+                  onClick={onToggleVideo}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title={videoEnabled ? "Disable video background" : "Enable video background"}
+                >
+                  {videoEnabled ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                </button>
+              )}
+
+              {onNewSession && (
+                <button
+                  onClick={onNewSession}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                  title="New session"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Right Side - User Controls */}
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className="flex items-center gap-2"
+            >
+              <button
+                onClick={() => navigate('/settings')}
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                title="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  {!user.isPro && (
+                    <button
+                      onClick={() => navigate('/pro-upgrade')}
+                      className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
+                      title="Upgrade to Pro"
+                    >
+                      <Crown className="w-4 h-4" />
+                      <span className="hidden sm:inline">Pro</span>
+                    </button>
+                  )}
+
+                  <div className="relative group">
+                    <button
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                      title={user.email || 'User menu'}
+                    >
+                      <User className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Dropdown menu */}
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                      <div className="p-2">
+                        <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
+                          {user.email}
+                        </div>
+                        <button
+                          onClick={handleSignOut}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:bg-white/10 ${getTextColor()}`}
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${getButtonStyle()}`}
+                  title="Sign In"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline text-sm font-medium">Sign In</span>
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
