@@ -117,390 +117,76 @@ const InsightsGallery: React.FC = () => {
     
     URL.revokeObjectURL(url);
   };
-            </div>
-          </div>
 
-          {/* Data Privacy Notice */}
-          {user && (
-            <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm mb-6 ${
-              timeOfDay.period === 'morning' ? 'bg-blue-500/10' : 'bg-blue-600/10'
-            }`}>
-              <div className="flex items-start gap-3">
-                <Shield className={`w-5 h-5 mt-0.5 ${
-                  timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
-                }`} />
-                <div>
-                  <h4 className={`font-semibold mb-1 ${
-                    timeOfDay.period === 'morning' ? 'text-blue-800' : 'text-blue-300'
-                  }`}>
-                    Your Data Belongs to You
-                  </h4>
-                  <p className={`text-sm ${
-                    timeOfDay.period === 'morning' ? 'text-blue-700' : 'text-blue-200'
-                  }`}>
-                    All conversations and insights are stored locally on your device. 
-                    We never access your private reflections.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Session Archive Section */}
-          <AnimatePresence>
-            {showSessionArchive && user && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mb-8 overflow-hidden"
-              >
-                <div className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 ${
-                  timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                }`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className={`text-xl font-semibold ${
-                      timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                    }`}>
-                      Conversation Archive
-                    </h3>
-                    <button
-                      onClick={handleExportData}
-                      className={`px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 text-sm font-medium ${
-                        timeOfDay.period === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      Export Data
-                    </button>
-                  </div>
-                  
-                  <div className={`text-xs mb-4 p-3 rounded-xl border border-white/20 ${
-                    timeOfDay.period === 'morning' 
-                      ? 'bg-blue-500/10 text-blue-700' 
-                      : 'bg-blue-600/10 text-blue-300'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-medium">
-                        Retention Policy: {user.isPro ? 'Unlimited history' : '7 days for free users'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {archivedSessions.length > 0 ? (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {archivedSessions.map((session) => (
-                        <div
-                          key={session.id}
-                          className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-200 ${
-                            timeOfDay.period === 'morning'
-                              ? 'bg-white/10 hover:bg-white/20'
-                              : 'bg-black/10 hover:bg-black/20'
-                          } ${selectedSession?.id === session.id ? 'ring-2 ring-white/30' : ''}`}
-                          onClick={() => setSelectedSession(selectedSession?.id === session.id ? null : session)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-3 h-3 rounded-full ${
-                                session.type === 'morning' 
-                                  ? 'bg-amber-500' 
-                                  : 'bg-purple-500'
-                              }`} />
-                              <div>
-                                <div className={`font-medium text-sm ${
-                                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                                }`}>
-                                  {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-                                </div>
-                                <div className={`text-xs ${
-                                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                                }`}>
-                                  {session.createdAt.toLocaleDateString()} • {session.messageCount} messages
-                                  {session.duration && ` • ${session.duration}min`}
-                                </div>
-                              </div>
-                            </div>
-                            <MessageCircle className={`w-4 h-4 ${
-                              timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                            }`} />
-                          </div>
-                          
-                          {/* Expanded Session View */}
-                          {selectedSession?.id === session.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="mt-4 pt-4 border-t border-white/20"
-                            >
-                              <div className="space-y-3 max-h-64 overflow-y-auto">
-                                {session.messages.map((message, index) => (
-                                  <div key={index} className={`text-xs ${
-                                    message.role === 'user' ? 'text-right' : 'text-left'
-                                  }`}>
-                                    <div className={`inline-block p-2 rounded-lg max-w-[80%] ${
-                                      message.role === 'user'
-                                        ? (timeOfDay.period === 'morning' 
-                                            ? 'bg-amber-500/20 text-gray-800' 
-                                            : 'bg-purple-500/20 text-white')
-                                        : (timeOfDay.period === 'morning' 
-                                            ? 'bg-gray-500/20 text-gray-700' 
-                                            : 'bg-gray-600/20 text-gray-200')
-                                    }`}>
-                                      {message.content}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Archive className={`w-12 h-12 mx-auto mb-3 ${
-                        timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                      }`} />
-                      <p className={`${
-                        timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                      }`}>
-                        No archived sessions yet. Complete a conversation to see it here.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* Insights Grid */}
-          {filteredInsights.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredInsights.map((insight) => (
-                selectedCard?.id === insight.id ? (
-                  // Placeholder to maintain grid layout when card is expanded
-                  <div 
-                    key={`placeholder-${insight.id}`}
-                    className="aspect-[2/3] rounded-2xl opacity-0"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <motion.div 
-                    key={insight.id} 
-                    layoutId={`card-${insight.id}`}
-                    className="animate-fade-in cursor-pointer"
-                    onClick={() => setSelectedCard(insight)}
-                    whileHover={{ y: -4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  >
-                    <InsightCard insight={insight} />
-                  </motion.div>
-                )
-              ))}
-            </div>
-          ) : (
-          )}
-
-            {/* Session Archive Section */}
-            <AnimatePresence>
-              {showSessionArchive && user && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mb-8 overflow-hidden"
-                >
-                  <div className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 ${
-                    timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                  }`}>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className={`text-xl font-semibold ${
-                        timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                      }`}>
-                        Conversation Archive
-                      </h3>
-                      <button
-                        onClick={handleExportData}
-                        className={`px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 text-sm font-medium ${
-                          timeOfDay.period === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        Export Data
-                      </button>
-                    </div>
-                    
-                    <div className={`text-xs mb-4 p-3 rounded-xl border border-white/20 ${
-                      timeOfDay.period === 'morning' 
-                        ? 'bg-blue-500/10 text-blue-700' 
-                        : 'bg-blue-600/10 text-blue-300'
-                    }`}>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-medium">
-                          Retention Policy: {user.isPro ? 'Unlimited history' : '7 days for free users'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {archivedSessions.length > 0 ? (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {archivedSessions.map((session) => (
-                          <div
-                            key={session.id}
-                            className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-200 ${
-                              timeOfDay.period === 'morning'
-                                ? 'bg-white/10 hover:bg-white/20'
-                                : 'bg-black/10 hover:bg-black/20'
-                            } ${selectedSession?.id === session.id ? 'ring-2 ring-white/30' : ''}`}
-                            onClick={() => setSelectedSession(selectedSession?.id === session.id ? null : session)}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${
-                                  session.type === 'morning' 
-                                    ? 'bg-amber-500' 
-                                    : 'bg-purple-500'
-                                }`} />
-                                <div>
-                                  <div className={`font-medium text-sm ${
-                                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                                  }`}>
-                                    {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-                                  </div>
-                                  <div className={`text-xs ${
-                                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                                  }`}>
-                                    {session.createdAt.toLocaleDateString()} • {session.messageCount} messages
-                                    {session.duration && ` • ${session.duration}min`}
-                                  </div>
-                                </div>
-                              </div>
-                              <MessageCircle className={`w-4 h-4 ${
-                                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                              }`} />
-                            </div>
-                            
-                            {/* Expanded Session View */}
-                            {selectedSession?.id === session.id && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="mt-4 pt-4 border-t border-white/20"
-                              >
-                                <div className="space-y-3 max-h-64 overflow-y-auto">
-                                  {session.messages.map((message, index) => (
-                                    <div key={index} className={`text-xs ${
-                                      message.role === 'user' ? 'text-right' : 'text-left'
-                                    }`}>
-                                      <div className={`inline-block p-2 rounded-lg max-w-[80%] ${
-                                        message.role === 'user'
-                                          ? (timeOfDay.period === 'morning' 
-                                              ? 'bg-amber-500/20 text-gray-800' 
-                                              : 'bg-purple-500/20 text-white')
-                                          : (timeOfDay.period === 'morning' 
-                                              ? 'bg-gray-500/20 text-gray-700' 
-                                              : 'bg-gray-600/20 text-gray-200')
-                                      }`}>
-                                        {message.content}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <Archive className={`w-12 h-12 mx-auto mb-3 ${
-                          timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                        }`} />
-                        <p className={`${
-                          timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                        }`}>
-                          No archived sessions yet. Complete a conversation to see it here.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            /* Empty State */
-          ) : (
-            <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
-              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <Sparkles className={`w-16 h-16 mx-auto mb-4 ${
-                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-              }`} />
-              <h3 className={`text-xl font-semibold mb-2 ${
-                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                {filter === 'all' ? 'No insights yet' : `No ${filter} insights yet`}
-              </h3>
-              <p className={`mb-6 ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-              }`}>
-                Complete your first session to see insights here.
-              </p>
+  return (
+    <div className="min-h-screen relative">
+      <NatureVideoBackground scene={currentScene} />
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-4">
               <button
                 onClick={handleBack}
-                className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm ${
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                   timeOfDay.period === 'morning'
-                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}
               >
-                Start Your First Session
+                <ArrowLeft className="w-5 h-5" />
               </button>
+              <h1 className={`text-2xl font-bold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Your Insights
+              </h1>
             </div>
-          )}
+
+            <div className="flex items-center gap-3">
+              {user && (
+                <button
+                  onClick={() => setShowSessionArchive(!showSessionArchive)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 text-sm font-medium ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Archive className="w-4 h-4" />
+                  <span>Archive</span>
+                  <ChevronRight className={`w-4 h-4 transition-transform ${
+                    showSessionArchive ? 'rotate-90' : ''
+                  }`} />
+                </button>
+              )}
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 ${
+                timeOfDay.period === 'morning' ? 'bg-white/20 text-gray-700' : 'bg-white/10 text-white'
+              }`}>
+                <Calendar className="w-4 h-4" />
+                <div className="text-sm font-medium">
+                  {morningCount} morning • {eveningCount} evening
+                </div>
+              </div>
+
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 ${
+                timeOfDay.period === 'morning' ? 'bg-white/20 text-gray-700' : 'bg-white/10 text-white'
+              }`}>
+                <Filter className="w-4 h-4" />
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value as 'all' | 'morning' | 'evening')}
+                  className="bg-transparent text-sm font-medium focus:outline-none"
+                >
+                  <option value="all">All</option>
+                  <option value="morning">Morning</option>
+                  <option value="evening">Evening</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Full-Screen Card Display */}
-      <AnimatePresence>
-        {selectedCard && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-8"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setSelectedCard(null);
-              }
-            }}
-          >
-            <motion.div
-              layoutId={`card-${selectedCard.id}`}
-              className="relative w-[400px] h-[600px] max-w-[90vw] max-h-[90vh]"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              initial={false}
-            >
-              <InsightCard 
-                insight={selectedCard} 
-                isExpanded={true}
-                onClose={() => setSelectedCard(null)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
