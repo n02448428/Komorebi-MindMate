@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Play, ArrowRight } from 'lucide-react';
+import { Sparkles, Play, ArrowRight, Star, MessageCircle, Calendar, Crown, Archive } from 'lucide-react';
 import UniversalMenu from '../components/UniversalMenu';
-import { Star, MessageCircle, Calendar, Sparkles, Crown, Archive } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
 
