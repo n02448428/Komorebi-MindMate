@@ -7,10 +7,11 @@ import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, Ar
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
 import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
+import UniversalNavigation from '../components/UniversalNavigation';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,6 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -48,28 +48,6 @@ const MainSession: React.FC = () => {
   // Check if session time has expired (only for non-Pro users)
   const isSessionExpired = !user?.isPro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
-
-  // Framer Motion variants for control panel animation
-  const controlsVariants = {
-    hidden: {
-      x: '100%',
-      opacity: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    }
-  };
 
   useEffect(() => {
     // Load settings from localStorage
@@ -456,17 +434,6 @@ const MainSession: React.FC = () => {
     navigate('/pro-upgrade');
   };
 
-  const handleLogin = () => {
-    navigate('/');
-  };
-
-  const handleInsights = () => {
-    navigate('/insights');
-  };
-
-  const handleSettings = () => {
-    navigate('/settings');
-  };
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
   if (user && !user.isPro && hasCompletedBothToday) {
@@ -487,36 +454,8 @@ const MainSession: React.FC = () => {
           }`} />
         )}
         
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
-          <div className={`text-2xl font-bold ${
-            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-          }`}>
-            Komorebi
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleInsights}
-              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                sessionType === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-            >
-              <User className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleSettings}
-              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                sessionType === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        {/* Universal Navigation */}
+        <UniversalNavigation />
 
         <SessionLimitReached
           nextSessionTime={getNextAvailableSession()}
@@ -546,40 +485,8 @@ const MainSession: React.FC = () => {
           }`} />
         )}
         
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
-          <div className={`text-2xl font-bold ${
-            sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-          }`}>
-            Komorebi
-          </div>
-          <div className="flex gap-3">
-            {user && (
-              <>
-                <button
-                  onClick={handleInsights}
-                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <User className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleSettings}
-                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+        {/* Universal Navigation */}
+        <UniversalNavigation />
 
         <div className="flex items-center justify-center h-screen p-8">
           <div className="text-center">
@@ -663,100 +570,6 @@ const MainSession: React.FC = () => {
       )}
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        {/* Left side - Title (only shown when controls are visible) */}
-        <AnimatePresence>
-          {showControls && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute left-6 top-6"
-            >
-              <div className={`text-2xl font-bold ${
-                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                Komorebi
-              </div>
-              {videoEnabled && (
-                <div className={`text-sm font-medium mt-0.5 ${
-                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  {getSceneDisplayName(currentScene)}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Right side - Controls Container (always positioned on the right) */}
-        <div className="absolute right-6 top-6 flex items-center gap-3">
-          {/* Animated Controls Panel */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                variants={controlsVariants}
-                className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
-                  sessionType === 'morning' 
-                    ? 'bg-white/20' 
-                    : 'bg-white/10'
-                }`}
-              >
-                {/* Background Controls */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={toggleVideoBackground}
-                    title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                      sessionType === 'morning'
-                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
-                  >
-                    {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                  
-                  {videoEnabled && (
-                    <>
-                      <button
-                        onClick={handleNextScene}
-                        title="Next scene"
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={handleRandomScene}
-                        title="Random scene"
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <Shuffle className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* Separator */}
-                <div className={`w-px h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
-
-                {/* Session Controls */}
-                <button
-                  onClick={handleNewSession}
                   title="Start fresh session"
                   className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
