@@ -7,7 +7,7 @@ import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
 import { useAuth } from '../context/AuthContext';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
-import { ArrowLeft, Sparkles, Calendar, Filter, Archive, MessageCircle, Clock, Shield } from 'lucide-react';
+import { ArrowLeft, Sparkles, Calendar, Filter, Archive, MessageCircle, Clock, Shield, ChevronRight } from 'lucide-react';
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
@@ -86,6 +86,36 @@ const InsightsGallery: React.FC = () => {
 
   const handleBack = () => {
     navigate('/');
+  };
+
+  const handleExportData = () => {
+    if (!user) return;
+
+    const insights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+    const sessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+    const limits = JSON.parse(localStorage.getItem('session-limits') || '{}');
+    
+    const exportData = {
+      insights,
+      archivedSessions: sessions,
+      sessionLimits: limits,
+      exportDate: new Date().toISOString(),
+      userEmail: user.email,
+      userType: user.isPro ? 'Pro' : 'Free'
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `komorebi-complete-data-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -228,6 +258,30 @@ const InsightsGallery: React.FC = () => {
 
           {/* Data Privacy Notice */}
           {user && (
+            <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm mb-6 ${
+              timeOfDay.period === 'morning' ? 'bg-blue-500/10' : 'bg-blue-600/10'
+            }`}>
+              <div className="flex items-start gap-3">
+                <Shield className={`w-5 h-5 mt-0.5 ${
+                  timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
+                }`} />
+                <div>
+                  <h4 className={`font-semibold mb-1 ${
+                    timeOfDay.period === 'morning' ? 'text-blue-800' : 'text-blue-300'
+                  }`}>
+                    Your Data Belongs to You
+                  </h4>
+                  <p className={`text-sm ${
+                    timeOfDay.period === 'morning' ? 'text-blue-700' : 'text-blue-200'
+                  }`}>
+                    All conversations and insights are stored locally on your device. 
+                    We never access your private reflections.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Insights Grid */}
           {filteredInsights.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -254,31 +308,7 @@ const InsightsGallery: React.FC = () => {
               ))}
             </div>
           ) : (
-                  className={`w-full p-4 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-between ${
-                    timeOfDay.period === 'morning' 
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-800' 
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Archive className={`w-6 h-6 ${
-                      timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-                    }`} />
-                    <div className="text-left">
-                      <div className="font-semibold">Session Archive</div>
-                      <div className={`text-sm ${
-                        timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                      }`}>
-                        View your conversation history ({archivedSessions.length} sessions)
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`transition-transform duration-200 ${showSessionArchive ? 'rotate-180' : ''}`}>
-                    <ChevronRight className="w-5 h-5" />
-                  </div>
-                </button>
-              </div>
-            )}
+          )}
 
             {/* Session Archive Section */}
             <AnimatePresence>
@@ -413,6 +443,7 @@ const InsightsGallery: React.FC = () => {
             </AnimatePresence>
 
             /* Empty State */
+          ) : (
             <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
