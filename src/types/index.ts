@@ -42,6 +42,7 @@ export interface InsightCard {
   sceneType: NatureScene;
   videoStillUrl?: string;
   imageUrl?: string;
+  isPinned?: boolean;
 }
 
 export interface AIResponse {
