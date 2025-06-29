@@ -1,445 +1,812 @@
-/**
- * InsightCard component
- * Displays a beautiful card with a quote/insight from the user's conversation
- * Features:
- * - Interactive 3D effects
- * - Download and share capabilities
- * - Pin/favorite functionality
- * - Scene background from user's session
- */
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { aiChatService } from '../lib/supabase';
+import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
+import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
+import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
+import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
+import UniversalNavigation from '../components/UniversalNavigation';
+import ChatInterface from '../components/ChatInterface';
+import InsightCard from '../components/InsightCard';
+import SessionLimitReached from '../components/SessionLimitReached';
+import { Sparkles } from 'lucide-react';
 
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles, X, Star, Trash2 } from 'lucide-react';
-import { natureScenes } from '../utils/sceneUtils';
+const MainSession: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [currentScene, setCurrentScene] = useState<NatureScene>('ocean');
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
+  const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
+    morningCompleted: false,
+    eveningCompleted: false,
+    messagesUsed: 0,
+    maxMessages: user?.isPro ? 999 : 4,
+  });
 
-interface InsightCardProps {
-  insight: InsightCardType;
-  className?: string;
-  isExpanded?: boolean;
-  onClose?: () => void;
-  onTogglePin?: (insightId: string) => void;
-  onDelete?: (event: React.MouseEvent) => void;
-  isDeleting?: boolean;
-}
-
-// Memoized action button component
-const ActionButton = React.memo<{
-  onClick: (e: React.MouseEvent) => void;
-  icon: React.ReactNode;
-  title: string;
-  variant?: 'default' | 'danger' | 'active';
-  disabled?: boolean;
-  timeOfDay: 'morning' | 'evening';
-}>(({ onClick, icon, title, variant = 'default', disabled = false, timeOfDay }) => {
-  // Get button styles based on variant and time of day
-  const getButtonStyles = () => {
-    const baseStyles = `p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:hover:scale-100`;
-    
-    if (variant === 'danger') {
-      return `${baseStyles} ${
-        timeOfDay === 'morning'
-          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border-red-300/50'
-          : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border-red-600/30'
-      }`;
-    }
-    
-    if (variant === 'active') {
-      return `${baseStyles} ${
-        timeOfDay === 'morning'
-          ? 'bg-amber-500/30 text-amber-700 border-amber-500/50'
-          : 'bg-purple-500/30 text-purple-300 border-purple-500/50'
-      }`;
-    }
-    
-    return `${baseStyles} ${
-      timeOfDay === 'morning'
-        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-        : 'bg-white/10 hover:bg-white/20 text-white'
-    }`;
-  };
+  const timeOfDay = getTimeOfDay(user?.name);
+  const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
   
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={getButtonStyles()}
-      title={title}
-      aria-label={title}
-    >
-      {icon}
-    </button>
-  );
-});
-
-const InsightCard: React.FC<InsightCardProps> = ({
-  insight,
-  className = '',
-  isExpanded = false,
-  onClose,
-  onTogglePin,
-  onDelete,
-  isDeleting = false
-}) => {
-  const [copied, setCopied] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  // Determine which session type to use based on time
+  const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
   
-  // Get scene data for the insight
-  const sceneData = useMemo(() => 
-    natureScenes[insight.sceneType], 
-    [insight.sceneType]
-  );
-  
-  // Motion values for 3D effect (only when expanded)
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  
-  // Memoized transforms to prevent recalculation
-  const rotateX = useMemo(() => 
-    useTransform(mouseY, [-150, 150], [15, -15]), 
-    [mouseY]
-  );
-  const rotateY = useMemo(() => 
-    useTransform(mouseX, [-150, 150], [-15, 15]), 
-    [mouseX]
-  );
+  // Check if user has completed BOTH sessions today (only block if both are done)
+  const hasCompletedBothToday = user ? (
+    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
+    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
+  ) : false;
 
-  // Holographic foil effect transforms
-  const holographicX = useMemo(() => 
-    useTransform(mouseX, [-150, 150], [0, 100]), 
-    [mouseX]
-  );
-  const holographicY = useMemo(() => 
-    useTransform(mouseY, [-150, 150], [0, 100]), 
-    [mouseY]
-  );
+  // Check if session time has expired (only for non-Pro users)
+  const isSessionExpired = !user?.isPro && sessionStartTime && 
+    (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
-  // Optimized mouse move handler
-  const handleMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isExpanded || !cardRef.current) return;
-
-    const rect = cardRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    mouseX.set(event.clientX - centerX);
-    mouseY.set(event.clientY - centerY);
-  }, [isExpanded, mouseX, mouseY]);
-
-  // Reset mouse position on leave
-  const handleMouseLeave = useCallback(() => {
-    if (!isExpanded) return;
-    mouseX.set(0);
-    mouseY.set(0);
-  }, [isExpanded, mouseX, mouseY]);
-
-  // Optimized copy handler with error handling
-  const handleCopy = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(insight.quote);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.warn('Clipboard API failed, using fallback', error);
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = insight.quote;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.select();
-      
-      try {
-        document.execCommand('copy');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (fallbackError) {
-        console.error('All copy methods failed', fallbackError);
-      } finally {
-        document.body.removeChild(textArea);
-      }
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+    if (savedVideoEnabled !== null) {
+      setVideoEnabled(JSON.parse(savedVideoEnabled));
     }
-  }, [insight.quote]);
 
-  // Optimized download handler
-  const handleDownload = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (downloading) return;
-    
-    setDownloading(true);
-    try {
-      const element = document.getElementById(`insight-card-${insight.id}`);
-      if (!element) {
-        throw new Error('Card element not found');
-      }
-
-      // Dynamic import for html2canvas to reduce bundle size
-      const html2canvas = (await import('html2canvas')).default;
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        width: 400,
-        height: 600,
-        useCORS: true,
-        logging: false,
-        backgroundColor: null,
-      });
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.download = `komorebi-insight-${insight.createdAt.toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-      
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Failed to download image. Please try again.');
-    } finally {
-      setDownloading(false);
+    const savedScene = localStorage.getItem('current-scene') as NatureScene;
+    if (savedScene) {
+      setCurrentScene(savedScene);
+    } else {
+      // Set initial scene based on session type
+      const initialScene = getSceneForSession(sessionType);
+      setCurrentScene(initialScene);
+      localStorage.setItem('current-scene', initialScene);
     }
-  }, [insight.id, insight.createdAt, downloading]);
 
-  // Optimized share handler
-  const handleShare = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const shareData = {
-      title: 'Komorebi MindMate Insight',
-      text: insight.quote,
-      url: window.location.origin,
-    };
-    
-    if (navigator.share && navigator.canShare?.(shareData)) {
-      try {
-        await navigator.share(shareData);
-      } catch (error) {
-        if ((error as Error).name !== 'AbortError') {
-          console.warn('Share failed, falling back to copy', error);
-          handleCopy(e);
-        }
+    // Load session limits from localStorage only if user is logged in
+    if (user) {
+      const savedLimits = localStorage.getItem('session-limits');
+      if (savedLimits) {
+        const parsed = JSON.parse(savedLimits);
+        setSessionLimits({
+          ...parsed,
+          lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
+          lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
+          maxMessages: user?.isPro ? 999 : 4,
+        });
       }
     } else {
-      handleCopy(e);
+      // Reset session limits for non-logged in users
+      setSessionLimits({
+        morningCompleted: false,
+        eveningCompleted: false,
+        messagesUsed: 0,
+        maxMessages: 4,
+      });
     }
-  }, [insight.quote, handleCopy]);
 
-  // Optimized pin toggle handler
-  const handleTogglePin = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onTogglePin) {
-      onTogglePin(insight.id);
+    // Load session start time
+    const savedStartTime = localStorage.getItem('session-start-time');
+    if (savedStartTime) {
+      setSessionStartTime(new Date(savedStartTime));
     }
-  }, [onTogglePin, insight.id]);
 
-  // Memoized responsive scale calculation
-  const responsiveScale = useMemo(() => {
-    if (!isExpanded) return 1;
+    // Add initial greeting message if no messages exist
+    if (messages.length === 0) {
+      const greetingMessage: Message = {
+        id: 'greeting',
+        content: timeOfDay.greeting,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+    }
+  }, [user?.isPro, user, sessionType]);
+
+  useEffect(() => {
+    // Auto-start session if conditions are met
+    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      // Store session start time
+      localStorage.setItem('session-start-time', startTime.toISOString());
+    }
+  }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedBothToday, isSessionExpired]);
+
+  const saveSessionLimits = (limits: SessionLimits) => {
+    setSessionLimits(limits);
+    // Only save to localStorage if user is logged in
+    if (user) {
+      localStorage.setItem('session-limits', JSON.stringify(limits));
+    }
+  };
+
+  const handleNextScene = () => {
+    const nextScene = getNextScene(currentScene, sessionType);
+    setCurrentScene(nextScene);
+    localStorage.setItem('current-scene', nextScene);
+  };
+
+  const handleRandomScene = () => {
+    const availableScenes = getAllScenesForSession(sessionType);
+    const otherScenes = availableScenes.filter(scene => scene !== currentScene);
+    const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
+    setCurrentScene(randomScene);
+    localStorage.setItem('current-scene', randomScene);
+  };
+
+  const toggleVideoBackground = () => {
+    const newVideoEnabled = !videoEnabled;
+    setVideoEnabled(newVideoEnabled);
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (isLoading || (!user?.isPro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+
+    // Start session timer if not already started
+    if (!sessionStartTime) {
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      localStorage.setItem('session-start-time', startTime.toISOString());
+    }
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      role: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    const newMessagesUsed = sessionLimits.messagesUsed + 1;
+    const newUserMessagesSinceLastInsight = userMessagesSinceLastInsight + 1;
     
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const baseWidth = 400;
-    const baseHeight = 600;
-    const marginX = 100;
-    const marginY = 100;
+    // Update message counts
+    setUserMessagesSinceLastInsight(newUserMessagesSinceLastInsight);
+    saveSessionLimits({
+      ...sessionLimits,
+      messagesUsed: newMessagesUsed,
+    });
+
+    // Check if we should show the insight generation button (every 5 user messages)
+    if (newUserMessagesSinceLastInsight % 5 === 0 && newUserMessagesSinceLastInsight > 0) {
+      setShowGenerateInsightButton(true);
+    }
+
+    try {
+      // Convert messages to conversation history format (excluding the greeting message)
+      const conversationHistory = messages
+        .filter(msg => msg.id !== 'greeting')
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+      // Use Supabase AI chat service
+      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, user?.name);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response.message,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble connecting right now. Let's try again in a moment.",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGenerateInsightClick = async () => {
+    setIsGeneratingInsight(true);
+    setShowGenerateInsightButton(false);
     
-    const scaleX = (viewportWidth - marginX) / baseWidth;
-    const scaleY = (viewportHeight - marginY) / baseHeight;
+    try {
+      // Filter out the greeting message for insight generation
+      const sessionMessages = messages.filter(msg => msg.id !== 'greeting');
+      await generateInsightCard(sessionMessages);
+      
+      // Reset the counter
+      setUserMessagesSinceLastInsight(0);
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      // Re-show the button if there was an error
+      setShowGenerateInsightButton(true);
+    } finally {
+      setIsGeneratingInsight(false);
+    }
+  };
+
+  const generateInsightCard = async (sessionMessages: Message[]) => {
+    try {
+      let response;
+      
+      try {
+        // Try Supabase AI service first
+        response = await aiChatService.generateInsightCard(sessionMessages, sessionType);
+      } catch (error) {
+        console.warn('Supabase AI service failed, using local fallback:', error);
+        // Fallback to local insight generation
+        response = await simulateInsightGeneration(sessionMessages, sessionType);
+      }
+      
+      // Capture current video frame if video is enabled
+      let videoStillUrl = null;
+      if (videoEnabled && videoBackgroundRef.current) {
+        // Wait a moment to ensure video is playing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        videoStillUrl = videoBackgroundRef.current.captureFrame();
+        console.log('Video frame capture result:', videoStillUrl ? 'Success' : 'Failed');
+      }
+      
+      const insight: InsightCardType = {
+        id: Date.now().toString(),
+        quote: response.quote,
+        type: sessionType,
+        sessionId: Date.now().toString(),
+        createdAt: new Date(),
+        sceneType: currentScene,
+        videoStillUrl: videoStillUrl || undefined,
+      };
+      
+      setInsightCard(insight);
+      
+      // Only save to localStorage if user is logged in
+      if (user) {
+        const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+        existingInsights.push(insight);
+        localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+      }
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      // Create a fallback insight with video capture
+      try {
+        let videoStillUrl = null;
+        if (videoEnabled && videoBackgroundRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          videoStillUrl = videoBackgroundRef.current.captureFrame();
+        }
+        
+        const fallbackInsight: InsightCardType = {
+          id: Date.now().toString(),
+          quote: sessionType === 'morning' 
+            ? "Every moment is a fresh beginning, and today holds infinite possibilities for growth and joy."
+            : "Today's experiences have shaped you in beautiful ways. Rest knowing you've grown through every challenge and triumph.",
+          type: sessionType,
+          sessionId: Date.now().toString(),
+          createdAt: new Date(),
+          sceneType: currentScene,
+          videoStillUrl: videoStillUrl || undefined,
+        };
+        
+        setInsightCard(fallbackInsight);
+        
+        if (user) {
+          const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+          existingInsights.push(fallbackInsight);
+          localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+        }
+      } catch (fallbackError) {
+        console.error('Fallback insight generation failed:', fallbackError);
+        throw error;
+      }
+    }
+  };
+
+  // Local insight generation fallback
+  const simulateInsightGeneration = async (sessionMessages: Message[], sessionType: 'morning' | 'evening') => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    return Math.min(Math.max(Math.min(scaleX, scaleY), 0.8), 2.0);
-  }, [isExpanded]);
+    const conversationText = sessionMessages.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
+    
+    let quote = "";
+    
+    if (conversationText.includes('stress') || conversationText.includes('anxious') || conversationText.includes('overwhelmed')) {
+      const stressInsights = sessionType === 'morning' 
+        ? [
+            "Your awareness of stress is the first step toward managing it with grace.",
+            "Even in challenging moments, you have the strength to find your center.",
+            "Today's difficulties are tomorrow's wisdom in disguise."
+          ]
+        : [
+            "You've carried today's challenges with more resilience than you realize.",
+            "Stress reveals our capacity for growth and adaptation.",
+            "Every difficult day teaches us something valuable about our inner strength."
+          ];
+      quote = stressInsights[Math.floor(Math.random() * stressInsights.length)];
+    } else if (conversationText.includes('grateful') || conversationText.includes('happy') || conversationText.includes('excited')) {
+      const positiveInsights = sessionType === 'morning'
+        ? [
+            "Gratitude is the foundation upon which beautiful days are built.",
+            "Your positive energy is a gift you give to yourself and the world.",
+            "Joy shared in the morning multiplies throughout the day."
+          ]
+        : [
+            "Today's joy is a reminder of life's endless capacity for beauty.",
+            "Gratitude transforms ordinary moments into extraordinary memories.",
+            "Your appreciation for life's gifts illuminates the path forward."
+          ];
+      quote = positiveInsights[Math.floor(Math.random() * positiveInsights.length)];
+    } else if (conversationText.includes('work') || conversationText.includes('career') || conversationText.includes('job')) {
+      const workInsights = sessionType === 'morning'
+        ? [
+            "Your work is an expression of your values and talents.",
+            "Purpose-driven action creates meaning in even the smallest tasks.",
+            "Today's efforts are building tomorrow's opportunities."
+          ]
+        : [
+            "Your professional journey reflects your commitment to growth and contribution.",
+            "Work challenges are invitations to discover new aspects of your capabilities.",
+            "Balance between effort and rest creates sustainable success."
+          ];
+      quote = workInsights[Math.floor(Math.random() * workInsights.length)];
+    } else {
+      const generalInsights = sessionType === 'morning'
+        ? [
+            "Today is a canvas waiting for your unique brushstrokes of intention.",
+            "Your awareness of this moment is the first step toward meaningful change.",
+            "Small, intentional actions create the foundation for extraordinary days.",
+            "You have everything within you to make today beautiful.",
+            "Clarity comes not from having all the answers, but from asking the right questions."
+          ]
+        : [
+            "Growth happens in the space between challenge and reflection.",
+            "Every experience today was a teacher, even the difficult ones.",
+            "You showed up today, and that itself is worthy of celebration.",
+            "Tomorrow's possibilities are born from today's insights.",
+            "Your journey is uniquely yours, and every step has value."
+          ];
+      quote = generalInsights[Math.floor(Math.random() * generalInsights.length)];
+    }
+    
+    return { quote };
+  };
 
-  return (
-    <div className={className}>
-      {/* Close button for expanded view */}
-      {isExpanded && onClose && (
-        <button
-          onClick={onClose}
-          className="fixed top-6 right-6 z-[110] p-3 rounded-full bg-black/50 hover:bg-black/70 text-white transition-all duration-200"
-          aria-label="Close expanded view"
-        >
-          <X className="w-6 h-6" />
-        </button>
-      )}
+  const handleNewSession = () => {
+    // Before starting a new session, save the current session if it has meaningful content
+    if (user && messages.length > 1) { // More than just the greeting
+      const sessionEndTime = new Date();
+      const sessionDuration = sessionStartTime 
+        ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : undefined;
 
-      {/* Card Container */}
-      <motion.div
-        ref={cardRef}
-        id={`insight-card-${insight.id}`}
-        drag={isExpanded}
-        dragElastic={0.1}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        style={isExpanded ? {
-          rotateX,
-          rotateY,
-          transformStyle: 'preserve-3d',
-        } : {}}
-        className={`relative w-full aspect-[2/3] rounded-2xl overflow-hidden transition-all duration-300 ${
-          isExpanded 
-            ? 'cursor-grab active:cursor-grabbing' 
-            : 'cursor-pointer insight-card'
-        }`}
-        whileHover={!isExpanded ? { 
-          scale: 1.05, 
-          rotateY: 5,
-          transition: { type: "spring", stiffness: 300, damping: 30 }
-        } : {}}
-        animate={isExpanded ? { scale: responsiveScale } : { scale: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-          style={{
-            backgroundImage: `url(${insight.videoStillUrl || sceneData.thumbnailUrl})`,
-          }}
-        />
+      const archivedSession: ArchivedChatSession = {
+        id: Date.now().toString(),
+        type: sessionType,
+        messages: messages.filter(msg => msg.id !== 'greeting'), // Exclude greeting
+        createdAt: sessionStartTime || sessionEndTime,
+        sceneType: currentScene,
+        messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
+        duration: sessionDuration,
+      };
 
-        {/* Background Overlay Gradient */}
-        <div className={`absolute inset-0 ${
-          insight.type === 'morning' 
-            ? 'bg-gradient-to-br from-amber-300/40 via-orange-200/30 to-yellow-200/40' 
-            : 'bg-gradient-to-br from-purple-400/40 via-indigo-300/30 to-blue-400/40'
-        }`} />
+      // Save to localStorage
+      const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+      existingSessions.push(archivedSession);
+      
+      // Keep only the most recent 50 sessions to prevent localStorage bloat
+      if (existingSessions.length > 50) {
+        existingSessions.splice(0, existingSessions.length - 50);
+      }
+      
+      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
+    }
 
-        {/* Holographic Foil Effect (only when expanded) */}
-        {isExpanded && (
-          <motion.div
-            className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
-            style={{
-              backgroundPosition: `${holographicX}% ${holographicY}%`,
-              background: 'linear-gradient(45deg, #ff0080 0%, #ff8c00 16%, #40e0d0 32%, #9370db 48%, #00ff7f 64%, #ffd700 80%, #ff0080 100%)',
-              backgroundSize: '200% 200%',
-            }}
+    // Reset to just the greeting message
+    const greetingMessage: Message = {
+      id: 'greeting',
+      content: timeOfDay.greeting,
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages([greetingMessage]);
+    setInsightCard(null);
+    setUserMessagesSinceLastInsight(0);
+    setShowGenerateInsightButton(false);
+    const startTime = new Date();
+    setSessionStartTime(startTime);
+    localStorage.setItem('session-start-time', startTime.toISOString());
+    saveSessionLimits({
+      ...sessionLimits,
+      messagesUsed: 0,
+    });
+  };
+
+  const handleUpgrade = () => {
+    navigate('/pro-upgrade');
+  };
+
+
+  // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
+  if (user && !user.isPro && hasCompletedBothToday) {
+    return (
+      <div className="h-screen relative overflow-hidden">
+        {videoEnabled && (
+          <NatureVideoBackground 
+            ref={videoBackgroundRef}
+            scene={currentScene} 
+            timeOfDay={sessionType} 
           />
         )}
-
-        {/* Content Container */}
-        <div className="relative h-full flex flex-col justify-between p-6">
-          {/* Header */}
-          <div className="text-center">
-            <div className="text-lg font-bold mb-2 text-white">
-              Komorebi
-            </div>
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
-              insight.type === 'morning' 
-                ? 'bg-amber-500/20 text-amber-100' 
-                : 'bg-purple-500/20 text-purple-100'
-            }`}>
-              <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {insight.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-              </span>
-            </div>
-          </div>
-
-          {/* Quote Section */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="relative max-w-full">
-              <div className="absolute inset-0 rounded-2xl backdrop-blur-md border border-white/30 bg-white/50" />
-              <div className="relative p-6">
-                <blockquote className="text-lg font-medium leading-relaxed text-center text-gray-900">
-                  "{insight.quote}"
-                </blockquote>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center">
-            <div className="text-sm font-medium text-white">
-              {insight.createdAt.toLocaleDateString([], {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Shine Effect */}
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
-            opacity: 0.3,
-          }}
-        />
-
-        {/* Premium border glow effect when expanded */}
-        {isExpanded && (
-          <div className={`absolute inset-0 rounded-2xl pointer-events-none ${
-            insight.type === 'morning'
-              ? 'rarity-legendary'
-              : 'rarity-epic'
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
           }`} />
         )}
-      </motion.div>
+        
+        {/* Universal Navigation */}
+        <UniversalNavigation />
 
-      {/* Action Buttons (only shown when not expanded) */}
-      {!isExpanded && (
-        <div className="flex justify-center gap-2 mt-6">
-          {/* Pin/Favorite Button */}
-          {onTogglePin && (
-            <ActionButton
-              onClick={handleTogglePin}
-              icon={<Star className={`w-5 h-5 ${insight.isPinned ? 'fill-current' : ''}`} />}
-              title={insight.isPinned ? 'Remove from favorites' : 'Add to favorites'}
-              variant={insight.isPinned ? 'active' : 'default'}
-              timeOfDay={insight.type}
-            />
-          )}
-          
-          {/* Delete Button */}
-          {onDelete && (
-            <ActionButton
-              onClick={onDelete}
-              icon={isDeleting ? (
-                <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              ) : (
-                <Trash2 className="w-5 h-5" />
-              )}
-              title="Delete insight"
-              variant="danger"
-              disabled={isDeleting}
-              timeOfDay={insight.type}
-            />
-          )}
-          
-          {/* Copy Button */}
-          <ActionButton
-            onClick={handleCopy}
-            icon={copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-            title="Copy quote to clipboard"
-            timeOfDay={insight.type}
+        <SessionLimitReached
+          nextSessionTime={getNextAvailableSession()}
+          timeOfDay={sessionType}
+          onUpgrade={handleUpgrade}
+        />
+      </div>
+    );
+  }
+
+  // Show session expired message
+  if (sessionStartTime && isSessionExpired) {
+    return (
+      <div className="h-screen relative overflow-hidden">
+        {videoEnabled && (
+          <NatureVideoBackground 
+            ref={videoBackgroundRef}
+            scene={currentScene} 
+            timeOfDay={sessionType} 
           />
-          
-          {/* Download Button */}
-          <ActionButton
-            onClick={handleDownload}
-            icon={downloading ? (
-              <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              <Download className="w-5 h-5" />
+        )}
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
+          }`} />
+        )}
+        
+        {/* Universal Navigation */}
+        <UniversalNavigation />
+
+        <div className="flex items-center justify-center h-screen p-8">
+          <div className="text-center">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ${
+              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            } border border-white/20`}>
+              <Settings className={`w-10 h-10 ${
+                sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+              }`} />
+            </div>
+            
+            <h2 className={`text-2xl font-semibold mb-4 ${
+              sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+            }`}>
+              Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+            </h2>
+            
+            <p className={`text-lg mb-6 ${
+              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              Your {sessionTimeLimit}-minute session has ended.
+            </p>
+
+            {!user?.isPro && (
+              <div className={`p-6 rounded-2xl backdrop-blur-sm mb-8 ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              } border border-white/20 max-w-md mx-auto`}>
+                <Crown className={`w-8 h-8 mx-auto mb-3 ${
+                  sessionType === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                }`} />
+                <h3 className={`text-lg font-semibold mb-2 ${
+                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Want longer sessions?
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Upgrade to Pro for 1-hour sessions and unlimited conversations.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
             )}
-            title="Download as image"
-            disabled={downloading}
-            timeOfDay={insight.type}
-          />
-          
-          {/* Share Button */}
-          <ActionButton
-            onClick={handleShare}
-            icon={<Share2 className="w-5 h-5" />}
-            title="Share insight"
-            timeOfDay={insight.type}
-          />
+            
+            <button
+              onClick={handleNewSession}
+              className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              Start New Session
+            </button>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen relative overflow-hidden flex flex-col">
+      {videoEnabled && (
+        <NatureVideoBackground 
+          ref={videoBackgroundRef}
+          scene={currentScene} 
+          timeOfDay={sessionType} 
+        />
       )}
+      {!videoEnabled && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${
+          sessionType === 'morning' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
+      )}
+      
+      {/* Header */}
+                  title="Start fresh session"
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+
+                {/* Separator */}
+                <div className={`w-px h-6 ${
+                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+                }`} />
+
+                {/* User Controls */}
+                {!user && (
+                  <button
+                    onClick={handleLogin}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <LogIn className="w-3 h-3" />
+                    <span className="text-xs font-medium">Sign In</span>
+                  </button>
+                )}
+                
+                {user && !user.isPro && (
+                  <button
+                    onClick={handleUpgrade}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                    }`}
+                  >
+                    <Crown className="w-3 h-3" />
+                    <span className="text-xs font-medium">Pro</span>
+                  </button>
+                )}
+
+                {user && (
+                  <>
+                    <button
+                      onClick={handleInsights}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <User className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleSettings}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Universal Toggle Button - Always positioned in top right */}
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+              sessionType === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+            title={showControls ? 'Hide controls' : 'Show controls'}
+          >
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
+        <div className="w-full flex-1 flex flex-col min-h-0">
+          {/* Session Type Display */}
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="text-center mb-4 flex-shrink-0"
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Komorebi
+                </div>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <Sparkles className={`w-5 h-5 ${
+                    sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+                  }`} />
+                  <span className={`text-lg font-semibold ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            timeOfDay={sessionType}
+            isImmersive={!showControls}
+            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+          />
+
+          {/* Insight Generation Button */}
+          <AnimatePresence>
+            {showGenerateInsightButton && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 text-center animate-fade-in flex-shrink-0"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                  </p>
+                  <button
+                    onClick={handleGenerateInsightClick}
+                    disabled={isGeneratingInsight}
+                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Display Latest Insight Card */}
+          <AnimatePresence>
+            {insightCard && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 animate-fade-in flex-shrink-0"
+              >
+                <div className="text-center mb-4">
+                  <h2 className={`text-xl md:text-2xl font-semibold mb-2 ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </h2>
+                  <p className={`text-sm ${
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    A reflection from our conversation
+                  </p>
+                </div>
+                <div className="max-w-sm mx-auto">
+                  <InsightCard insight={insightCard} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Login prompt for non-logged in users */}
+          <AnimatePresence>
+            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 text-center flex-shrink-0"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    Sign in to save your insights and track your progress
+                  </p>
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Sign In to Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-xs ${
+          sessionType === 'morning' 
+            ? 'text-white' 
+            : 'text-gray-900'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
+      </div>
     </div>
   );
 };
 
-export default InsightCard;
+export default MainSession;
