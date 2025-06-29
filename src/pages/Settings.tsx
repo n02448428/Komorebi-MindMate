@@ -68,6 +68,8 @@ const ChatArchive: React.FC = () => {
       textArea.value = chatText;
       textArea.style.position = 'fixed';
       textArea.style.left = '-999999px';
+    }
+  };
 
   const highlightSearchText = (text: string, query: string) => {
     if (!query) return text;
