@@ -28,6 +28,13 @@ const ChatArchive: React.FC = () => {
         const date = new Date(session.createdAt);
         return isValid(date) ? date : new Date();
       })(),
+      messages: session.messages?.map((message: any) => ({
+        ...message,
+        timestamp: (() => {
+          const date = new Date(message.timestamp);
+          return isValid(date) ? date : new Date();
+        })(),
+      })) || [],
     }));
     
     // Sort by date (newest first)
