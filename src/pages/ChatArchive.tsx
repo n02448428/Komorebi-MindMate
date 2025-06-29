@@ -5,8 +5,7 @@ import { ArchivedChatSession } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import UniversalMenu from '../components/UniversalMenu';
-import { Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check } from 'lucide-react';
+import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 
 const ChatArchive: React.FC = () => {
@@ -171,13 +170,24 @@ Your AI companion for mindful reflection
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
+        <button
+          onClick={handleBack}
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+            timeOfDay.period === 'morning'
+              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              : 'bg-white/10 hover:bg-white/20 text-white'
+          }`}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
           Chat Archive
         </div>
         
-        <UniversalMenu />
+        <div className="w-11" /> {/* Spacer */}
       </div>
 
       {/* Main Content */}
