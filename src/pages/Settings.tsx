@@ -10,12 +10,11 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download }
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, updateUserName, updateUserEmail } = useAuth();
-
-  const timeOfDay = getTimeOfDay();
   const [editingName, setEditingName] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
   const [tempName, setTempName] = useState(user?.name || '');
-  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+  const [timeOfDay] = useState(() => getTimeOfDay()); // Stabilize timeOfDay to prevent background changes
+  const [currentScene] = useState(() => getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening'));
 
   // Get video background setting
   const handleSaveName = () => {

@@ -5,7 +5,7 @@ import { ArchivedChatSession } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const ChatArchive: React.FC = () => {
@@ -14,6 +14,7 @@ const ChatArchive: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
