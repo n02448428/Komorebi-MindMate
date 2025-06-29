@@ -683,136 +683,119 @@ const MainSession: React.FC = () => {
                 animate="visible"
                 exit="hidden"
                 variants={controlsVariants}
-                className={`flex flex-col sm:flex-row items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                className={`grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:items-center backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
                   sessionType === 'morning' 
                     ? 'bg-white/20' 
                     : 'bg-white/10'
                 }`}
               >
-                {/* Background Controls */}
-                <div className="grid grid-cols-3 sm:flex gap-2">
+                {/* Row 1: Background Controls */}
+                <button
+                  onClick={toggleVideoBackground}
+                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                
+                <button
+                  onClick={handleNextScene}
+                  title="Next scene"
+                  disabled={!videoEnabled}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    !videoEnabled 
+                      ? 'opacity-50 cursor-not-allowed'
+                      : (sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white')
+                  }`}
+                >
+                  <SkipForward className="w-4 h-4" />
+                </button>
+                
+                <button
+                  onClick={handleRandomScene}
+                  title="Random scene"
+                  disabled={!videoEnabled}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    !videoEnabled 
+                      ? 'opacity-50 cursor-not-allowed'
+                      : (sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white')
+                  }`}
+                >
+                  <Shuffle className="w-4 h-4" />
+                </button>
+
+                {/* Row 2: Session and User Controls */}
+                <button
+                  onClick={handleNewSession}
+                  title="Start fresh session"
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                
+                {!user && (
                   <button
-                    onClick={toggleVideoBackground}
-                    title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                    onClick={handleLogin}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <LogIn className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {user && !user.isPro && (
+                  <button
+                    onClick={handleUpgrade}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                    }`}
+                  >
+                    <Crown className="w-4 h-4" />
+                  </button>
+                )}
+
+                {user && (
+                  <button
+                    onClick={handleInsights}
                     className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <User className="w-4 h-4" />
                   </button>
-                  
-                  {videoEnabled && (
-                    <>
-                      <button
-                        onClick={handleNextScene}
-                        title="Next scene"
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={handleRandomScene}
-                        title="Random scene"
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <Shuffle className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* Separator */}
-                <div className={`w-full h-px sm:w-px sm:h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
-
-                {/* Session Controls */}
-                <div className="grid grid-cols-2 sm:flex gap-2">
+                )}
+                
+                {user && (
                   <button
-                    onClick={handleNewSession}
-                    title="Start fresh session"
+                    onClick={handleSettings}
                     className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
                     }`}
                   >
-                    <RefreshCw className="w-4 h-4" />
+                    <Settings className="w-4 h-4" />
                   </button>
-                </div>
-
-                {/* Separator */}
-                <div className={`w-full h-px sm:w-px sm:h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
-
-                {/* User Controls */}
-                <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
-                  {!user && (
-                    <button
-                      onClick={handleLogin}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      <LogIn className="w-3 h-3" />
-                      <span className="text-xs font-medium">Sign In</span>
-                    </button>
-                  )}
-                  
-                  {user && !user.isPro && (
-                    <button
-                      onClick={handleUpgrade}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
-                          : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
-                      }`}
-                    >
-                      <Crown className="w-3 h-3" />
-                      <span className="text-xs font-medium">Pro</span>
-                    </button>
-                  )}
-
-                  {user && (
-                    <button
-                      onClick={handleInsights}
-                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      <User className="w-4 h-4" />
-                    </button>
-                  )}
-                  
-                  {user && (
-                    <button
-                      onClick={handleSettings}
-                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
