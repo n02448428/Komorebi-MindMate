@@ -1,452 +1,812 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArchivedChatSession } from '../types';
-import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
-import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check, Trash2 } from 'lucide-react';
-import { format, isValid } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { aiChatService } from '../lib/supabase';
+import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
+import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
+import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
+import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
+import UniversalNavigation from '../components/UniversalNavigation';
+import ChatInterface from '../components/ChatInterface';
+import InsightCard from '../components/InsightCard';
+import SessionLimitReached from '../components/SessionLimitReached';
+import { Sparkles } from 'lucide-react';
 
-const ChatArchive: React.FC = () => {
+const MainSession: React.FC = () => {
   const navigate = useNavigate();
-  const [archivedSessions, setArchivedSessions] = useState<ArchivedChatSession[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
-  const [expandedSession, setExpandedSession] = useState<string | null>(null);
-  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-
-  const timeOfDay = getTimeOfDay();
-  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
-
-  useEffect(() => {
-    // Load archived sessions from localStorage
-    const loadArchivedSessions = () => {
-      try {
-        const stored = localStorage.getItem('komorebi-chat-sessions');
-        if (stored) {
-          const sessions = JSON.parse(stored) as ArchivedChatSession[];
-          // Sort by date, newest first
-          const sortedSessions = sessions.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setArchivedSessions(sortedSessions);
-        }
-      } catch (error) {
-        console.error('Error loading archived sessions:', error);
-      }
-    };
-
-    loadArchivedSessions();
-  }, []);
-
-  const filteredSessions = archivedSessions.filter(session => {
-    const matchesSearch = searchTerm === '' || 
-      session.messages.some(msg => 
-        msg.content.toLowerCase().includes(searchTerm.toLowerCase())
-      ) ||
-      session.insights?.some(insight =>
-        insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        insight.content.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-
-    const matchesFilter = filter === 'all' || session.type === filter;
-
-    return matchesSearch && matchesFilter;
+  const { user } = useAuth();
+  const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [insightCard, setInsightCard] = useState<InsightCardType | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [currentScene, setCurrentScene] = useState<NatureScene>('ocean');
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
+  const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
+    morningCompleted: false,
+    eveningCompleted: false,
+    messagesUsed: 0,
+    maxMessages: user?.isPro ? 999 : 4,
   });
 
-  const handleBack = () => {
-    navigate('/insights');
-  };
+  const timeOfDay = getTimeOfDay(user?.name);
+  const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
+  
+  // Determine which session type to use based on time
+  const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
+  
+  // Check if user has completed BOTH sessions today (only block if both are done)
+  const hasCompletedBothToday = user ? (
+    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
+    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
+  ) : false;
 
-  const toggleExpanded = (sessionId: string) => {
-    setExpandedSession(expandedSession === sessionId ? null : sessionId);
-  };
+  // Check if session time has expired (only for non-Pro users)
+  const isSessionExpired = !user?.isPro && sessionStartTime && 
+    (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
-  const handleCopySession = async (session: ArchivedChatSession) => {
-    try {
-      const formattedSession = formatSessionForExport(session);
-      await navigator.clipboard.writeText(formattedSession);
-      setCopiedSessionId(session.id);
-      setTimeout(() => setCopiedSessionId(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy session:', error);
+  useEffect(() => {
+    // Load settings from localStorage
+    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+    if (savedVideoEnabled !== null) {
+      setVideoEnabled(JSON.parse(savedVideoEnabled));
+    }
+
+    const savedScene = localStorage.getItem('current-scene') as NatureScene;
+    if (savedScene) {
+      setCurrentScene(savedScene);
+    } else {
+      // Set initial scene based on session type
+      const initialScene = getSceneForSession(sessionType);
+      setCurrentScene(initialScene);
+      localStorage.setItem('current-scene', initialScene);
+    }
+
+    // Load session limits from localStorage only if user is logged in
+    if (user) {
+      const savedLimits = localStorage.getItem('session-limits');
+      if (savedLimits) {
+        const parsed = JSON.parse(savedLimits);
+        setSessionLimits({
+          ...parsed,
+          lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
+          lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
+          maxMessages: user?.isPro ? 999 : 4,
+        });
+      }
+    } else {
+      // Reset session limits for non-logged in users
+      setSessionLimits({
+        morningCompleted: false,
+        eveningCompleted: false,
+        messagesUsed: 0,
+        maxMessages: 4,
+      });
+    }
+
+    // Load session start time
+    const savedStartTime = localStorage.getItem('session-start-time');
+    if (savedStartTime) {
+      setSessionStartTime(new Date(savedStartTime));
+    }
+
+    // Add initial greeting message if no messages exist
+    if (messages.length === 0) {
+      const greetingMessage: Message = {
+        id: 'greeting',
+        content: timeOfDay.greeting,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+    }
+  }, [user?.isPro, user, sessionType]);
+
+  useEffect(() => {
+    // Auto-start session if conditions are met
+    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      // Store session start time
+      localStorage.setItem('session-start-time', startTime.toISOString());
+    }
+  }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedBothToday, isSessionExpired]);
+
+  const saveSessionLimits = (limits: SessionLimits) => {
+    setSessionLimits(limits);
+    // Only save to localStorage if user is logged in
+    if (user) {
+      localStorage.setItem('session-limits', JSON.stringify(limits));
     }
   };
 
-  const handleDownloadSession = (session: ArchivedChatSession) => {
-    try {
-      const formattedSession = formatSessionForExport(session);
-      const blob = new Blob([formattedSession], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `komorebi-${session.type}-${format(session.createdAt, 'yyyy-MM-dd')}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to download session:', error);
-    }
+  const handleNextScene = () => {
+    const nextScene = getNextScene(currentScene, sessionType);
+    setCurrentScene(nextScene);
+    localStorage.setItem('current-scene', nextScene);
   };
 
-  const handleDeleteSession = async (sessionId: string) => {
-    const session = archivedSessions.find(s => s.id === sessionId);
-    if (!session) return;
+  const handleRandomScene = () => {
+    const availableScenes = getAllScenesForSession(sessionType);
+    const otherScenes = availableScenes.filter(scene => scene !== currentScene);
+    const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
+    setCurrentScene(randomScene);
+    localStorage.setItem('current-scene', randomScene);
+  };
 
-    const confirmMessage = `Are you sure you want to delete this ${session.type} session from ${format(session.createdAt, 'MMM d, yyyy')}? This action cannot be undone.`;
+  const toggleVideoBackground = () => {
+    const newVideoEnabled = !videoEnabled;
+    setVideoEnabled(newVideoEnabled);
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (isLoading || (!user?.isPro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+
+    // Start session timer if not already started
+    if (!sessionStartTime) {
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      localStorage.setItem('session-start-time', startTime.toISOString());
+    }
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      role: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+
+    const newMessagesUsed = sessionLimits.messagesUsed + 1;
+    const newUserMessagesSinceLastInsight = userMessagesSinceLastInsight + 1;
     
-    if (confirm(confirmMessage)) {
-      setDeletingSessionId(sessionId);
-      // Update state
-      const updatedSessions = archivedSessions.filter(s => s.id !== sessionId);
-      setArchivedSessions(updatedSessions);
-      // Update localStorage
-      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(updatedSessions));
-      setDeletingSessionId(null);
+    // Update message counts
+    setUserMessagesSinceLastInsight(newUserMessagesSinceLastInsight);
+    saveSessionLimits({
+      ...sessionLimits,
+      messagesUsed: newMessagesUsed,
+    });
+
+    // Check if we should show the insight generation button (every 5 user messages)
+    if (newUserMessagesSinceLastInsight % 5 === 0 && newUserMessagesSinceLastInsight > 0) {
+      setShowGenerateInsightButton(true);
+    }
+
+    try {
+      // Convert messages to conversation history format (excluding the greeting message)
+      const conversationHistory = messages
+        .filter(msg => msg.id !== 'greeting')
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+      // Use Supabase AI chat service
+      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, user?.name);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response.message,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble connecting right now. Let's try again in a moment.",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const formatSessionForExport = (session: ArchivedChatSession): string => {
-    const header = `Komorebi ${session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-Date: ${format(session.createdAt, 'MMMM d, yyyy')}
-Time: ${format(session.createdAt, 'h:mm a')}
-Duration: ${Math.round(session.duration / 60)} minutes
-
----
-
-`;
-
-    const messages = session.messages
-      .map(msg => `${msg.role === 'user' ? 'You' : 'Komorebi'}: ${msg.content}`)
-      .join('\n\n');
-
-    const insights = session.insights && session.insights.length > 0
-      ? `\n\n--- INSIGHTS ---\n\n${session.insights
-          .map(insight => `${insight.title}\n${insight.content}`)
-          .join('\n\n')}`
-      : '';
-
-    return header + messages + insights;
-  };
-
-  const getSessionTypeGradient = () => {
-    switch (timeOfDay.period) {
-      case 'morning':
-        return 'from-amber-200/20 via-orange-100/10 to-yellow-200/20';
-      case 'evening':
-        return 'from-purple-900/30 via-indigo-800/20 to-blue-900/30';
-      default:
-        return 'from-blue-200/20 via-cyan-100/10 to-teal-200/20';
+  const handleGenerateInsightClick = async () => {
+    setIsGeneratingInsight(true);
+    setShowGenerateInsightButton(false);
+    
+    try {
+      // Filter out the greeting message for insight generation
+      const sessionMessages = messages.filter(msg => msg.id !== 'greeting');
+      await generateInsightCard(sessionMessages);
+      
+      // Reset the counter
+      setUserMessagesSinceLastInsight(0);
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      // Re-show the button if there was an error
+      setShowGenerateInsightButton(true);
+    } finally {
+      setIsGeneratingInsight(false);
     }
   };
 
-  return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Background Video */}
-      <NatureVideoBackground 
-        scene={currentScene}
-        className="absolute inset-0 z-0"
-      />
+  const generateInsightCard = async (sessionMessages: Message[]) => {
+    try {
+      let response;
       
-      {/* Gradient Overlay */}
-      <div className={`absolute inset-0 z-10 bg-gradient-to-br ${getSessionTypeGradient()}`} />
+      try {
+        // Try Supabase AI service first
+        response = await aiChatService.generateInsightCard(sessionMessages, sessionType);
+      } catch (error) {
+        console.warn('Supabase AI service failed, using local fallback:', error);
+        // Fallback to local insight generation
+        response = await simulateInsightGeneration(sessionMessages, sessionType);
+      }
       
-      {/* Content */}
-      <div className="relative z-20 min-h-screen">
-        {/* Header */}
-        <div className="p-6 border-b border-white/10 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-6">
+      // Capture current video frame if video is enabled
+      let videoStillUrl = null;
+      if (videoEnabled && videoBackgroundRef.current) {
+        // Wait a moment to ensure video is playing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        videoStillUrl = videoBackgroundRef.current.captureFrame();
+        console.log('Video frame capture result:', videoStillUrl ? 'Success' : 'Failed');
+      }
+      
+      const insight: InsightCardType = {
+        id: Date.now().toString(),
+        quote: response.quote,
+        type: sessionType,
+        sessionId: Date.now().toString(),
+        createdAt: new Date(),
+        sceneType: currentScene,
+        videoStillUrl: videoStillUrl || undefined,
+      };
+      
+      setInsightCard(insight);
+      
+      // Only save to localStorage if user is logged in
+      if (user) {
+        const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+        existingInsights.push(insight);
+        localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+      }
+    } catch (error) {
+      console.error('Error generating insight:', error);
+      // Create a fallback insight with video capture
+      try {
+        let videoStillUrl = null;
+        if (videoEnabled && videoBackgroundRef.current) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          videoStillUrl = videoBackgroundRef.current.captureFrame();
+        }
+        
+        const fallbackInsight: InsightCardType = {
+          id: Date.now().toString(),
+          quote: sessionType === 'morning' 
+            ? "Every moment is a fresh beginning, and today holds infinite possibilities for growth and joy."
+            : "Today's experiences have shaped you in beautiful ways. Rest knowing you've grown through every challenge and triumph.",
+          type: sessionType,
+          sessionId: Date.now().toString(),
+          createdAt: new Date(),
+          sceneType: currentScene,
+          videoStillUrl: videoStillUrl || undefined,
+        };
+        
+        setInsightCard(fallbackInsight);
+        
+        if (user) {
+          const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+          existingInsights.push(fallbackInsight);
+          localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+        }
+      } catch (fallbackError) {
+        console.error('Fallback insight generation failed:', fallbackError);
+        throw error;
+      }
+    }
+  };
+
+  // Local insight generation fallback
+  const simulateInsightGeneration = async (sessionMessages: Message[], sessionType: 'morning' | 'evening') => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const conversationText = sessionMessages.filter(m => m.role === 'user').map(m => m.content).join(' ').toLowerCase();
+    
+    let quote = "";
+    
+    if (conversationText.includes('stress') || conversationText.includes('anxious') || conversationText.includes('overwhelmed')) {
+      const stressInsights = sessionType === 'morning' 
+        ? [
+            "Your awareness of stress is the first step toward managing it with grace.",
+            "Even in challenging moments, you have the strength to find your center.",
+            "Today's difficulties are tomorrow's wisdom in disguise."
+          ]
+        : [
+            "You've carried today's challenges with more resilience than you realize.",
+            "Stress reveals our capacity for growth and adaptation.",
+            "Every difficult day teaches us something valuable about our inner strength."
+          ];
+      quote = stressInsights[Math.floor(Math.random() * stressInsights.length)];
+    } else if (conversationText.includes('grateful') || conversationText.includes('happy') || conversationText.includes('excited')) {
+      const positiveInsights = sessionType === 'morning'
+        ? [
+            "Gratitude is the foundation upon which beautiful days are built.",
+            "Your positive energy is a gift you give to yourself and the world.",
+            "Joy shared in the morning multiplies throughout the day."
+          ]
+        : [
+            "Today's joy is a reminder of life's endless capacity for beauty.",
+            "Gratitude transforms ordinary moments into extraordinary memories.",
+            "Your appreciation for life's gifts illuminates the path forward."
+          ];
+      quote = positiveInsights[Math.floor(Math.random() * positiveInsights.length)];
+    } else if (conversationText.includes('work') || conversationText.includes('career') || conversationText.includes('job')) {
+      const workInsights = sessionType === 'morning'
+        ? [
+            "Your work is an expression of your values and talents.",
+            "Purpose-driven action creates meaning in even the smallest tasks.",
+            "Today's efforts are building tomorrow's opportunities."
+          ]
+        : [
+            "Your professional journey reflects your commitment to growth and contribution.",
+            "Work challenges are invitations to discover new aspects of your capabilities.",
+            "Balance between effort and rest creates sustainable success."
+          ];
+      quote = workInsights[Math.floor(Math.random() * workInsights.length)];
+    } else {
+      const generalInsights = sessionType === 'morning'
+        ? [
+            "Today is a canvas waiting for your unique brushstrokes of intention.",
+            "Your awareness of this moment is the first step toward meaningful change.",
+            "Small, intentional actions create the foundation for extraordinary days.",
+            "You have everything within you to make today beautiful.",
+            "Clarity comes not from having all the answers, but from asking the right questions."
+          ]
+        : [
+            "Growth happens in the space between challenge and reflection.",
+            "Every experience today was a teacher, even the difficult ones.",
+            "You showed up today, and that itself is worthy of celebration.",
+            "Tomorrow's possibilities are born from today's insights.",
+            "Your journey is uniquely yours, and every step has value."
+          ];
+      quote = generalInsights[Math.floor(Math.random() * generalInsights.length)];
+    }
+    
+    return { quote };
+  };
+
+  const handleNewSession = () => {
+    // Before starting a new session, save the current session if it has meaningful content
+    if (user && messages.length > 1) { // More than just the greeting
+      const sessionEndTime = new Date();
+      const sessionDuration = sessionStartTime 
+        ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : undefined;
+
+      const archivedSession: ArchivedChatSession = {
+        id: Date.now().toString(),
+        type: sessionType,
+        messages: messages.filter(msg => msg.id !== 'greeting'), // Exclude greeting
+        createdAt: sessionStartTime || sessionEndTime,
+        sceneType: currentScene,
+        messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
+        duration: sessionDuration,
+      };
+
+      // Save to localStorage
+      const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+      existingSessions.push(archivedSession);
+      
+      // Keep only the most recent 50 sessions to prevent localStorage bloat
+      if (existingSessions.length > 50) {
+        existingSessions.splice(0, existingSessions.length - 50);
+      }
+      
+      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
+    }
+
+    // Reset to just the greeting message
+    const greetingMessage: Message = {
+      id: 'greeting',
+      content: timeOfDay.greeting,
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages([greetingMessage]);
+    setInsightCard(null);
+    setUserMessagesSinceLastInsight(0);
+    setShowGenerateInsightButton(false);
+    const startTime = new Date();
+    setSessionStartTime(startTime);
+    localStorage.setItem('session-start-time', startTime.toISOString());
+    saveSessionLimits({
+      ...sessionLimits,
+      messagesUsed: 0,
+    });
+  };
+
+  const handleUpgrade = () => {
+    navigate('/pro-upgrade');
+  };
+
+
+  // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
+  if (user && !user.isPro && hasCompletedBothToday) {
+    return (
+      <div className="h-screen relative overflow-hidden">
+        {videoEnabled && (
+          <NatureVideoBackground 
+            ref={videoBackgroundRef}
+            scene={currentScene} 
+            timeOfDay={sessionType} 
+          />
+        )}
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
+          }`} />
+        )}
+        
+        {/* Universal Navigation */}
+        <UniversalNavigation />
+
+        <SessionLimitReached
+          nextSessionTime={getNextAvailableSession()}
+          timeOfDay={sessionType}
+          onUpgrade={handleUpgrade}
+        />
+      </div>
+    );
+  }
+
+  // Show session expired message
+  if (sessionStartTime && isSessionExpired) {
+    return (
+      <div className="h-screen relative overflow-hidden">
+        {videoEnabled && (
+          <NatureVideoBackground 
+            ref={videoBackgroundRef}
+            scene={currentScene} 
+            timeOfDay={sessionType} 
+          />
+        )}
+        {!videoEnabled && (
+          <div className={`absolute inset-0 bg-gradient-to-br ${
+            sessionType === 'morning' 
+              ? 'from-amber-100 via-orange-50 to-yellow-100'
+              : 'from-indigo-900 via-purple-900 to-blue-900'
+          }`} />
+        )}
+        
+        {/* Universal Navigation */}
+        <UniversalNavigation />
+
+        <div className="flex items-center justify-center h-screen p-8">
+          <div className="text-center">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ${
+              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            } border border-white/20`}>
+              <Settings className={`w-10 h-10 ${
+                sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+              }`} />
+            </div>
+            
+            <h2 className={`text-2xl font-semibold mb-4 ${
+              sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+            }`}>
+              Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+            </h2>
+            
+            <p className={`text-lg mb-6 ${
+              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              Your {sessionTimeLimit}-minute session has ended.
+            </p>
+
+            {!user?.isPro && (
+              <div className={`p-6 rounded-2xl backdrop-blur-sm mb-8 ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              } border border-white/20 max-w-md mx-auto`}>
+                <Crown className={`w-8 h-8 mx-auto mb-3 ${
+                  sessionType === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                }`} />
+                <h3 className={`text-lg font-semibold mb-2 ${
+                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Want longer sessions?
+                </h3>
+                <p className={`text-sm mb-4 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Upgrade to Pro for 1-hour sessions and unlimited conversations.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  className="w-full p-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Upgrade to Pro
+                </button>
+              </div>
+            )}
+            
             <button
-              onClick={handleBack}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
-                timeOfDay.period === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              onClick={handleNewSession}
+              className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                   : 'bg-white/10 hover:bg-white/20 text-white'
               }`}
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm font-medium">Back to Insights</span>
+              Start New Session
             </button>
-
-            <h1 className={`text-2xl font-light ${
-              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-            }`}>
-              Chat Archive
-            </h1>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-white/60'
-              }`} />
-              <input
-                type="text"
-                placeholder="Search conversations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30 ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-white/20 text-gray-800 placeholder-gray-500'
-                    : 'bg-white/10 text-white placeholder-white/60'
-                }`}
-              />
-            </div>
-
-            {/* Filter */}
-            <div className="relative">
-              <Filter className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
-                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-white/60'
-              }`} />
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as 'all' | 'morning' | 'evening')}
-                className={`pl-10 pr-8 py-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/30 appearance-none cursor-pointer ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-white/20 text-gray-800'
-                    : 'bg-white/10 text-white'
-                }`}
-              >
-                <option value="all">All Sessions</option>
-                <option value="morning">Morning</option>
-                <option value="evening">Evening</option>
-              </select>
-            </div>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Sessions List */}
-        <div className="p-6">
-          {filteredSessions.length === 0 ? (
-            <div className="text-center py-12">
-              <MessageCircle className={`w-12 h-12 mx-auto mb-4 ${
-                timeOfDay.period === 'morning' ? 'text-gray-400' : 'text-white/40'
-              }`} />
-              <p className={`text-lg ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-white/80'
-              }`}>
-                {searchTerm || filter !== 'all' ? 'No sessions match your search' : 'No archived sessions yet'}
-              </p>
-              <p className={`text-sm mt-2 ${
-                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-white/60'
-              }`}>
-                {searchTerm || filter !== 'all' 
-                  ? 'Try adjusting your search or filter'
-                  : 'Your completed sessions will appear here'
-                }
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredSessions.map((session) => (
-                <motion.div
-                  key={session.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`rounded-2xl backdrop-blur-sm border border-white/20 overflow-hidden ${
-                    timeOfDay.period === 'morning'
-                      ? 'bg-white/20'
-                      : 'bg-white/10'
+  return (
+    <div className="h-screen relative overflow-hidden flex flex-col">
+      {videoEnabled && (
+        <NatureVideoBackground 
+          ref={videoBackgroundRef}
+          scene={currentScene} 
+          timeOfDay={sessionType} 
+        />
+      )}
+      {!videoEnabled && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${
+          sessionType === 'morning' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
+      )}
+      
+      {/* Header */}
+                  title="Start fresh session"
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
                   }`}
                 >
-                  {/* Session Header */}
-                  <div 
-                    className="p-6 cursor-pointer hover:bg-white/5 transition-colors duration-200"
-                    onClick={() => toggleExpanded(session.id)}
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+
+                {/* Separator */}
+                <div className={`w-px h-6 ${
+                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+                }`} />
+
+                {/* User Controls */}
+                {!user && (
+                  <button
+                    onClick={handleLogin}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl ${
-                          session.type === 'morning'
-                            ? 'bg-amber-500/20 text-amber-700'
-                            : 'bg-purple-500/20 text-purple-300'
-                        }`}>
-                          {session.type === 'morning' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </div>
-                        
-                        <div>
-                          <h3 className={`text-lg font-medium ${
-                            timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                          }`}>
-                            {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-                          </h3>
-                          <div className={`flex items-center gap-4 text-sm ${
-                            timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-white/80'
-                          }`}>
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              {isValid(new Date(session.createdAt)) 
-                                ? format(new Date(session.createdAt), 'MMM d, yyyy')
-                                : 'Invalid date'
-                              }
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {Math.round(session.duration / 60)} min
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MessageCircle className="w-4 h-4" />
-                              {session.messages.length} messages
-                            </div>
-                            {session.insights && session.insights.length > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Sparkles className="w-4 h-4" />
-                                {session.insights.length} insights
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className={`transform transition-transform duration-200 ${
-                        expandedSession === session.id ? 'rotate-180' : ''
-                      }`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+                    <LogIn className="w-3 h-3" />
+                    <span className="text-xs font-medium">Sign In</span>
+                  </button>
+                )}
+                
+                {user && !user.isPro && (
+                  <button
+                    onClick={handleUpgrade}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                    }`}
+                  >
+                    <Crown className="w-3 h-3" />
+                    <span className="text-xs font-medium">Pro</span>
+                  </button>
+                )}
 
-                  {/* Expanded Content */}
-                  {expandedSession === session.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="border-t border-white/10"
+                {user && (
+                  <>
+                    <button
+                      onClick={handleInsights}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
                     >
-                      <div className="p-6">
-                        {/* Action Buttons */}
-                        <div className="flex justify-end gap-2 mb-4">
-                          <button
-                            onClick={() => handleDeleteSession(session.id)}
-                            disabled={deletingSessionId === session.id}
-                            className={`p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${
-                              timeOfDay.period === 'morning'
-                                ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border-red-500/30'
-                                : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border-red-600/30'
-                            }`}
-                            title="Delete conversation"
-                          >
-                            {deletingSessionId === session.id ? (
-                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                          
-                          <button
-                            onClick={() => handleCopySession(session)}
-                            disabled={deletingSessionId === session.id}
-                            className={`p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 ${
-                              copiedSessionId === session.id
-                                ? (timeOfDay.period === 'morning'
-                                    ? 'bg-green-500/30 text-green-700 border-green-500/50'
-                                    : 'bg-green-600/30 text-green-300 border-green-600/50')
-                                : (timeOfDay.period === 'morning'
-                                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                                    : 'bg-white/10 hover:bg-white/20 text-white')
-                            }`}
-                            title="Copy conversation"
-                          >
-                            {copiedSessionId === session.id ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-                          
-                          <button
-                            onClick={() => handleDownloadSession(session)}
-                            disabled={deletingSessionId === session.id}
-                            className={`p-2 rounded-xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 ${
-                              timeOfDay.period === 'morning'
-                                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                                : 'bg-white/10 hover:bg-white/20 text-white'
-                            }`}
-                            title="Download conversation"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-                        </div>
+                      <User className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleSettings}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-                        {/* Messages */}
-                        <div className="space-y-4 mb-6">
-                          {session.messages.map((message, index) => (
-                            <div
-                              key={index}
-                              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[80%] p-4 rounded-2xl ${
-                                  message.role === 'user'
-                                    ? (timeOfDay.period === 'morning'
-                                        ? 'bg-gray-800 text-white'
-                                        : 'bg-white text-gray-800')
-                                    : (timeOfDay.period === 'morning'
-                                        ? 'bg-white/30 text-gray-800'
-                                        : 'bg-white/20 text-white')
-                                }`}
-                              >
-                                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                                  {message.content}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Insights */}
-                        {session.insights && session.insights.length > 0 && (
-                          <div className="border-t border-white/10 pt-6">
-                            <h4 className={`text-lg font-medium mb-4 flex items-center gap-2 ${
-                              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                            }`}>
-                              <Sparkles className="w-5 h-5" />
-                              Insights
-                            </h4>
-                            <div className="space-y-4">
-                              {session.insights.map((insight, index) => (
-                                <div
-                                  key={index}
-                                  className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 ${
-                                    timeOfDay.period === 'morning'
-                                      ? 'bg-white/30'
-                                      : 'bg-white/20'
-                                  }`}
-                                >
-                                  <h5 className={`font-medium mb-2 ${
-                                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                                  }`}>
-                                    {insight.title}
-                                  </h5>
-                                  <p className={`text-sm leading-relaxed ${
-                                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-white/90'
-                                  }`}>
-                                    {insight.content}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Universal Toggle Button - Always positioned in top right */}
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+              sessionType === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+            title={showControls ? 'Hide controls' : 'Show controls'}
+          >
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
+        <div className="w-full flex-1 flex flex-col min-h-0">
+          {/* Session Type Display */}
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="text-center mb-4 flex-shrink-0"
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Komorebi
+                </div>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <Sparkles className={`w-5 h-5 ${
+                    sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+                  }`} />
+                  <span className={`text-lg font-semibold ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <ChatInterface
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            timeOfDay={sessionType}
+            isImmersive={!showControls}
+            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+          />
+
+          {/* Insight Generation Button */}
+          <AnimatePresence>
+            {showGenerateInsightButton && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 text-center animate-fade-in flex-shrink-0"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                  </p>
+                  <button
+                    onClick={handleGenerateInsightClick}
+                    disabled={isGeneratingInsight}
+                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 mx-auto ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Display Latest Insight Card */}
+          <AnimatePresence>
+            {insightCard && showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-6 animate-fade-in flex-shrink-0"
+              >
+                <div className="text-center mb-4">
+                  <h2 className={`text-xl md:text-2xl font-semibold mb-2 ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </h2>
+                  <p className={`text-sm ${
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    A reflection from our conversation
+                  </p>
+                </div>
+                <div className="max-w-sm mx-auto">
+                  <InsightCard insight={insightCard} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Login prompt for non-logged in users */}
+          <AnimatePresence>
+            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="mt-4 text-center flex-shrink-0"
+              >
+                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <p className={`text-sm mb-3 ${
+                    sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                  }`}>
+                    Sign in to save your insights and track your progress
+                  </p>
+                  <button
+                    onClick={handleLogin}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Sign In to Save
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-xs ${
+          sessionType === 'morning' 
+            ? 'text-white' 
+            : 'text-gray-900'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
       </div>
     </div>
   );
 };
 
-export default ChatArchive;
+export default MainSession;
