@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
+import UniversalMenu from '../components/UniversalMenu';
 import { getTimeOfDay } from '../utils/timeUtils';
 
 const LandingPage: React.FC = () => {
@@ -52,6 +53,9 @@ const LandingPage: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* Universal Menu */}
+      <UniversalMenu hideDefaultItems={true} />
 
       {/* Main Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
