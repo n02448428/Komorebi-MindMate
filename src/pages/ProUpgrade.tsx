@@ -5,8 +5,7 @@ import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import { subscriptionService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import UniversalMenu from '../components/UniversalMenu';
-import { Crown, Check, Sparkles, Heart, Brain, Infinity } from 'lucide-react';
+import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
@@ -94,13 +93,24 @@ const ProUpgrade: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
+        <button
+          onClick={handleBack}
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+            timeOfDay.period === 'morning'
+              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              : 'bg-white/10 hover:bg-white/20 text-white'
+          }`}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
           Upgrade to Pro
         </div>
         
-        <UniversalMenu />
+        <div className="w-11" /> {/* Spacer */}
       </div>
 
       {/* Main Content */}
