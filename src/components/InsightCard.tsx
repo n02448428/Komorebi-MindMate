@@ -6,27 +6,39 @@ At the top, add these missing imports:
 import { Settings, Crown, LogIn, ChevronLeft, ChevronRight, RefreshCw, User } from 'lucide-react';
 ```
 
-In the header section, add the missing opening JSX for the controls:
+And here's the missing section that should go between the Header comment and the Main Content section:
 
 ```javascript
-{/* Header */}
-<div className="fixed top-0 left-0 right-0 z-50 p-4">
-  <div className="flex items-center justify-between max-w-6xl mx-auto">
-    {/* Left side controls */}
-    <div className="relative flex items-center">
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center gap-2"
-          >
-            <button
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
+        <div className="flex items-center justify-end gap-2">
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2"
+              >
+                {/* Scene Controls */}
+                <button
+                  onClick={handleNextScene}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <span className="text-xs font-medium">
+                    {getSceneDisplayName(currentScene)}
+                  </span>
+                </button>
+
+                <button
 ```
 
-And at the very end of the file, add the missing closing bracket for the MainSession component:
+The file should end with these closing brackets:
 
 ```javascript
 };
@@ -34,4 +46,4 @@ And at the very end of the file, add the missing closing bracket for the MainSes
 export default MainSession;
 ```
 
-These additions should complete the component structure and fix the syntax errors in the file. The component should now be properly structured with all necessary brackets closed and required imports included.
+These additions complete the component structure and add the missing UI elements for the header section. The component now has proper closure of all brackets and includes all necessary imports.
