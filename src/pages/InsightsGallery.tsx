@@ -6,7 +6,7 @@ import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
-import { ArrowLeft, Sparkles, Calendar, Filter, Pin } from 'lucide-react';
+import { ArrowLeft, Sparkles, Calendar, Filter, Star } from 'lucide-react';
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
@@ -43,10 +43,11 @@ const InsightsGallery: React.FC = () => {
   }, []);
 
   const handleTogglePin = (insightId: string) => {
-    const updatedInsights = insights.map(insight => 
-      insight.id === insightId 
-        ? { ...insight, isPinned: !insight.isPinned }
-        : insight
+    const updatedInsights = insights.map(insight => {
+      if (insight.id === insightId) {
+        return { ...insight, isPinned: !insight.isPinned };
+      } else {
+        // If pinning a new card, unpin all others (only one can be pinned at a time)
     );
     
     // Re-sort after pinning/unpinning
@@ -106,7 +107,7 @@ const InsightsGallery: React.FC = () => {
       <div className="relative z-10 pt-24 pb-8 px-6">
         <div className="max-w-6xl mx-auto">
           {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
@@ -126,24 +127,7 @@ const InsightsGallery: React.FC = () => {
             </div>
 
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
-              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <Pin className={`w-8 h-8 mx-auto mb-2 fill-current ${
-                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-              }`} />
-              <div className={`text-2xl font-bold ${
-                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                {pinnedCount}
-              </div>
-              <div className={`text-sm ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-              }`}>
-                Pinned Favorites
-              </div>
-            </div>
 
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
