@@ -403,6 +403,15 @@ const MainSession: React.FC = () => {
   };
 
   const handleNewSession = () => {
+    // Save current session to archive before starting new one (if it has meaningful content)
+    const meaningfulMessages = messages.filter(msg => msg.id !== 'greeting');
+    if (meaningfulMessages.length > 0) {
+      saveCurrentSessionToArchive();
+    }
+
+    // Shuffle to a new random scene
+    handleRandomScene();
+
     // Reset to just the greeting message
     const greetingMessage: Message = {
       id: 'greeting',
@@ -421,6 +430,43 @@ const MainSession: React.FC = () => {
       ...sessionLimits,
       messagesUsed: 0,
     });
+  };
+
+  const saveCurrentSessionToArchive = () => {
+    // Only save if user is logged in and there are meaningful messages
+    if (!user) return;
+    
+    const meaningfulMessages = messages.filter(msg => msg.id !== 'greeting');
+    if (meaningfulMessages.length === 0) return;
+
+    const archivedSession: ArchivedChatSession = {
+      id: Date.now().toString(),
+      type: sessionType,
+      messages: meaningfulMessages,
+      createdAt: new Date(),
+      sceneType: currentScene,
+      messageCount: meaningfulMessages.length,
+      duration: sessionStartTime ? Math.round((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60)) : undefined,
+    };
+
+    // Get existing archived sessions
+    const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+    
+    // Add new session
+    existingSessions.push(archivedSession);
+
+    // Apply retention policy: free users keep 7 days, Pro users keep forever
+    const now = new Date();
+    const retentionDays = user.isPro ? 365 * 10 : 7; // Pro: 10 years, Free: 7 days
+    const cutoffDate = new Date(now.getTime() - (retentionDays * 24 * 60 * 60 * 1000));
+    
+    const filteredSessions = existingSessions.filter((session: any) => {
+      const sessionDate = new Date(session.createdAt);
+      return sessionDate > cutoffDate;
+    });
+
+    // Save filtered sessions
+    localStorage.setItem('komorebi-chat-sessions', JSON.stringify(filteredSessions));
   };
 
   const handleUpgrade = () => {

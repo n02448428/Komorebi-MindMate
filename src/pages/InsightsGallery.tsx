@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { InsightCard as InsightCardType, NatureScene } from '../types';
+import { InsightCard as InsightCardType, NatureScene, ArchivedChatSession } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
+import { useAuth } from '../context/AuthContext';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
-import { ArrowLeft, Sparkles, Calendar, Filter } from 'lucide-react';
+import { ArrowLeft, Sparkles, Calendar, Filter, Archive, MessageCircle, Clock, Shield } from 'lucide-react';
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
   const [selectedCard, setSelectedCard] = useState<InsightCardType | null>(null);
+  const [showSessionArchive, setShowSessionArchive] = useState(false);
+  const [archivedSessions, setArchivedSessions] = useState<ArchivedChatSession[]>([]);
+  const [selectedSession, setSelectedSession] = useState<ArchivedChatSession | null>(null);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
@@ -35,7 +40,42 @@ const InsightsGallery: React.FC = () => {
     );
     
     setInsights(parsedInsights);
+
+    // Load archived sessions if user is logged in
+    if (user) {
+      loadArchivedSessions();
+    }
   }, []);
+
+  const loadArchivedSessions = () => {
+    if (!user) return;
+
+    const savedSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+    const parsedSessions = savedSessions.map((session: any) => ({
+      ...session,
+      createdAt: new Date(session.createdAt),
+      messages: session.messages.map((msg: any) => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }))
+    }));
+
+    // Apply retention filter based on user type
+    const now = new Date();
+    const retentionDays = user.isPro ? 365 * 10 : 7;
+    const cutoffDate = new Date(now.getTime() - (retentionDays * 24 * 60 * 60 * 1000));
+    
+    const filteredSessions = parsedSessions.filter((session: ArchivedChatSession) => 
+      session.createdAt > cutoffDate
+    );
+
+    // Sort by date (newest first)
+    filteredSessions.sort((a: ArchivedChatSession, b: ArchivedChatSession) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+
+    setArchivedSessions(filteredSessions);
+  };
 
   const filteredInsights = insights.filter(insight => 
     filter === 'all' || insight.type === filter

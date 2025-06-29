@@ -63,6 +63,16 @@ export interface SubscriptionPlan {
 
 export type NatureScene = 'ocean' | 'forest' | 'desert' | 'mountain' | 'lake' | 'meadow';
 
+export interface ArchivedChatSession {
+  id: string;
+  type: 'morning' | 'evening';
+  messages: Message[];
+  createdAt: Date;
+  sceneType: NatureScene;
+  messageCount: number;
+  duration?: number; // in minutes
+}
+
 export interface SessionLimits {
   morningCompleted: boolean;
   eveningCompleted: boolean;
