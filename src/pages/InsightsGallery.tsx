@@ -77,7 +77,7 @@ const InsightsGallery: React.FC = () => {
   };
 
   const handleChatArchive = () => {
-    navigate('/chat-archive');
+    navigate('/archive');
   };
 
   const handleSettings = () => {
