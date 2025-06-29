@@ -12,102 +12,70 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { InsightCard as InsightCardType } from '../types';
 import InsightCard from '../components/InsightCard';
-
-interface Insight {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  date: string;
-  rating?: number;
-  tags: string[];
-  isFavorite: boolean;
-}
 
 const AllInsights: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'date' | 'rating' | 'alphabetical'>('date');
   const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API call
+  // Load insights from localStorage
   useEffect(() => {
-    const mockInsights: Insight[] = [
-      {
-        id: '1',
-        title: 'Morning Reflection',
-        content: 'Today I realized the importance of starting each day with intention and gratitude.',
-        category: 'Mindfulness',
-        date: '2024-01-15',
-        rating: 5,
-        tags: ['gratitude', 'morning', 'intention'],
-        isFavorite: true
-      },
-      {
-        id: '2',
-        title: 'Breathing Exercise Benefits',
-        content: 'The 4-7-8 breathing technique has significantly reduced my anxiety levels.',
-        category: 'Breathing',
-        date: '2024-01-14',
-        rating: 4,
-        tags: ['breathing', 'anxiety', 'technique'],
-        isFavorite: false
-      },
-      {
-        id: '3',
-        title: 'Nature Connection',
-        content: 'Spending time in nature helps me feel more grounded and connected to myself.',
-        category: 'Nature',
-        date: '2024-01-13',
-        rating: 5,
-        tags: ['nature', 'grounding', 'connection'],
-        isFavorite: true
-      }
-    ];
+    const savedInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+    const parsedInsights = savedInsights.map((insight: any) => ({
+      ...insight,
+      createdAt: new Date(insight.createdAt),
+    }));
     
-    setTimeout(() => {
-      setInsights(mockInsights);
-      setLoading(false);
-    }, 1000);
+    // Sort by date (newest first)
+    parsedInsights.sort((a: InsightCardType, b: InsightCardType) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+    
+    setInsights(parsedInsights);
+    setLoading(false);
   }, []);
 
-  const categories = ['all', 'Mindfulness', 'Breathing', 'Nature', 'Sleep', 'Gratitude'];
+  const categories = ['all', 'morning', 'evening'];
 
   const filteredInsights = insights
     .filter(insight => 
-      selectedCategory === 'all' || insight.category === selectedCategory
+      selectedCategory === 'all' || insight.type === selectedCategory
     )
     .filter(insight =>
-      insight.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      insight.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      insight.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      insight.quote.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       switch (sortBy) {
         case 'date':
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        case 'rating':
-          return (b.rating || 0) - (a.rating || 0);
+          return b.createdAt.getTime() - a.createdAt.getTime();
         case 'alphabetical':
-          return a.title.localeCompare(b.title);
+          return a.quote.localeCompare(b.quote);
         default:
           return 0;
       }
     });
 
-  const toggleFavorite = (insightId: string) => {
-    setInsights(prev => 
-      prev.map(insight => 
-        insight.id === insightId 
-          ? { ...insight, isFavorite: !insight.isFavorite }
-          : insight
-      )
-    );
+  const handleTogglePin = (insightId: string) => {
+    const updatedInsights = insights.map(insight => {
+      if (insight.id === insightId) {
+        return { ...insight, isPinned: !insight.isPinned };
+      } else {
+        // Only one insight can be pinned at a time
+        return insight.isPinned && !insights.find(i => i.id === insightId)?.isPinned 
+          ? { ...insight, isPinned: false }
+          : insight;
+      }
+    });
+    
+    setInsights(updatedInsights);
+    localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
   };
 
   return (
@@ -134,11 +102,10 @@ const AllInsights: React.FC = () => {
             <div className="flex items-center gap-2">
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'date' | 'rating' | 'alphabetical')}
+                onChange={(e) => setSortBy(e.target.value as any)}
                 className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
               >
                 <option value="date">Sort by Date</option>
-                <option value="rating">Sort by Rating</option>
                 <option value="alphabetical">Sort Alphabetically</option>
               </select>
             </div>
@@ -217,8 +184,7 @@ const AllInsights: React.FC = () => {
                 >
                   <InsightCard
                     insight={insight}
-                    onToggleFavorite={() => toggleFavorite(insight.id)}
-                    className="h-full"
+                    onTogglePin={() => handleTogglePin(insight.id)}
                   />
                 </motion.div>
               ))}

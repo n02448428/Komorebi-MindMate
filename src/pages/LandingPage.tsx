@@ -1,214 +1,306 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Settings, 
+  Crown, 
+  LogIn, 
+  ChevronLeft, 
+  ChevronRight, 
+  RefreshCw, 
+  User,
+  Video,
+  VideoOff,
+  Mic,
+  MicOff,
+  Calendar,
+  Clock
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Play, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { getTimeOfDay } from '../utils/timeUtils';
+import ChatInterface from '../components/ChatInterface';
+import SessionLimitReached from '../components/SessionLimitReached';
 
-const LandingPage: React.FC = () => {
-  const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [showLogin, setShowLogin] = useState(false);
-  const timeOfDay = getTimeOfDay();
+type SessionType = 'morning' | 'evening' | 'meditation';
+type SceneType = 'forest' | 'ocean' | 'mountain' | 'rain';
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    try {
-      await login(email, password);
-    } catch (err) {
-      setError('Login failed. Please try again.');
+const MainSession: React.FC = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  const [sessionType, setSessionType] = useState<SessionType>('morning');
+  const [currentScene, setCurrentScene] = useState<SceneType>('forest');
+  const [videoEnabled, setVideoEnabled] = useState(true);
+  const [showControls, setShowControls] = useState(true);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [sessionDuration, setSessionDuration] = useState(0);
+  const [isRecording, setIsRecording] = useState(false);
+  
+  const sessionIntervalRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowControls(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (sessionStarted) {
+      sessionIntervalRef.current = setInterval(() => {
+        setSessionDuration(prev => prev + 1);
+      }, 1000);
+    } else {
+      if (sessionIntervalRef.current) {
+        clearInterval(sessionIntervalRef.current);
+      }
+    }
+
+    return () => {
+      if (sessionIntervalRef.current) {
+        clearInterval(sessionIntervalRef.current);
+      }
+    };
+  }, [sessionStarted]);
+
+  const handleNextScene = () => {
+    const scenes: SceneType[] = ['forest', 'ocean', 'mountain', 'rain'];
+    const currentIndex = scenes.indexOf(currentScene);
+    const nextIndex = (currentIndex + 1) % scenes.length;
+    setCurrentScene(scenes[nextIndex]);
+  };
+
+  const toggleVideoBackground = () => {
+    setVideoEnabled(!videoEnabled);
+  };
+
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+  };
+
+  const handleNewSession = () => {
+    setSessionStarted(!sessionStarted);
+    if (sessionStarted) {
+      setSessionDuration(0);
     }
   };
 
-  const handleQuickLogin = async () => {
-    setError('');
-    try {
-      await login('dev@example.com', 'password');
-    } catch (err) {
-      setError('Quick login failed. Please try again.');
+  const getSceneDisplayName = (scene: SceneType): string => {
+    switch (scene) {
+      case 'forest': return 'Forest';
+      case 'ocean': return 'Ocean';
+      case 'mountain': return 'Mountain';
+      case 'rain': return 'Rain';
+      default: return 'Forest';
+    }
+  };
+
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getSessionTypeGradient = () => {
+    switch (sessionType) {
+      case 'morning':
+        return 'from-amber-200/20 via-orange-100/10 to-yellow-200/20';
+      case 'evening':
+        return 'from-purple-900/30 via-indigo-800/20 to-blue-900/30';
+      case 'meditation':
+        return 'from-emerald-200/20 via-teal-100/10 to-cyan-200/20';
+      default:
+        return 'from-blue-200/20 via-cyan-100/10 to-teal-200/20';
     }
   };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground scene="ocean" timeOfDay={timeOfDay.period} />
+      {/* Background Video */}
+      {videoEnabled && (
+        <NatureVideoBackground 
+          scene={currentScene}
+          className="absolute inset-0 z-0"
+        />
+      )}
+      
+      {/* Gradient Overlay */}
+      <div className={`absolute inset-0 z-10 bg-gradient-to-br ${getSessionTypeGradient()}`} />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-8 h-8 text-amber-500" />
-          <span className="text-2xl font-bold text-gray-800">Komorebi</span>
+      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/')}
+              className="p-2 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+          </div>
+
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2"
+              >
+                {/* Scene Controls */}
+                <button
+                  onClick={handleNextScene}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <span className="text-xs font-medium">
+                    {getSceneDisplayName(currentScene)}
+                  </span>
+                </button>
+
+                {/* Video Toggle */}
+                <button
+                  onClick={toggleVideoBackground}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? (
+                    <Video className="w-4 h-4" />
+                  ) : (
+                    <VideoOff className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* Settings */}
+                <button
+                  onClick={() => navigate('/settings')}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+
+                {/* User Menu */}
+                {user ? (
+                  <button
+                    onClick={() => signOut()}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <LogIn className="w-4 h-4" />
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        
-        {!showLogin && (
-          <button
-            onClick={() => setShowLogin(true)}
-            className="px-4 py-2 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 border border-white/20"
-          >
-            Sign In
-          </button>
-        )}
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
-        {!showLogin ? (
-          /* Landing Content */
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6 leading-tight">
-                Your AI companion for
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
-                  mindful reflection
-                </span>
-              </h1>
-              <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-                Experience the gentle art of self-discovery through conversations with AI, 
-                surrounded by the calming beauty of nature.
-              </p>
-            </div>
+      <div className="relative z-20 min-h-screen flex flex-col">
+        {/* Session Info */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-8"
+          >
+            <h1 className={`text-4xl md:text-6xl font-light mb-4 ${
+              sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+            }`}>
+              {sessionType === 'morning' ? 'Good Morning' : 
+               sessionType === 'evening' ? 'Good Evening' : 
+               'Meditation Session'}
+            </h1>
+            
+            {sessionStarted && (
+              <div className={`text-2xl font-mono ${
+                sessionType === 'morning' ? 'text-gray-600' : 'text-white/80'
+              }`}>
+                {formatDuration(sessionDuration)}
+              </div>
+            )}
+          </motion.div>
 
-            {/* Features */}
-            <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
-              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Morning Intentions</h3>
-                <p className="text-gray-700">
-                  Start each day with clarity and purpose through gentle AI-guided conversations.
-                </p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Evening Reflections</h3>
-                <p className="text-gray-700">
-                  Wind down with thoughtful reflection on your day's experiences and insights.
-                </p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Insight Cards</h3>
-                <p className="text-gray-700">
-                  Receive beautiful, shareable cards with personalized wisdom from your sessions.
-                </p>
-              </div>
-              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
-                <h3 className="text-xl font-semibold text-gray-800 mb-4">Nature Immersion</h3>
-                <p className="text-gray-700">
-                  Reflect surrounded by stunning nature scenes that enhance your mindful experience.
-                </p>
-              </div>
-            </div>
+          {/* Session Controls */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="flex flex-col items-center gap-4"
+          >
+            <button
+              onClick={handleNewSession}
+              className={`px-8 py-3 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-200 font-medium ${
+                sessionStarted 
+                  ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100 border-red-400/30'
+                  : sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              {sessionStarted ? 'End Session' : 'Start Session'}
+            </button>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {sessionStarted && (
               <button
-                onClick={handleQuickLogin}
-                disabled={isLoading}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50"
+                onClick={toggleRecording}
+                className={`p-3 rounded-full backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                  isRecording
+                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-100 border-red-400/30'
+                    : sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
               >
-                <Play className="w-5 h-5" />
-                {isLoading ? 'Starting...' : 'Try Demo'}
-              </button>
-              <button
-                onClick={() => setShowLogin(true)}
-                className="px-8 py-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 border border-white/20"
-              >
-                Get Started
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-sm text-gray-600 mt-6">
-              Free to try • No credit card required • Private & secure
-            </p>
-          </div>
-        ) : (
-          /* Login Form */
-          <div className="w-full max-w-md mx-auto">
-            <div className="backdrop-blur-md bg-white/20 rounded-3xl p-8 border border-white/20">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Welcome to Komorebi
-                </h2>
-                <p className="text-gray-700">
-                  Sign in to begin your mindful journey
-                </p>
-              </div>
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
-
-                {error && (
-                  <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
-                    {error}
-                  </div>
+                {isRecording ? (
+                  <MicOff className="w-5 h-5" />
+                ) : (
+                  <Mic className="w-5 h-5" />
                 )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? 'Signing In...' : 'Sign In'}
-                </button>
-              </form>
-
-              <div className="mt-6 pt-6 border-t border-white/20">
-                <button
-                  onClick={handleQuickLogin}
-                  disabled={isLoading}
-                  className="w-full p-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Quick Demo Access
-                </button>
-                <p className="text-xs text-center mt-2 text-gray-600">
-                  Try the experience with demo@komorebi.app
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowLogin(false)}
-                className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
-              >
-                ← Back to landing page
               </button>
-            </div>
-          </div>
-        )}
+            )}
+          </motion.div>
+        </div>
+
+        {/* Chat Interface */}
+        <div className="p-4">
+          <ChatInterface sessionType={sessionType} />
+        </div>
       </div>
 
-      {/* Privacy Notice - Bottom of page */}
-      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
-        <p className={`text-xs ${
-          timeOfDay.period === 'morning' 
-            ? 'text-white' 
-            : 'text-gray-900'
-        }`}>
-          🔒 All data stored locally & privately on your device
-        </p>
-      </div>
+      {/* Click to show controls */}
+      <div 
+        className="absolute inset-0 z-30"
+        onClick={() => setShowControls(true)}
+      />
     </div>
   );
 };
 
-export default LandingPage;
+export default MainSession;
