@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
-import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene } from '../types';
+import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
 import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
@@ -25,6 +25,7 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string>('');
   const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
@@ -48,6 +49,49 @@ const MainSession: React.FC = () => {
   // Check if session time has expired (only for non-Pro users)
   const isSessionExpired = !user?.isPro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
+
+  // Save current session to localStorage
+  const saveCurrentSession = () => {
+    // Only save if we have meaningful content (more than just the greeting)
+    if (!currentSessionId || messages.length <= 1 || !sessionStartTime) {
+      return;
+    }
+
+    // Calculate session duration in minutes
+    const duration = Math.round((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60));
+    
+    // Count actual user messages (excluding greeting)
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    const messageCount = userMessages.length;
+
+    // Create archived session object
+    const archivedSession: ArchivedChatSession = {
+      id: currentSessionId,
+      type: sessionType,
+      messages: messages,
+      createdAt: sessionStartTime,
+      sceneType: currentScene,
+      messageCount,
+      duration: duration > 0 ? duration : undefined,
+    };
+
+    // Get existing sessions from localStorage
+    const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+    
+    // Check if session already exists (to avoid duplicates)
+    const existingIndex = existingSessions.findIndex((session: ArchivedChatSession) => session.id === currentSessionId);
+    
+    if (existingIndex >= 0) {
+      // Update existing session
+      existingSessions[existingIndex] = archivedSession;
+    } else {
+      // Add new session
+      existingSessions.push(archivedSession);
+    }
+
+    // Save back to localStorage
+    localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
+  };
 
   // Framer Motion variants for control panel animation
   const controlsVariants = {
@@ -118,6 +162,10 @@ const MainSession: React.FC = () => {
 
     // Add initial greeting message if no messages exist
     if (messages.length === 0) {
+      // Generate new session ID
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setCurrentSessionId(newSessionId);
+      
       const greetingMessage: Message = {
         id: 'greeting',
         content: timeOfDay.greeting,
@@ -127,6 +175,13 @@ const MainSession: React.FC = () => {
       setMessages([greetingMessage]);
     }
   }, [user?.isPro, user, sessionType]);
+
+  // Cleanup effect to save session when component unmounts
+  useEffect(() => {
+    return () => {
+      saveCurrentSession();
+    };
+  }, [currentSessionId, messages, sessionStartTime, currentScene, sessionType]);
 
   useEffect(() => {
     // Auto-start session if conditions are met
@@ -403,6 +458,13 @@ const MainSession: React.FC = () => {
   };
 
   const handleNewSession = () => {
+    // Save current session before starting new one
+    saveCurrentSession();
+    
+    // Generate new session ID
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setCurrentSessionId(newSessionId);
+    
     // Reset to just the greeting message
     const greetingMessage: Message = {
       id: 'greeting',
@@ -421,6 +483,9 @@ const MainSession: React.FC = () => {
       ...sessionLimits,
       messagesUsed: 0,
     });
+
+    // Clear session start time storage
+    localStorage.removeItem('session-start-time');
   };
 
   const handleUpgrade = () => {
@@ -437,10 +502,21 @@ const MainSession: React.FC = () => {
 
   const handleSettings = () => {
     navigate('/settings');
+    // Save current session before navigating away
+    saveCurrentSession();
+  };
+
+  const handleInsights = () => {
+    navigate('/insights');
+    // Save current session before navigating away
+    saveCurrentSession();
   };
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
   if (user && !user.isPro && hasCompletedBothToday) {
+    // Save session before showing limit reached screen
+    saveCurrentSession();
+    
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -500,6 +576,9 @@ const MainSession: React.FC = () => {
 
   // Show session expired message
   if (sessionStartTime && isSessionExpired) {
+    // Save session when it expires
+    saveCurrentSession();
+    
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -556,9 +635,9 @@ const MainSession: React.FC = () => {
           <div className="text-center">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 backdrop-blur-sm ${
               sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            } border border-white/20`}>
-              <Settings className={`w-10 h-10 ${
-                sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+              <p className={`text-sm mb-4 ${
+                Sign In to Save Everything
               }`} />
             </div>
             
@@ -647,7 +726,7 @@ const MainSession: React.FC = () => {
               <div className={`text-2xl font-bold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                Komorebi
+                Sign in to save your conversations and insights permanently
               </div>
               {videoEnabled && (
                 <div className={`text-sm font-medium mt-0.5 ${
