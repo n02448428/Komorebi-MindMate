@@ -39,7 +39,6 @@ const LandingPage: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
-          </button>
         {showLogin ? (
           /* Login Content */
           <div className="w-full max-w-4xl mx-auto text-center">
