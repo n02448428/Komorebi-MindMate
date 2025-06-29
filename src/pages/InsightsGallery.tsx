@@ -48,7 +48,12 @@ const InsightsGallery: React.FC = () => {
         return { ...insight, isPinned: !insight.isPinned };
       } else {
         // If pinning a new card, unpin all others (only one can be pinned at a time)
-    );
+        const isBeingPinned = insights.find(i => i.id === insightId)?.isPinned === false;
+        return isBeingPinned ? { ...insight, isPinned: false } : insight;
+      }
+    });
+      }
+    });
     
     // Re-sort after pinning/unpinning
     updatedInsights.sort((a: InsightCardType, b: InsightCardType) => {
@@ -127,7 +132,6 @@ const InsightsGallery: React.FC = () => {
             </div>
 
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
-
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
