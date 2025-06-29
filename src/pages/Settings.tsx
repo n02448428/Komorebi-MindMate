@@ -1,101 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArchivedChatSession } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
+import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff } from 'lucide-react';
 
-const ChatArchive: React.FC = () => {
+const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const [archivedSessions, setArchivedSessions] = useState<ArchivedChatSession[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
-  const [expandedSession, setExpandedSession] = useState<string | null>(null);
-  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
+  const { user, logout, updateUserName, updateUserEmail } = useAuth();
+  const [userName, setUserName] = useState(user?.name || '');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
 
-  const timeOfDay = getTimeOfDay();
-  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+  // Stabilize timeOfDay and currentScene to prevent background changes while typing
+  const [timeOfDay] = useState(() => getTimeOfDay(user?.name));
+  const [currentScene] = useState(() => getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening'));
 
-  useEffect(() => {
-    // Load archived sessions from localStorage
-    const savedSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
-    const parsedSessions = savedSessions.map((session: any) => ({
-      ...session,
-      createdAt: new Date(session.createdAt),
-    }));
-    
-    // Sort by date (newest first)
-    parsedSessions.sort((a: ArchivedChatSession, b: ArchivedChatSession) => 
-      b.createdAt.getTime() - a.createdAt.getTime()
-    );
-    
-    setArchivedSessions(parsedSessions);
-  }, []);
+  // Get video background setting
+  const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
 
-  // Filter and search sessions
-  const filteredSessions = archivedSessions.filter(session => {
-    const matchesFilter = filter === 'all' || session.type === filter;
-    const matchesSearch = searchQuery === '' || 
-      session.messages.some(message => 
-        message.content.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    return matchesFilter && matchesSearch;
-  });
-
-  const handleBack = () => {
-    navigate('/insights');
+  const handleLogout = () => {
+    logout();
+    navigate('/');
   };
 
-  const toggleSessionExpansion = (sessionId: string) => {
-    setExpandedSession(expandedSession === sessionId ? null : sessionId);
-  };
-
-  const handleCopyChat = async (session: ArchivedChatSession) => {
-    try {
-      const chatText = `${session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'} - ${format(session.createdAt, 'MMM d, yyyy')}\n\n${session.messages.map(msg => `${msg.role === 'user' ? 'You' : 'Komorebi'}: ${msg.content}`).join('\n\n')}`;
-      
-      await navigator.clipboard.writeText(chatText);
-      setCopiedSessionId(session.id);
-      setTimeout(() => setCopiedSessionId(null), 2000);
-    } catch (error) {
-      console.error('Failed to copy chat:', error);
-      // Fallback for browsers that don't support clipboard API
-      const textArea = document.createElement('textarea');
-      const chatText = `${session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'} - ${format(session.createdAt, 'MMM d, yyyy')}\n\n${session.messages.map(msg => `${msg.role === 'user' ? 'You' : 'Komorebi'}: ${msg.content}`).join('\n\n')}`;
-      textArea.value = chatText;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
+  const handleClearData = () => {
+    if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
+      localStorage.removeItem('insight-cards');
+      localStorage.removeItem('komorebi-chat-sessions');
+      localStorage.removeItem('session-limits');
+      localStorage.removeItem('session-start-time');
+      alert('All data has been cleared.');
     }
   };
 
-  const highlightSearchText = (text: string, query: string) => {
-    if (!query) return text;
-    
-    const regex = new RegExp(`(${query})`, 'gi');
-    const parts = text.split(regex);
-    
-    return parts.map((part, index) => 
-      regex.test(part) ? (
-        <mark key={index} className={`${
-          timeOfDay.period === 'morning' 
-            ? 'bg-amber-300/50 text-amber-900' 
-            : 'bg-purple-300/50 text-purple-900'
-        } px-1 rounded`}>
-          {part}
-        </mark>
-      ) : part
-    );
+  const handleBack = () => {
+    navigate('/');
+  };
+
+  const toggleVideoBackground = () => {
+    const newVideoEnabled = !videoEnabled;
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
+    // Refresh the page to apply the change
+    window.location.reload();
+  };
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (updateUserName && user) {
+      updateUserName(userName);
+    }
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (updateUserEmail && user) {
+      updateUserEmail(userEmail);
+    }
   };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground 
-        scene={currentScene} 
-        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
-      />
+      {videoEnabled && (
+        <NatureVideoBackground 
+          scene={currentScene} 
+          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+        />
+      )}
+      {!videoEnabled && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${
+          timeOfDay.period === 'morning' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
+      )}
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
@@ -113,7 +91,7 @@ const ChatArchive: React.FC = () => {
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
-          Chat Archive
+          Settings
         </div>
         
         <div className="w-11" /> {/* Spacer */}
@@ -121,233 +99,248 @@ const ChatArchive: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-8 px-6">
-        <div className="max-w-4xl mx-auto">
-          {/* Search and Filter */}
-          <div className={`p-4 rounded-2xl mb-6 backdrop-blur-sm border border-white/20 ${
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Profile Section */}
+          {user && (
+            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <div className="flex items-center gap-3 mb-4">
+                <User className={`w-6 h-6 ${
+                  timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
+                }`} />
+                <h2 className={`text-xl font-semibold ${
+                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Profile
+                </h2>
+              </div>
+              <div className="space-y-4">
+                <form onSubmit={handleNameSubmit}>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Name
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      placeholder="Enter your name"
+                      className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                        timeOfDay.period === 'morning'
+                          ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                          : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
+                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                    />
+                    <button
+                      type="submit"
+                      className={`px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+                        timeOfDay.period === 'morning'
+                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
+
+                <form onSubmit={handleEmailSubmit}>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Email
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                        timeOfDay.period === 'morning'
+                          ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                          : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
+                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                    />
+                    <button
+                      type="submit"
+                      className={`px-4 py-3 rounded-2xl font-medium transition-all duration-200 ${
+                        timeOfDay.period === 'morning'
+                          ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      }`}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Plan
+                  </label>
+                  <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-white/20'
+                      : 'bg-white/10'
+                  }`}>
+                    {user?.isPro && (
+                      <Crown className={`w-4 h-4 ${
+                        timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                      }`} />
+                    )}
+                    <span className={`font-medium ${
+                      user?.isPro 
+                        ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
+                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
+                    }`}>
+                      {user?.isPro ? 'Pro Plan' : 'Free Plan'}
+                    </span>
+                  </div>
+                </div>
+                {!user?.isPro && (
+                  <button
+                    onClick={() => navigate('/pro-upgrade')}
+                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Upgrade to Pro
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Appearance Settings */}
+          <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
-            {/* Search Bar */}
-            <div className="relative mb-4">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
-                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
+            <div className="flex items-center gap-3 mb-4">
+              <Eye className={`w-6 h-6 ${
+                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search your conversations..."
-                className={`w-full pl-10 pr-4 py-3 rounded-xl border-0 transition-all duration-200 placeholder-opacity-70 ${
-                  timeOfDay.period === 'morning'
-                    ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
-                    : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
-                } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30`}
-              />
+              <h2 className={`text-xl font-semibold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Appearance
+              </h2>
             </div>
-
-            {/* Filter Buttons */}
-            <div className="flex items-center gap-4">
-              <Filter className={`w-5 h-5 ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
-              }`} />
-              <div className="flex gap-2">
-                {(['all', 'morning', 'evening'] as const).map((filterType) => (
-                  <button
-                    key={filterType}
-                    onClick={() => setFilter(filterType)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize flex items-center gap-2 ${
-                      filter === filterType
-                        ? (timeOfDay.period === 'morning'
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-purple-600 text-white')
-                        : (timeOfDay.period === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-gray-300')
-                    } backdrop-blur-sm`}
-                  >
-                    {filterType === 'morning' && <Sun className="w-4 h-4" />}
-                    {filterType === 'evening' && <Moon className="w-4 h-4" />}
-                    {filterType === 'all' && <MessageCircle className="w-4 h-4" />}
-                    {filterType}
-                  </button>
-                ))}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className={`font-medium ${
+                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Video Backgrounds
+                  </div>
+                  <div className={`text-sm ${
+                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    Show nature video backgrounds during sessions
+                  </div>
+                </div>
+                <button
+                  onClick={toggleVideoBackground}
+                  className={`p-3 rounded-2xl transition-all duration-200 ${
+                    videoEnabled
+                      ? (timeOfDay.period === 'morning'
+                          ? 'bg-green-500/20 text-green-700 border border-green-500/30'
+                          : 'bg-green-600/20 text-green-300 border border-green-600/30')
+                      : (timeOfDay.period === 'morning'
+                          ? 'bg-gray-500/20 text-gray-700 border border-gray-500/30'
+                          : 'bg-gray-600/20 text-gray-300 border border-gray-600/30')
+                  } backdrop-blur-sm`}
+                >
+                  {videoEnabled ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Sessions List */}
-          {filteredSessions.length > 0 ? (
-            <div className="space-y-4">
-              {filteredSessions.map((session) => (
-                <motion.div
-                  key={session.id}
-                  className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                  onClick={() => toggleSessionExpansion(session.id)}
-                  whileHover={{ y: -2 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                >
-                  {/* Session Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      {session.type === 'morning' ? (
-                        <Sun className={`w-5 h-5 ${
-                          timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-                        }`} />
-                      ) : (
-                        <Moon className={`w-5 h-5 ${
-                          timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-                        }`} />
-                      )}
-                      <div>
-                        <h3 className={`font-semibold ${
-                          timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                        }`}>
-                          {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-                        </h3>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className={`flex items-center gap-1 ${
-                            timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                          }`}>
-                            <Calendar className="w-4 h-4" />
-                            {format(session.createdAt, 'MMM d, yyyy')}
-                          </span>
-                          <span className={`flex items-center gap-1 ${
-                            timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                          }`}>
-                            <MessageCircle className="w-4 h-4" />
-                            {session.messageCount} messages
-                          </span>
-                          {session.duration && (
-                            <span className={`flex items-center gap-1 ${
-                              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                            }`}>
-                              <Clock className="w-4 h-4" />
-                              {session.duration}m
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={`text-sm px-3 py-1 rounded-full backdrop-blur-sm ${
-                      session.type === 'morning'
-                        ? 'bg-amber-500/20 text-amber-700 border border-amber-500/30'
-                        : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    }`}>
-                      {getSceneDisplayName(session.sceneType)}
-                    </div>
-                  </div>
-
-                  {/* Session Preview */}
-                  <div className={`text-sm ${
-                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
-                  }`}>
-                    {session.messages.length > 0 && (
-                      <p className="line-clamp-2">
-                        {highlightSearchText(session.messages[0].content, searchQuery)}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Expanded Messages */}
-                  {expandedSession === session.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-4 pt-4 border-t border-white/20"
-                    >
-                      <div className="space-y-3">
-                        {session.messages.map((message, index) => (
-                          <div key={index} className={`p-3 rounded-xl ${
-                            message.role === 'user'
-                              ? (timeOfDay.period === 'morning'
-                                  ? 'bg-white/20 ml-8'
-                                  : 'bg-white/10 ml-8')
-                              : (timeOfDay.period === 'morning'
-                                  ? 'bg-black/10 mr-8'
-                                  : 'bg-black/20 mr-8')
-                          }`}>
-                            <div className={`text-xs font-medium mb-1 ${
-                              timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                            }`}>
-                              {message.role === 'user' ? 'You' : 'Komorebi'}
-                            </div>
-                            <p className={`text-sm ${
-                              timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
-                            }`}>
-                              {highlightSearchText(message.content, searchQuery)}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </motion.div>
-              ))}
+          {/* Privacy Section */}
+          <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className={`w-6 h-6 ${
+                timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
+              }`} />
+              <h2 className={`text-xl font-semibold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Privacy & Data
+              </h2>
             </div>
-          ) : (
-            /* Empty State */
-            <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className="space-y-4">
+              <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
+                timeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
+              }`}>
+                <div className={`text-sm ${
+                  timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
+                }`}>
+                  Your conversations and insights are stored locally on your device and are completely private. 
+                  We never share your personal reflections with anyone.
+                </div>
+              </div>
+              <button 
+                onClick={handleClearData}
+                className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                  timeOfDay.period === 'morning'
+                    ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
+                    : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
+                } backdrop-blur-sm`}
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear All Data
+              </button>
+            </div>
+          </div>
+
+          {/* Account Actions */}
+          {user && (
+            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              {searchQuery ? (
-                <>
-                  <Search className={`w-16 h-16 mx-auto mb-4 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                  }`} />
-                  <h3 className={`text-xl font-semibold mb-2 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    No matches found
-                  </h3>
-                  <p className={`mb-4 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    Try adjusting your search or filter to find what you're looking for.
-                  </p>
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                      timeOfDay.period === 'morning'
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    }`}
-                  >
-                    Clear Search
-                  </button>
-                </>
-              ) : (
-                <>
-                  <MessageCircle className={`w-16 h-16 mx-auto mb-4 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                  }`} />
-                  <h3 className={`text-xl font-semibold mb-2 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    No conversations yet
-                  </h3>
-                  <p className={`mb-6 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    Your past conversations will appear here once you complete your first session.
-                  </p>
-                  <button
-                    onClick={() => navigate('/')}
-                    className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm ${
-                      timeOfDay.period === 'morning'
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    }`}
-                  >
-                    Start Your First Conversation
-                  </button>
-                </>
-              )}
+              <div className="flex items-center gap-3 mb-4">
+                <LogOut className={`w-6 h-6 ${
+                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+                }`} />
+                <h2 className={`text-xl font-semibold ${
+                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Account
+                </h2>
+              </div>
+              <button
+                onClick={handleLogout}
+                className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                  timeOfDay.period === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                Sign Out
+              </button>
             </div>
           )}
+
+          {/* App Info */}
+          <div className="text-center">
+            <p className={`text-sm ${
+              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
+              Komorebi MindMate v1.0.0
+            </p>
+            <p className={`text-xs mt-1 ${
+              timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
+            }`}>
+              Your AI companion for mindful reflection
+            </p>
+          </div>
         </div>
       </div>
 
@@ -365,4 +358,4 @@ const ChatArchive: React.FC = () => {
   );
 };
 
-export default ChatArchive;
+export default Settings;
