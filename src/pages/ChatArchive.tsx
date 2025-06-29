@@ -181,14 +181,14 @@ Your AI companion for mindful reflection
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-8 px-6">
+      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
         <div className="max-w-4xl mx-auto">
           {/* Search and Filter */}
-          <div className={`p-4 rounded-2xl mb-6 backdrop-blur-sm border border-white/20 ${
+          <div className={`p-3 md:p-4 rounded-2xl mb-4 backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             {/* Search Bar */}
-            <div className="relative mb-4">
+            <div className="relative mb-3">
               <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${
                 timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
               }`} />
@@ -206,16 +206,16 @@ Your AI companion for mindful reflection
             </div>
 
             {/* Filter Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Filter className={`w-5 h-5 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
               }`} />
-              <div className="flex gap-2">
+              <div className="flex gap-1 md:gap-2">
                 {(['all', 'morning', 'evening'] as const).map((filterType) => (
                   <button
                     key={filterType}
                     onClick={() => setFilter(filterType)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize flex items-center gap-2 ${
+                    className={`px-3 md:px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize flex items-center gap-1 md:gap-2 text-sm ${
                       filter === filterType
                         ? (timeOfDay.period === 'morning'
                             ? 'bg-amber-500 text-white'
@@ -225,9 +225,9 @@ Your AI companion for mindful reflection
                             : 'bg-white/10 hover:bg-white/20 text-gray-300')
                     } backdrop-blur-sm`}
                   >
-                    {filterType === 'morning' && <Sun className="w-4 h-4" />}
-                    {filterType === 'evening' && <Moon className="w-4 h-4" />}
-                    {filterType === 'all' && <MessageCircle className="w-4 h-4" />}
+                    {filterType === 'morning' && <Sun className="w-3 h-3 md:w-4 md:h-4" />}
+                    {filterType === 'evening' && <Moon className="w-3 h-3 md:w-4 md:h-4" />}
+                    {filterType === 'all' && <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />}
                     {filterType}
                   </button>
                 ))}
@@ -245,11 +245,11 @@ Your AI companion for mindful reflection
                     timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
                   }`}
                   onClick={() => toggleSessionExpansion(session.id)}
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 >
                   {/* Session Header */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       {session.type === 'morning' ? (
                         <Sun className={`w-5 h-5 ${
@@ -261,29 +261,29 @@ Your AI companion for mindful reflection
                         }`} />
                       )}
                       <div>
-                        <h3 className={`font-semibold ${
+                        <h3 className={`text-sm md:text-base font-semibold ${
                           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                         }`}>
                           {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
                         </h3>
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm">
                           <span className={`flex items-center gap-1 ${
                             timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                           }`}>
-                            <Calendar className="w-4 h-4" />
+                            <Calendar className="w-3 h-3 md:w-4 md:h-4" />
                             {format(session.createdAt, 'MMM d, yyyy')}
                           </span>
                           <span className={`flex items-center gap-1 ${
                             timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                           }`}>
-                            <MessageCircle className="w-4 h-4" />
+                            <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                             {session.messageCount} messages
                           </span>
                           {session.duration && (
                             <span className={`flex items-center gap-1 ${
                               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                             }`}>
-                              <Clock className="w-4 h-4" />
+                              <Clock className="w-3 h-3 md:w-4 md:h-4" />
                               {session.duration}m
                             </span>
                           )}
@@ -291,7 +291,7 @@ Your AI companion for mindful reflection
                       </div>
                     </div>
                     
-                    <div className={`text-sm px-3 py-1 rounded-full backdrop-blur-sm ${
+                    <div className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded-full backdrop-blur-sm ${
                       session.type === 'morning'
                         ? 'bg-amber-500/20 text-amber-700 border border-amber-500/30'
                         : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
@@ -305,7 +305,7 @@ Your AI companion for mindful reflection
                     timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
                   }`}>
                     {session.messages.length > 0 && (
-                      <p className="line-clamp-2">
+                      <p className="line-clamp-1 md:line-clamp-2">
                         {highlightSearchText(session.messages[0].content, searchQuery)}
                       </p>
                     )}

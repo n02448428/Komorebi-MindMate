@@ -98,11 +98,11 @@ const Settings: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-8 px-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
+        <div className="max-w-2xl mx-auto space-y-4">
           {/* Profile Section */}
           {user && (
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <div className="flex items-center gap-3 mb-4">
@@ -216,7 +216,7 @@ const Settings: React.FC = () => {
           )}
 
           {/* Appearance Settings */}
-          <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
@@ -262,7 +262,7 @@ const Settings: React.FC = () => {
           </div>
 
           {/* Privacy Section */}
-          <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
@@ -302,7 +302,7 @@ const Settings: React.FC = () => {
 
           {/* Account Actions */}
           {user && (
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <div className="flex items-center gap-3 mb-4">
@@ -329,7 +329,7 @@ const Settings: React.FC = () => {
           )}
 
           {/* App Info */}
-          <div className="text-center">
+          <div className="text-center pb-4">
             <p className={`text-sm ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
             }`}>

@@ -114,11 +114,11 @@ const ProUpgrade: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-8 px-6">
-        <div className="max-w-6xl mx-auto">
+      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
+        <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
               <Crown className={`w-10 h-10 ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
               }`} />
@@ -126,12 +126,12 @@ const ProUpgrade: React.FC = () => {
                 timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
             </div>
-            <h1 className={`text-4xl md:text-5xl font-bold mb-4 ${
+            <h1 className={`text-3xl md:text-4xl font-bold mb-3 ${
               timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
               Unlock Your Full Potential
             </h1>
-            <p className={`text-xl ${
+            <p className={`text-lg ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
             }`}>
               Experience unlimited conversations and deeper insights with Komorebi Pro
@@ -139,18 +139,18 @@ const ProUpgrade: React.FC = () => {
           </div>
 
           {/* Feature Comparison */}
-          <div className="grid lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
             {/* Free Plan */}
-            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              <div className="text-center mb-6">
-                <h3 className={`text-xl font-semibold ${
+              <div className="text-center mb-4">
+                <h3 className={`text-lg md:text-xl font-semibold ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Free Plan
                 </h3>
-                <div className={`text-3xl font-bold mt-2 ${
+                <div className={`text-2xl md:text-3xl font-bold mt-2 ${
                   timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                 }`}>
                   $0
@@ -162,7 +162,7 @@ const ProUpgrade: React.FC = () => {
                 </div>
               </div>
               
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {freeFeatures.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <Check className={`w-5 h-5 mt-0.5 ${
@@ -182,7 +182,7 @@ const ProUpgrade: React.FC = () => {
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`relative p-6 rounded-3xl backdrop-blur-sm border ${
+                className={`relative p-4 md:p-6 rounded-3xl backdrop-blur-sm border ${
                   plan.isPopular
                     ? 'border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-orange-500/20'
                     : 'border-white/20 bg-white/10'
@@ -194,21 +194,21 @@ const ProUpgrade: React.FC = () => {
                   </div>
                 )}
 
-                <div className="text-center mb-6">
-                  <h3 className={`text-xl font-semibold ${
+                <div className="text-center mb-4">
+                  <h3 className={`text-lg md:text-xl font-semibold ${
                     timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
                     {plan.name}
                   </h3>
                   <div className="mt-2">
                     {plan.originalPrice && (
-                      <div className={`text-lg line-through ${
+                      <div className={`text-base line-through ${
                         timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
                       }`}>
                         ${plan.originalPrice}
                       </div>
                     )}
-                    <div className={`text-3xl font-bold ${
+                    <div className={`text-2xl md:text-3xl font-bold ${
                       timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                     }`}>
                       ${plan.price}
@@ -221,7 +221,7 @@ const ProUpgrade: React.FC = () => {
                   </div>
                 </div>
 
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-4">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <Check className={`w-5 h-5 mt-0.5 ${
@@ -254,16 +254,16 @@ const ProUpgrade: React.FC = () => {
           </div>
 
           {/* Benefits Section */}
-          <div className={`p-8 rounded-3xl backdrop-blur-sm border border-white/20 ${
+          <div className={`p-4 md:p-8 rounded-3xl backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
-            <h2 className={`text-2xl font-bold text-center mb-8 ${
+            <h2 className={`text-xl md:text-2xl font-bold text-center mb-6 ${
               timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
               Why upgrade to Pro?
             </h2>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-4 md:gap-6">
               <div className="text-center">
                 <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-sm ${
                   timeOfDay.period === 'morning' ? 'bg-blue-500/20' : 'bg-blue-600/20'
@@ -272,7 +272,7 @@ const ProUpgrade: React.FC = () => {
                     timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
                   }`} />
                 </div>
-                <h3 className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Unlimited Sessions
@@ -292,7 +292,7 @@ const ProUpgrade: React.FC = () => {
                     timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
                   }`} />
                 </div>
-                <h3 className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Deeper Insights
@@ -312,7 +312,7 @@ const ProUpgrade: React.FC = () => {
                     timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
                   }`} />
                 </div>
-                <h3 className={`text-lg font-semibold mb-2 ${
+                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Premium Experience
@@ -327,7 +327,7 @@ const ProUpgrade: React.FC = () => {
           </div>
 
           {/* Money Back Guarantee */}
-          <div className="text-center mt-8">
+          <div className="text-center">
             <p className={`text-sm ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
             }`}>

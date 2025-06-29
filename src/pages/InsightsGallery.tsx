@@ -127,21 +127,21 @@ const InsightsGallery: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-8 px-6">
-        <div className="max-w-4xl mx-auto">
+      <div className="relative z-10 pt-20 pb-4 px-4 md:px-6 h-screen overflow-y-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
           {/* Welcome Section */}
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
               <Sparkles className={`w-8 h-8 ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-purple-400'
               }`} />
             </div>
-            <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${
+            <h1 className={`text-2xl md:text-3xl font-bold mb-2 ${
               timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
               Welcome back, {getDisplayName()}
             </h1>
-            <p className={`text-lg ${
+            <p className={`text-base ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
             }`}>
               Your mindful reflection journey continues
@@ -149,14 +149,14 @@ const InsightsGallery: React.FC = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Calendar className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
               }`} />
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {insights.length}
@@ -168,13 +168,13 @@ const InsightsGallery: React.FC = () => {
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <MessageCircle className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
               }`} />
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {chatCount}
@@ -186,7 +186,7 @@ const InsightsGallery: React.FC = () => {
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               {user?.isPro ? (
@@ -198,7 +198,7 @@ const InsightsGallery: React.FC = () => {
                   timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
                 }`} />
               )}
-              <div className={`text-xl font-bold ${
+              <div className={`text-lg md:text-xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {user?.isPro ? 'Pro' : 'Free'}
@@ -213,7 +213,7 @@ const InsightsGallery: React.FC = () => {
 
           {/* Favorite Insight Card */}
           {pinnedInsight && (
-            <div className="mb-8">
+            <div>
               <div className="flex items-center gap-2 mb-4">
                 <Star className={`w-5 h-5 fill-current ${
                   timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
@@ -224,7 +224,7 @@ const InsightsGallery: React.FC = () => {
                   Your Favorite Insight
                 </h2>
               </div>
-              <div className="max-w-lg mx-auto">
+              <div className="max-w-sm mx-auto">
                 <InsightCard 
                   insight={pinnedInsight} 
                   onTogglePin={handleTogglePin}
@@ -235,7 +235,7 @@ const InsightsGallery: React.FC = () => {
 
           {/* Recent Insights */}
           {recentInsights.length > 0 && (
-            <div className="mb-8">
+            <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className={`text-xl font-semibold ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
@@ -255,7 +255,7 @@ const InsightsGallery: React.FC = () => {
                   </button>
                 )}
               </div>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-3 gap-4">
                 {recentInsights.map((insight) => (
                   <motion.div 
                     key={insight.id} 
@@ -277,14 +277,14 @@ const InsightsGallery: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <button
               onClick={handleChatArchive}
-              className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
+              className={`p-4 md:p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
                 timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
               }`}
             >
               <Archive className={`w-8 h-8 mx-auto mb-3 ${
                 timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
               }`} />
-              <h3 className={`text-lg font-semibold mb-2 ${
+              <h3 className={`text-base md:text-lg font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Chat Archive
@@ -298,14 +298,14 @@ const InsightsGallery: React.FC = () => {
 
             <button
               onClick={() => navigate('/')}
-              className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
+              className={`p-4 md:p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
                 timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
               }`}
             >
               <Sparkles className={`w-8 h-8 mx-auto mb-3 ${
                 timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
-              <h3 className={`text-lg font-semibold mb-2 ${
+              <h3 className={`text-base md:text-lg font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 New Session
@@ -320,18 +320,18 @@ const InsightsGallery: React.FC = () => {
 
           {/* Empty State */}
           {insights.length === 0 && (
-            <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-8 md:p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-16 h-16 mx-auto mb-4 ${
                 timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
               }`} />
-              <h3 className={`text-xl font-semibold mb-2 ${
+              <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Begin Your Journey
               </h3>
-              <p className={`mb-6 ${
+              <p className={`mb-4 md:mb-6 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
                 Start your first mindful session to create beautiful insights.

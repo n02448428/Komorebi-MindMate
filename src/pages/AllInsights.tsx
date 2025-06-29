@@ -109,17 +109,17 @@ const AllInsights: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-8 px-6">
+      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
         <div className="max-w-6xl mx-auto">
           {/* Stats */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Calendar className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
               }`} />
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {insights.length}
@@ -131,13 +131,13 @@ const AllInsights: React.FC = () => {
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
               }`} />
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {morningCount}
@@ -149,13 +149,13 @@ const AllInsights: React.FC = () => {
               </div>
             </div>
 
-            <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
-              <div className={`text-2xl font-bold ${
+              <div className={`text-xl md:text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {eveningCount}
@@ -169,19 +169,19 @@ const AllInsights: React.FC = () => {
           </div>
 
           {/* Filter */}
-          <div className={`p-4 rounded-2xl mb-8 backdrop-blur-sm border border-white/20 ${
+          <div className={`p-3 md:p-4 rounded-2xl mb-6 backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Filter className={`w-5 h-5 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
               }`} />
-              <div className="flex gap-2">
+              <div className="flex gap-1 md:gap-2">
                 {(['all', 'morning', 'evening'] as const).map((filterType) => (
                   <button
                     key={filterType}
                     onClick={() => setFilter(filterType)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize ${
+                    className={`px-3 md:px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize text-sm ${
                       filter === filterType
                         ? (timeOfDay.period === 'morning'
                             ? 'bg-amber-500 text-white'
@@ -200,7 +200,7 @@ const AllInsights: React.FC = () => {
 
           {/* Insights Grid */}
           {filteredInsights.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredInsights.map((insight) => (
                 selectedCard?.id === insight.id ? (
                   // Placeholder to maintain grid layout when card is expanded
@@ -228,18 +228,18 @@ const AllInsights: React.FC = () => {
             </div>
           ) : (
             /* Empty State */
-            <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+            <div className={`p-8 md:p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <Sparkles className={`w-16 h-16 mx-auto mb-4 ${
                 timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
               }`} />
-              <h3 className={`text-xl font-semibold mb-2 ${
+              <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 {filter === 'all' ? 'No insights yet' : `No ${filter} insights yet`}
               </h3>
-              <p className={`mb-6 ${
+              <p className={`mb-4 md:mb-6 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
                 Complete your first session to see insights here.

@@ -73,16 +73,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   return (
-    <div className={`flex flex-col h-full w-full mx-auto ${
+    <div className={`flex flex-col w-full mx-auto ${
       isImmersive 
-        ? 'max-h-[calc(100vh-8rem)] max-w-full' 
-        : 'max-h-[calc(100vh-12rem)] max-w-full sm:max-w-xl md:max-w-3xl'
+        ? 'h-[calc(100vh-8rem)] max-w-full' 
+        : 'h-[calc(100vh-14rem)] max-w-full sm:max-w-xl md:max-w-3xl'
     }`}>
       {/* Chat Messages */}
-      <div className={`flex-1 overflow-y-auto space-y-4 md:space-y-6 backdrop-blur-md bg-white/10 border border-white/20 scrollbar-thin ${
+      <div className={`flex-1 min-h-0 overflow-y-auto space-y-3 md:space-y-4 backdrop-blur-md bg-white/10 border border-white/20 ${
         isImmersive 
-          ? 'p-4 md:p-6 min-h-[calc(60vh)] max-h-[calc(70vh)] rounded-3xl' 
-          : 'p-4 md:p-6 min-h-[calc(40vh)] max-h-[calc(50vh)] rounded-t-3xl'
+          ? 'p-4 md:p-6 rounded-3xl' 
+          : 'p-4 md:p-6 rounded-t-3xl'
       }`}>
         {messages.map((message, index) => (
           <div 
@@ -100,18 +100,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className={`backdrop-blur-md bg-white/10 border border-white/20 p-4 ${
+      <div className={`flex-shrink-0 backdrop-blur-md bg-white/10 border border-white/20 p-3 md:p-4 ${
         isImmersive ? 'rounded-3xl mt-4' : 'rounded-b-3xl border-x border-b'
       }`}>
         {messagesRemaining !== undefined && messagesRemaining <= 2 && (
-          <div className={`text-xs text-center mb-3 ${
+          <div className={`text-xs text-center mb-2 ${
             timeOfDay === 'morning' ? 'text-amber-700' : 'text-amber-300'
           }`}>
             {messagesRemaining} messages remaining in free session
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+        <form onSubmit={handleSubmit} className="flex gap-2 md:gap-3 items-end">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -127,8 +127,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30'
               } backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:cursor-not-allowed`}
               style={{ 
-                minHeight: '56px',
-                maxHeight: '120px',
+                minHeight: '48px',
+                maxHeight: '96px',
                 lineHeight: '1.5'
               }}
             />
@@ -152,16 +152,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[56px] min-h-[56px] focus:outline-none focus:ring-2 focus:ring-white/30`}
           >
             {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
+              <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
             ) : (
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4 md:w-5 md:h-5" />
             )}
           </button>
         </form>
         
         {/* Helpful hints */}
         {!isImmersive && (
-          <div className={`text-xs mt-2 text-center ${
+          <div className={`text-xs mt-1 text-center ${
             timeOfDay === 'morning' ? 'text-gray-600' : 'text-gray-400'
           } opacity-70`}>
             Press Enter to send
