@@ -35,31 +35,15 @@ And here's the missing section that should go between the Header comment and the
                   </span>
                 </button>
 
-                {/* Video Toggle */}
                 <button
-                  onClick={toggleVideoBackground}
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  {videoEnabled ? (
-                    <Video className="w-4 h-4" />
-                  ) : (
-                    <VideoOff className="w-4 h-4" />
-                  )}
-                </button>
-
-                {/* New Session Button */}
-                <button
-                  onClick={handleNewSession}
 ```
 
-Also add these missing imports at the top:
+The file should end with these closing brackets:
 
 ```javascript
-import { Video, VideoOff } from 'lucide-react';
+};
+
+export default MainSession;
 ```
 
-The rest of the code remains the same. These additions should complete the file structure and fix the syntax errors.
+These additions complete the component structure and add the missing UI elements for the header section. The component now has proper closure of all brackets and includes all necessary imports.

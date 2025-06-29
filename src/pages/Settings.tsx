@@ -35,15 +35,31 @@ And here's the missing section that should go between the Header comment and the
                   </span>
                 </button>
 
+                {/* Video Toggle */}
                 <button
+                  onClick={toggleVideoBackground}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? (
+                    <Video className="w-4 h-4" />
+                  ) : (
+                    <VideoOff className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* New Session Button */}
+                <button
+                  onClick={handleNewSession}
 ```
 
-The file should end with these closing brackets:
+Also add these missing imports at the top:
 
 ```javascript
-};
-
-export default MainSession;
+import { Video, VideoOff } from 'lucide-react';
 ```
 
-These additions complete the component structure and add the missing UI elements for the header section. The component now has proper closure of all brackets and includes all necessary imports.
+The rest of the code remains the same. These additions complete the missing sections and provide the necessary imports for the icons and components used in the header section.

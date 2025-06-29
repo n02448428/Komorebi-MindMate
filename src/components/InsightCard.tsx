@@ -21,21 +21,45 @@ And here's the missing section that should go between the Header comment and the
                 transition={{ duration: 0.3 }}
                 className="flex items-center gap-2"
               >
+                {/* Scene Controls */}
                 <button
+                  onClick={handleNextScene}
+                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <span className="text-xs font-medium">
+                    {getSceneDisplayName(currentScene)}
+                  </span>
+                </button>
+
+                {/* Video Toggle */}
+                <button
+                  onClick={toggleVideoBackground}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? (
+                    <Video className="w-4 h-4" />
+                  ) : (
+                    <VideoOff className="w-4 h-4" />
+                  )}
+                </button>
+
+                {/* New Session Button */}
+                <button
+                  onClick={handleNewSession}
 ```
 
-The file also needs these closing brackets at the very end:
+Also add these missing imports at the top:
 
 ```javascript
-};
-
-export default MainSession;
+import { Video, VideoOff } from 'lucide-react';
 ```
 
-With these additions, the syntax errors should be resolved and the component should work as intended. The main issues were:
-
-1. Missing imports for Lucide icons
-2. Incomplete header section
-3. Missing closing brackets for the component and export
-
-The file should now be properly structured with all necessary closures and components.
+The rest of the code remains the same. These additions complete the missing sections and provide the necessary imports for the icons used in the component.
