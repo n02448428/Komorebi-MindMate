@@ -18,6 +18,8 @@ const InsightsGallery: React.FC = () => {
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
+  const getDisplayName = () => user?.name || user?.email?.split('@')[0] || 'Friend';
+
   useEffect(() => {
     // Load insights from localStorage
     const savedInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
@@ -137,7 +139,7 @@ const InsightsGallery: React.FC = () => {
             <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${
               timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
             }`}>
-              Welcome back, {user?.email?.split('@')[0] || 'Friend'}
+              Welcome back, {getDisplayName()}
             </h1>
             <p className={`text-lg ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'

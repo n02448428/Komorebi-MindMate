@@ -25,7 +25,7 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -33,7 +33,7 @@ const MainSession: React.FC = () => {
     maxMessages: user?.isPro ? 999 : 4,
   });
 
-  const timeOfDay = getTimeOfDay();
+  const timeOfDay = getTimeOfDay(user?.name);
   const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
   
   // Determine which session type to use based on time
@@ -212,9 +212,12 @@ const MainSession: React.FC = () => {
         }));
 
       // Use Supabase AI chat service
-      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory);
-      
-      const aiMessage: Message = {
+      const response = await aiChatService.sendMessage(
+        content, 
+        sessionType, 
+        conversationHistory, 
+        userName: user?.name
+      });
         id: (Date.now() + 1).toString(),
         content: response.message,
         role: 'assistant',

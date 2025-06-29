@@ -7,13 +7,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // AI Chat Service
 export const aiChatService = {
-  async sendMessage(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[]) {
+  async sendMessage(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[], userName?: string) {
     try {
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message,
           sessionType,
           conversationHistory,
+          userName,
         },
       })
 

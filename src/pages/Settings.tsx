@@ -4,14 +4,35 @@ import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
+import { useState } from 'react';
 import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUserName, updateUserEmail } = useAuth();
 
   const timeOfDay = getTimeOfDay();
+  const [editingName, setEditingName] = useState(false);
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [tempName, setTempName] = useState(user?.name || '');
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+
+  // Get video background setting
+  const handleSaveName = () => {
+    updateUserName(tempName);
+    setEditingName(false);
+  };
+
+  const handleCancelEditName = () => {
+    setTempName(user?.name || '');
+    setEditingName(false);
+  };
+
+  const getDisplayName = () => {
+    if (user?.name) return user.name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'Friend';
+  };
 
   // Get video background setting
   const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
@@ -142,13 +163,69 @@ const Settings: React.FC = () => {
                   <label className={`block text-sm font-medium mb-2 ${
                     timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
                   }`}>
+                    Name
+                  </label>
+                  {editingName ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        placeholder="How would you like to be addressed?"
+                        className={`w-full p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                            : 'bg-white/20 text-white placeholder-gray-300 focus:bg-white/30'
+                        } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveName}
+                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                            timeOfDay.period === 'morning'
+                              ? 'bg-green-600 hover:bg-green-700 text-white'
+                              : 'bg-green-700 hover:bg-green-800 text-white'
+                          }`}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEditName}
+                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                            timeOfDay.period === 'morning'
+                              ? 'bg-gray-500 hover:bg-gray-600 text-white'
+                              : 'bg-gray-600 hover:bg-gray-700 text-white'
+                          }`}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm cursor-pointer transition-all duration-200 ${
+                        timeOfDay.period === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-gray-300'
+                      }`}
+                      onClick={() => setEditingName(true)}
+                    >
+                      {user?.name || 'Click to add your name'}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
                     Email
                   </label>
                   <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm ${
                     timeOfDay.period === 'morning'
                       ? 'bg-white/20 text-gray-700'
                       : 'bg-white/10 text-gray-300'
-                  }`}>
+                  }`} title="Email cannot be changed">
                     {user?.email || 'Not signed in'}
                   </div>
                 </div>

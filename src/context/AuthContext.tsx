@@ -10,6 +10,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  updateUserName: (name: string) => void;
+  updateUserEmail: (email: string) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -50,6 +52,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
+  const updateUserName = (name: string) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, name: name.trim() || undefined };
+    setUser(updatedUser);
+    localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
+  };
+
+  const updateUserEmail = (email: string) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, email };
+    setUser(updatedUser);
+    localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
+  };
+
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     
@@ -87,6 +105,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value = {
     user,
     login,
+    updateUserName,
+    updateUserEmail,
     logout,
     isLoading,
   };

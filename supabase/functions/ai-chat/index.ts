@@ -26,6 +26,7 @@ interface ChatRequest {
     role: 'user' | 'assistant'
     content: string
   }>
+  userName?: string
 }
 
 serve(async (req) => {
@@ -34,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, sessionType, conversationHistory }: ChatRequest = await req.json()
+    const { message, sessionType, conversationHistory, userName }: ChatRequest = await req.json()
 
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
@@ -43,8 +44,10 @@ serve(async (req) => {
     }
 
     // Prepare system prompt based on session type
+    const nameContext = userName ? ` The user's name is ${userName}, so you can address them personally when appropriate.` : '';
+    
     const systemPrompt = sessionType === 'morning'
-      ? `You are Komorebi, a gentle, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user start their day with intention, clarity, and gentle motivation.
+      ? `You are Komorebi, a gentle, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user start their day with intention, clarity, and gentle motivation.${nameContext}
          
          When responding:
          - **Actively Listen & Validate**: Acknowledge the user's feelings, thoughts, and experiences. Show you've understood their input by referencing specific details they've shared. Validate their emotions without judgment.
@@ -55,6 +58,7 @@ serve(async (req) => {
          - **Build on Context**: Refer to previous messages in the conversation history to maintain continuity and demonstrate deep understanding.
          - **Example phrases**: "I hear you're feeling...", "It sounds like...", "What feels most important for you today?", "How might you approach this with a sense of...", "What small step could you take?"`
       : `You are Komorebi, a calming, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user wind down, process their day, and reflect on their experiences with peace and understanding.
+${nameContext}
          
          When responding:
          - **Actively Listen & Validate**: Acknowledge the user's feelings, thoughts, and experiences. Show you've understood their input by referencing specific details they've shared. Validate their emotions without judgment.
