@@ -130,7 +130,7 @@ const InsightsGallery: React.FC = () => {
             }`}>
               <Pin className={`w-8 h-8 mx-auto mb-2 fill-current ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-              }`}>
+              }`} />
               <div className={`text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
@@ -148,7 +148,7 @@ const InsightsGallery: React.FC = () => {
             }`}>
               <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-              }`}>
+              }`} />
               <div className={`text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
@@ -299,7 +299,7 @@ const InsightsGallery: React.FC = () => {
                 onClose={() => setSelectedCard(null)}
               />
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
