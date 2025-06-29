@@ -1,65 +1,309 @@
-Here's the fixed version with added missing brackets and components. I'll add the missing imports and closing brackets:
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { InsightCard as InsightCardType, NatureScene } from '../types';
+import { getTimeOfDay } from '../utils/timeUtils';
+import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
+import NatureVideoBackground from '../components/NatureVideoBackground';
+import InsightCard from '../components/InsightCard';
+import { ArrowLeft, Sparkles, Calendar, Filter } from 'lucide-react';
 
-At the top, add these missing imports:
+const AllInsights: React.FC = () => {
+  const navigate = useNavigate();
+  const [insights, setInsights] = useState<InsightCardType[]>([]);
+  const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
+  const [selectedCard, setSelectedCard] = useState<InsightCardType | null>(null);
 
-```javascript
-import { Settings, Crown, LogIn, ChevronLeft, ChevronRight, RefreshCw, User } from 'lucide-react';
-```
+  const timeOfDay = getTimeOfDay();
+  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
-And here's the missing section that should go between the Header comment and the Main Content section:
+  useEffect(() => {
+    // Load insights from localStorage
+    const savedInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+    const parsedInsights = savedInsights.map((insight: any) => ({
+      ...insight,
+      createdAt: new Date(insight.createdAt),
+      // Validate and fix sceneType if it's missing or invalid
+      sceneType: insight.sceneType && Object.keys(natureScenes).includes(insight.sceneType) 
+        ? insight.sceneType 
+        : 'ocean' as NatureScene
+    }));
+    
+    // Sort by pinned status first, then by date (newest first)
+    parsedInsights.sort((a: InsightCardType, b: InsightCardType) => {
+      // Pinned cards first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // Then by date (newest first)
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
+    
+    setInsights(parsedInsights);
+  }, []);
 
-```javascript
+  const handleTogglePin = (insightId: string) => {
+    const updatedInsights = insights.map(insight => {
+      if (insight.id === insightId) {
+        return { ...insight, isPinned: !insight.isPinned };
+      } else {
+        // If pinning a new card, unpin all others (only one can be pinned at a time)
+        const isBeingPinned = insights.find(i => i.id === insightId)?.isPinned === false;
+        return isBeingPinned ? { ...insight, isPinned: false } : insight;
+      }
+    });
+    
+    // Re-sort after pinning/unpinning
+    updatedInsights.sort((a: InsightCardType, b: InsightCardType) => {
+      // Pinned cards first
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // Then by date (newest first)
+      return b.createdAt.getTime() - a.createdAt.getTime();
+    });
+    
+    setInsights(updatedInsights);
+    
+    // Save to localStorage
+    localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
+  };
+
+  const filteredInsights = insights.filter(insight => 
+    filter === 'all' || insight.type === filter
+  );
+
+  const morningCount = insights.filter(i => i.type === 'morning').length;
+  const eveningCount = insights.filter(i => i.type === 'evening').length;
+
+  const handleBack = () => {
+    navigate('/insights');
+  };
+
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Keep the scene static throughout the gallery */}
+      <NatureVideoBackground 
+        scene={currentScene} 
+        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+      />
+      
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
-        <div className="flex items-center justify-end gap-2">
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2"
+      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
+        <button
+          onClick={handleBack}
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+            timeOfDay.period === 'morning'
+              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              : 'bg-white/10 hover:bg-white/20 text-white'
+          }`}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        
+        <div className={`text-2xl font-bold ${
+          timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+        }`}>
+          All Insights
+        </div>
+        
+        <div className="w-11" /> {/* Spacer */}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Stats */}
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Calendar className={`w-8 h-8 mx-auto mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
+              }`} />
+              <div className={`text-xl md:text-2xl font-bold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                {insights.length}
+              </div>
+              <div className={`text-sm ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Total Insights
+              </div>
+            </div>
+
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+              }`} />
+              <div className={`text-xl md:text-2xl font-bold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                {morningCount}
+              </div>
+              <div className={`text-sm ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Morning Insights
+              </div>
+            </div>
+
+            <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+              }`} />
+              <div className={`text-xl md:text-2xl font-bold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                {eveningCount}
+              </div>
+              <div className={`text-sm ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Evening Reflections
+              </div>
+            </div>
+          </div>
+
+          {/* Filter */}
+          <div className={`p-3 md:p-4 rounded-2xl mb-6 backdrop-blur-sm border border-white/20 ${
+            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className="flex items-center gap-2 md:gap-4">
+              <Filter className={`w-5 h-5 ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+              }`} />
+              <div className="flex gap-1 md:gap-2">
+                {(['all', 'morning', 'evening'] as const).map((filterType) => (
+                  <button
+                    key={filterType}
+                    onClick={() => setFilter(filterType)}
+                    className={`px-3 md:px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize text-sm ${
+                      filter === filterType
+                        ? (timeOfDay.period === 'morning'
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-purple-600 text-white')
+                        : (timeOfDay.period === 'morning'
+                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                            : 'bg-white/10 hover:bg-white/20 text-gray-300')
+                    } backdrop-blur-sm`}
+                  >
+                    {filterType === 'all' ? 'all' : filterType === 'morning' ? 'morning' : 'evening'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Insights Grid */}
+          {filteredInsights.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {filteredInsights.map((insight) => (
+                selectedCard?.id === insight.id ? (
+                  // Placeholder to maintain grid layout when card is expanded
+                  <div 
+                    key={`placeholder-${insight.id}`}
+                    className="aspect-[2/3] rounded-2xl opacity-0"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <motion.div 
+                    key={insight.id} 
+                    layoutId={`card-${insight.id}`}
+                    className="animate-fade-in cursor-pointer"
+                    onClick={() => setSelectedCard(insight)}
+                    whileHover={{ y: -4 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <InsightCard 
+                      insight={insight} 
+                      onTogglePin={handleTogglePin}
+                    />
+                  </motion.div>
+                )
+              ))}
+            </div>
+          ) : (
+            /* Empty State */
+            <div className={`p-8 md:p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Sparkles className={`w-16 h-16 mx-auto mb-4 ${
+                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
+              }`} />
+              <h3 className={`text-lg md:text-xl font-semibold mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                {filter === 'all' ? 'No insights yet' : `No ${filter} insights yet`}
+              </h3>
+              <p className={`mb-4 md:mb-6 ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Complete your first session to see insights here.
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm ${
+                  timeOfDay.period === 'morning'
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                    : 'bg-purple-600 hover:bg-purple-700 text-white'
+                }`}
               >
-                {/* Scene Controls */}
-                <button
-                  onClick={handleNextScene}
-                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <span className="text-xs font-medium">
-                    {getSceneDisplayName(currentScene)}
-                  </span>
-                </button>
+                Start Your First Session
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
-                {/* Video Toggle */}
-                <button
-                  onClick={toggleVideoBackground}
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  {videoEnabled ? (
-                    <Video className="w-4 h-4" />
-                  ) : (
-                    <VideoOff className="w-4 h-4" />
-                  )}
-                </button>
+      {/* Full-Screen Card Display */}
+      <AnimatePresence>
+        {selectedCard && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-8"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setSelectedCard(null);
+              }
+            }}
+          >
+            <motion.div
+              layoutId={`card-${selectedCard.id}`}
+              className="relative w-[400px] h-[600px] max-w-[90vw] max-h-[90vh]"
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={false}
+            >
+              <InsightCard 
+                insight={selectedCard} 
+                isExpanded={true}
+                onClose={() => setSelectedCard(null)}
+                onTogglePin={handleTogglePin}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                {/* New Session Button */}
-                <button
-                  onClick={handleNewSession}
-```
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-xs ${
+          timeOfDay.period === 'morning' 
+            ? 'text-white' 
+            : 'text-gray-900'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
+      </div>
+    </div>
+  );
+};
 
-Also add these missing imports at the top:
-
-```javascript
-import { Video, VideoOff } from 'lucide-react';
-```
-
-The rest of the code remains the same. These additions should complete the file structure and fix the syntax errors.
+export default AllInsights;
