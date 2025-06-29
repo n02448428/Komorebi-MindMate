@@ -11,7 +11,6 @@ interface InsightCardProps {
   isExpanded?: boolean;
   onClose?: () => void;
   onTogglePin?: (insightId: string) => void;
-  onTogglePin?: (insightId: string) => void;
 }
 
 const InsightCard: React.FC<InsightCardProps> = ({ 
@@ -19,7 +18,6 @@ const InsightCard: React.FC<InsightCardProps> = ({
   className = '', 
   isExpanded = false,
   onClose,
-  onTogglePin
   onTogglePin
 }) => {
   const [copied, setCopied] = useState(false);
