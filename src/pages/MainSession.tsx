@@ -635,6 +635,11 @@ const MainSession: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
+        {/* Universal Toggle Button - Always in top right when collapsed */}
+        {!showControls && (
+          <div></div> // Empty left spacer
+        )}
+        
         {/* Title */}
         <AnimatePresence>
           {showControls && (
@@ -660,12 +665,14 @@ const MainSession: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Controls Container */}
-        <div className="flex items-center gap-3">
-          {/* Universal Toggle Button */}
+        {/* Controls Container - Only shown when expanded, otherwise just the toggle button */}
+        <div className="flex items-center gap-3 relative">
+          {/* Universal Toggle Button - Positioned absolutely when collapsed */}
           <button
             onClick={() => setShowControls(!showControls)}
             className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+              !showControls ? 'fixed top-6 right-6' : 'relative'
+            } ${
               sessionType === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                 : 'bg-white/10 hover:bg-white/20 text-white'
