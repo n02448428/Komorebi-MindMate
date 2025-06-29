@@ -5,13 +5,14 @@
  * - Lazy loading for images
  * - Optimized event handlers
  * - Reduced DOM manipulations
+ * - Refined background image handling with proper layering
  */
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { InsightCard as InsightCardType } from '../types';
-import { Share2, Download, Copy, Check, Sparkles, X, Star } from 'lucide-react';
-import { getThemeColors } from '../utils/styleUtils';
+import { Share2, Download, Copy, Check, Sparkles, X, Star, Trash2 } from 'lucide-react';
+import { natureScenes } from '../utils/sceneUtils';
 
 interface OptimizedInsightCardProps {
   insight: InsightCardType;
@@ -19,28 +20,51 @@ interface OptimizedInsightCardProps {
   isExpanded?: boolean;
   onClose?: () => void;
   onTogglePin?: (insightId: string) => void;
+  onDelete?: (event: React.MouseEvent) => void;
+  isDeleting?: boolean;
 }
 
 // Memoized action button component
 const ActionButton = React.memo<{
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   icon: React.ReactNode;
   title: string;
-  variant?: 'default' | 'active';
+  variant?: 'default' | 'danger' | 'active';
+  disabled?: boolean;
   timeOfDay: 'morning' | 'evening';
-}>(({ onClick, icon, title, variant = 'default', timeOfDay }) => {
-  const colors = getThemeColors(timeOfDay);
+}>(({ onClick, icon, title, variant = 'default', disabled = false, timeOfDay }) => {
+  // Get button styles based on variant and time of day
+  const getButtonStyles = () => {
+    const baseStyles = `p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:hover:scale-100`;
+    
+    if (variant === 'danger') {
+      return `${baseStyles} ${
+        timeOfDay === 'morning'
+          ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border-red-300/50'
+          : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border-red-600/30'
+      }`;
+    }
+    
+    if (variant === 'active') {
+      return `${baseStyles} ${
+        timeOfDay === 'morning'
+          ? 'bg-amber-500/30 text-amber-700 border-amber-500/50'
+          : 'bg-purple-500/30 text-purple-300 border-purple-500/50'
+      }`;
+    }
+    
+    return `${baseStyles} ${
+      timeOfDay === 'morning'
+        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+        : 'bg-white/10 hover:bg-white/20 text-white'
+    }`;
+  };
   
   return (
     <button
       onClick={onClick}
-      className={`p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30 ${
-        variant === 'active'
-          ? (timeOfDay === 'morning'
-              ? 'bg-amber-500/30 text-amber-700 border-amber-500/50'
-              : 'bg-purple-500/30 text-purple-300 border-purple-500/50')
-          : `${colors.background} hover:${colors.secondary.split(' ')[1]} ${colors.text}`
-      }`}
+      disabled={disabled}
+      className={getButtonStyles()}
       title={title}
       aria-label={title}
     >
@@ -54,14 +78,19 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
   className = '',
   isExpanded = false,
   onClose,
-  onTogglePin
+  onTogglePin,
+  onDelete,
+  isDeleting = false
 }) => {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   
-  // Memoize theme colors
-  const colors = useMemo(() => getThemeColors(insight.type), [insight.type]);
+  // Get scene data for the insight
+  const sceneData = useMemo(() => 
+    natureScenes[insight.sceneType], 
+    [insight.sceneType]
+  );
   
   // Motion values for 3D effect (only when expanded)
   const mouseX = useMotionValue(0);
@@ -75,6 +104,16 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
   const rotateY = useMemo(() => 
     useTransform(mouseX, [-150, 150], [-15, 15]), 
     [mouseX]
+  );
+
+  // Holographic foil effect transforms
+  const holographicX = useMemo(() => 
+    useTransform(mouseX, [-150, 150], [0, 100]), 
+    [mouseX]
+  );
+  const holographicY = useMemo(() => 
+    useTransform(mouseY, [-150, 150], [0, 100]), 
+    [mouseY]
   );
 
   // Optimized mouse move handler
@@ -97,7 +136,8 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
   }, [isExpanded, mouseX, mouseY]);
 
   // Optimized copy handler with error handling
-  const handleCopy = useCallback(async () => {
+  const handleCopy = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       await navigator.clipboard.writeText(insight.quote);
       setCopied(true);
@@ -125,7 +165,8 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
   }, [insight.quote]);
 
   // Optimized download handler
-  const handleDownload = useCallback(async () => {
+  const handleDownload = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (downloading) return;
     
     setDownloading(true);
@@ -162,7 +203,8 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
   }, [insight.id, insight.createdAt, downloading]);
 
   // Optimized share handler
-  const handleShare = useCallback(async () => {
+  const handleShare = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
     const shareData = {
       title: 'Komorebi MindMate Insight',
       text: insight.quote,
@@ -175,16 +217,17 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
       } catch (error) {
         if ((error as Error).name !== 'AbortError') {
           console.warn('Share failed, falling back to copy', error);
-          handleCopy();
+          handleCopy(e);
         }
       }
     } else {
-      handleCopy();
+      handleCopy(e);
     }
   }, [insight.quote, handleCopy]);
 
   // Optimized pin toggle handler
-  const handleTogglePin = useCallback(() => {
+  const handleTogglePin = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onTogglePin) {
       onTogglePin(insight.id);
     }
@@ -246,27 +289,40 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
         animate={isExpanded ? { scale: responsiveScale } : { scale: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
-        {/* Background Image */}
-        {insight.videoStillUrl ? (
-          <img 
-            src={insight.videoStillUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="lazy"
+        {/* IMPROVED: Background Image - always prioritize the videoStillUrl if available */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+          style={{
+            backgroundImage: `url(${insight.videoStillUrl || sceneData.thumbnailUrl})`,
+          }}
+        />
+
+        {/* Background Overlay Gradient - consistent with time of day theme */}
+        <div className={`absolute inset-0 ${
+          insight.type === 'morning' 
+            ? 'bg-gradient-to-br from-amber-300/40 via-orange-200/30 to-yellow-200/40' 
+            : 'bg-gradient-to-br from-purple-400/40 via-indigo-300/30 to-blue-400/40'
+        }`} />
+
+        {/* Holographic Foil Effect (only when expanded) */}
+        {isExpanded && (
+          <motion.div
+            className="absolute inset-0 opacity-20 mix-blend-overlay pointer-events-none"
+            style={{
+              backgroundPosition: `${holographicX}% ${holographicY}%`,
+              background: 'linear-gradient(45deg, #ff0080 0%, #ff8c00 16%, #40e0d0 32%, #9370db 48%, #00ff7f 64%, #ffd700 80%, #ff0080 100%)',
+              backgroundSize: '200% 200%',
+            }}
           />
-        ) : (
-          <div className={`absolute inset-0 bg-gradient-to-br ${
-            insight.type === 'morning' 
-              ? 'from-amber-300/40 via-orange-200/30 to-yellow-200/40' 
-              : 'from-purple-400/40 via-indigo-300/30 to-blue-400/40'
-          }`} />
         )}
 
         {/* Content Container */}
-        <div className="relative h-full flex flex-col justify-between p-6 backdrop-blur-sm bg-black/10">
+        <div className="relative h-full flex flex-col justify-between p-6">
           {/* Header */}
           <div className="text-center">
-            <div className="text-lg font-bold mb-2 text-white">Komorebi</div>
+            <div className="text-lg font-bold mb-2 text-white">
+              Komorebi
+            </div>
             <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm border border-white/30 ${
               insight.type === 'morning' 
                 ? 'bg-amber-500/20 text-amber-100' 
@@ -302,11 +358,30 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Shine Effect */}
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%)',
+            opacity: 0.3,
+          }}
+        />
+
+        {/* Premium border glow effect when expanded */}
+        {isExpanded && (
+          <div className={`absolute inset-0 rounded-2xl pointer-events-none ${
+            insight.type === 'morning'
+              ? 'rarity-legendary'
+              : 'rarity-epic'
+          }`} />
+        )}
       </motion.div>
 
       {/* Action Buttons (only shown when not expanded) */}
       {!isExpanded && (
-        <div className="flex justify-center gap-3 mt-6">
+        <div className="flex justify-center gap-2 mt-6">
+          {/* Pin/Favorite Button */}
           {onTogglePin && (
             <ActionButton
               onClick={handleTogglePin}
@@ -317,6 +392,23 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
             />
           )}
           
+          {/* Delete Button */}
+          {onDelete && (
+            <ActionButton
+              onClick={onDelete}
+              icon={isDeleting ? (
+                <div className="w-5 h-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Trash2 className="w-5 h-5" />
+              )}
+              title="Delete insight"
+              variant="danger"
+              disabled={isDeleting}
+              timeOfDay={insight.type}
+            />
+          )}
+          
+          {/* Copy Button */}
           <ActionButton
             onClick={handleCopy}
             icon={copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
@@ -324,6 +416,7 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
             timeOfDay={insight.type}
           />
           
+          {/* Download Button */}
           <ActionButton
             onClick={handleDownload}
             icon={downloading ? (
@@ -332,9 +425,11 @@ export const OptimizedInsightCard: React.FC<OptimizedInsightCardProps> = ({
               <Download className="w-5 h-5" />
             )}
             title="Download as image"
+            disabled={downloading}
             timeOfDay={insight.type}
           />
           
+          {/* Share Button */}
           <ActionButton
             onClick={handleShare}
             icon={<Share2 className="w-5 h-5" />}
