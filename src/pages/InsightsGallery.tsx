@@ -52,8 +52,6 @@ const InsightsGallery: React.FC = () => {
         return isBeingPinned ? { ...insight, isPinned: false } : insight;
       }
     });
-      }
-    });
     
     // Re-sort after pinning/unpinning
     updatedInsights.sort((a: InsightCardType, b: InsightCardType) => {
