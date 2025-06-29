@@ -187,31 +187,32 @@ const Settings: React.FC = () => {
                   }`}>
                     Name
                   </label>
-                  <div className="flex gap-2 items-center">
+                  <div className="relative group">
                     <input
                       type="text"
                       value={userName}
                       onChange={(e) => setUserName(e.target.value)}
                       placeholder="Enter your name"
-                      disabled={!nameEditMode}
-                      className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                      readOnly={!nameEditMode}
+                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
                         nameEditMode
                           ? (timeOfDay.period === 'morning'
                               ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
                               : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
                           : (timeOfDay.period === 'morning'
-                              ? 'bg-white/10 text-gray-700 cursor-not-allowed'
-                              : 'bg-black/10 text-gray-300 cursor-not-allowed')
+                              ? 'bg-white/10 text-gray-700 cursor-pointer'
+                              : 'bg-black/10 text-gray-300 cursor-pointer')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                      onClick={!nameEditMode ? handleNameEdit : undefined}
                     />
                     {!nameEditMode ? (
                       <button
                         type="button"
                         onClick={handleNameEdit}
-                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
                           timeOfDay.period === 'morning'
-                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
+                            : 'text-gray-400 hover:text-white hover:bg-white/10'
                         }`}
                         title="Edit name"
                       >
@@ -220,26 +221,26 @@ const Settings: React.FC = () => {
                     ) : (
                       <button
                         type="submit"
-                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
                           timeOfDay.period === 'morning'
-                            ? 'bg-green-500 hover:bg-green-600 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
+                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
                         }`}
                         title="Save name"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                     )}
-                    {nameSaved && (
-                      <div className={`px-3 py-2 rounded-xl text-sm font-medium ${
-                        timeOfDay.period === 'morning'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-green-900/50 text-green-300'
-                      } animate-fade-in`}>
-                        Saved!
-                      </div>
-                    )}
                   </div>
+                  {nameSaved && (
+                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
+                      timeOfDay.period === 'morning'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-green-900/50 text-green-300'
+                    } animate-fade-in`}>
+                      Saved!
+                    </div>
+                  )}
                 </form>
 
                 {/* Email Field */}
@@ -249,31 +250,32 @@ const Settings: React.FC = () => {
                   }`}>
                     Email
                   </label>
-                  <div className="flex gap-2 items-center">
+                  <div className="relative group">
                     <input
                       type="email"
                       value={userEmail}
                       onChange={(e) => setUserEmail(e.target.value)}
                       placeholder="Enter your email"
-                      disabled={!emailEditMode}
-                      className={`flex-1 p-3 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                      readOnly={!emailEditMode}
+                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
                         emailEditMode
                           ? (timeOfDay.period === 'morning'
                               ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
                               : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
                           : (timeOfDay.period === 'morning'
-                              ? 'bg-white/10 text-gray-700 cursor-not-allowed'
-                              : 'bg-black/10 text-gray-300 cursor-not-allowed')
+                              ? 'bg-white/10 text-gray-700 cursor-pointer'
+                              : 'bg-black/10 text-gray-300 cursor-pointer')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                      onClick={!emailEditMode ? handleEmailEdit : undefined}
                     />
                     {!emailEditMode ? (
                       <button
                         type="button"
                         onClick={handleEmailEdit}
-                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
                           timeOfDay.period === 'morning'
-                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
+                            : 'text-gray-400 hover:text-white hover:bg-white/10'
                         }`}
                         title="Edit email"
                       >
@@ -282,26 +284,26 @@ const Settings: React.FC = () => {
                     ) : (
                       <button
                         type="submit"
-                        className={`p-3 rounded-2xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
                           timeOfDay.period === 'morning'
-                            ? 'bg-green-500 hover:bg-green-600 text-white'
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
+                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
                         }`}
                         title="Save email"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                     )}
-                    {emailSaved && (
-                      <div className={`px-3 py-2 rounded-xl text-sm font-medium ${
-                        timeOfDay.period === 'morning'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-green-900/50 text-green-300'
-                      } animate-fade-in`}>
-                        Saved!
-                      </div>
-                    )}
                   </div>
+                  {emailSaved && (
+                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
+                      timeOfDay.period === 'morning'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-green-900/50 text-green-300'
+                    } animate-fade-in`}>
+                      Saved!
+                    </div>
+                  )}
                 </form>
 
                 <div>
