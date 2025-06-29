@@ -26,7 +26,6 @@ const MainSession: React.FC = () => {
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -113,14 +112,9 @@ const MainSession: React.FC = () => {
 
     // Load session start time
     const savedStartTime = localStorage.getItem('session-start-time');
-    const savedSessionId = localStorage.getItem('current-session-id');
     
     if (savedStartTime) {
       setSessionStartTime(new Date(savedStartTime));
-    }
-    
-    if (savedSessionId) {
-      setCurrentSessionId(savedSessionId);
     }
 
     // Add initial greeting message if no messages exist
@@ -137,11 +131,7 @@ const MainSession: React.FC = () => {
 
   useEffect(() => {
     // Auto-start session if conditions are met
-    if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
-      const startTime = new Date();
-      setSessionStartTime(startTime);
       // Store session start time
-      localStorage.setItem('session-start-time', startTime.toISOString());
     }
   }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedBothToday, isSessionExpired]);
 
@@ -234,23 +224,26 @@ const MainSession: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Save or update conversation in archive if user is logged in
-      if (user && messages.length > 1) { // Only save if there are actual conversation messages
+      // Save conversation in archive if user is logged in (only after at least 2 exchanges)
+      const conversationMessages = [...messages.filter(msg => msg.id !== 'greeting'), userMessage, aiMessage];
+      if (user && conversationMessages.length >= 4) { // At least 2 user messages and 2 AI responses
         const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
-        const sessionId = currentSessionId || `session-${Date.now()}`;
         
-        // Find existing session or create new one
-        let existingSessionIndex = existingSessions.findIndex((session: ArchivedChatSession) => 
+        // Create a unique session ID based on session start time and type
+        const sessionId = `${sessionType}-${sessionStartTime?.getTime() || Date.now()}`;
+        
+        // Check if session already exists
+        const existingSessionIndex = existingSessions.findIndex((session: ArchivedChatSession) => 
           session.id === sessionId
         );
 
         const updatedSession: ArchivedChatSession = {
           id: sessionId,
           type: sessionType,
-          messages: [...messages.filter(msg => msg.id !== 'greeting'), userMessage, aiMessage],
-          createdAt: existingSessionIndex >= 0 ? new Date(existingSessions[existingSessionIndex].createdAt) : new Date(),
+          messages: conversationMessages,
+          createdAt: sessionStartTime || new Date(),
           sceneType: currentScene,
-          messageCount: messages.filter(msg => msg.id !== 'greeting').length + 2, // +2 for current user message and AI response
+          messageCount: conversationMessages.length,
           duration: sessionStartTime ? Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60)) : undefined,
         };
         
@@ -258,7 +251,7 @@ const MainSession: React.FC = () => {
           // Update existing session
           existingSessions[existingSessionIndex] = updatedSession;
         } else {
-          // Add new session
+          // Add new session (only if it doesn't exist)
           existingSessions.push(updatedSession);
         }
 
@@ -456,13 +449,9 @@ const MainSession: React.FC = () => {
     setInsightCard(null);
     setUserMessagesSinceLastInsight(0);
     setShowGenerateInsightButton(false);
-    // Create new session ID for fresh session
     const startTime = new Date();
-    const newSessionId = `session-${Date.now()}`;
     setSessionStartTime(startTime);
-    setCurrentSessionId(newSessionId);
     localStorage.setItem('session-start-time', startTime.toISOString());
-    localStorage.setItem('current-session-id', newSessionId);
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: 0,
