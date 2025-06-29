@@ -287,11 +287,6 @@ const MainSession: React.FC = () => {
             )}
           </motion.div>
         </div>
-
-        {/* Chat Interface */}
-        <div className="p-4">
-          <ChatInterface sessionType={sessionType} />
-        </div>
       </div>
 
       {/* Click to show controls */}
