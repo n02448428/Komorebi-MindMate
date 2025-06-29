@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import MainSession from './pages/MainSession';
 import InsightsGallery from './pages/InsightsGallery';
+import AllInsights from './pages/AllInsights';
+import ChatArchive from './pages/ChatArchive';
 import ProUpgrade from './pages/ProUpgrade';
 import Settings from './pages/Settings';
 
@@ -21,6 +23,16 @@ const AppRoutes: React.FC = () => {
       <Route path="/insights" element={
         <ProtectedRoute>
           <InsightsGallery />
+        </ProtectedRoute>
+      } />
+      <Route path="/insights-gallery" element={
+        <ProtectedRoute>
+          <AllInsights />
+        </ProtectedRoute>
+      } />
+      <Route path="/chat-archive" element={
+        <ProtectedRoute>
+          <ChatArchive />
         </ProtectedRoute>
       } />
       <Route path="/pro-upgrade" element={

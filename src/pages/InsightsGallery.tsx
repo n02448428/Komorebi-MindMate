@@ -2,20 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InsightCard as InsightCardType, NatureScene } from '../types';
+import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession, natureScenes } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
-import { ArrowLeft, Sparkles, Calendar, Filter, Star } from 'lucide-react';
+import { ArrowLeft, Star, MessageCircle, Calendar, Sparkles, Crown, Settings, Archive } from 'lucide-react';
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
-  const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
-  const [selectedCard, setSelectedCard] = useState<InsightCardType | null>(null);
+  const [pinnedInsight, setPinnedInsight] = useState<InsightCardType | null>(null);
 
   const timeOfDay = getTimeOfDay();
-  // Keep the scene static - set once and don't change based on filters
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
   useEffect(() => {
@@ -24,22 +24,21 @@ const InsightsGallery: React.FC = () => {
     const parsedInsights = savedInsights.map((insight: any) => ({
       ...insight,
       createdAt: new Date(insight.createdAt),
-      // Validate and fix sceneType if it's missing or invalid
       sceneType: insight.sceneType && Object.keys(natureScenes).includes(insight.sceneType) 
         ? insight.sceneType 
         : 'ocean' as NatureScene
     }));
     
-    // Sort by pinned status first, then by date (newest first)
-    parsedInsights.sort((a: InsightCardType, b: InsightCardType) => {
-      // Pinned cards first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      // Then by date (newest first)
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    });
+    // Sort by date (newest first)
+    parsedInsights.sort((a: InsightCardType, b: InsightCardType) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
     
     setInsights(parsedInsights);
+    
+    // Find pinned insight
+    const pinned = parsedInsights.find((insight: InsightCardType) => insight.isPinned);
+    setPinnedInsight(pinned || null);
   }, []);
 
   const handleTogglePin = (insightId: string) => {
@@ -53,37 +52,47 @@ const InsightsGallery: React.FC = () => {
       }
     });
     
-    // Re-sort after pinning/unpinning
-    updatedInsights.sort((a: InsightCardType, b: InsightCardType) => {
-      // Pinned cards first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      // Then by date (newest first)
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    });
-    
     setInsights(updatedInsights);
+    
+    // Update pinned insight
+    const newPinned = updatedInsights.find(insight => insight.isPinned);
+    setPinnedInsight(newPinned || null);
     
     // Save to localStorage
     localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
   };
 
-  const filteredInsights = insights.filter(insight => 
-    filter === 'all' || insight.type === filter
-  );
-
   const morningCount = insights.filter(i => i.type === 'morning').length;
   const eveningCount = insights.filter(i => i.type === 'evening').length;
-  const pinnedCount = insights.filter(i => i.isPinned).length;
+  const recentInsights = insights.slice(0, 3); // Show 3 most recent
+
+  // Get archived chat sessions count
+  const archivedSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+  const chatCount = archivedSessions.length;
 
   const handleBack = () => {
     navigate('/');
   };
 
+  const handleChatArchive = () => {
+    navigate('/chat-archive');
+  };
+
+  const handleSettings = () => {
+    navigate('/settings');
+  };
+
+  const handleViewAllInsights = () => {
+    navigate('/insights-gallery');
+  };
+
   return (
-    <div className="min-h-screen relative">
-      {/* Keep the scene static throughout the gallery */}
-      <NatureVideoBackground scene={currentScene} />
+    <div className="min-h-screen relative overflow-hidden">
+      <NatureVideoBackground 
+        scene={currentScene} 
+        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+      />
+      
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
         <button
@@ -100,16 +109,44 @@ const InsightsGallery: React.FC = () => {
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
-          Your Insights
+          Your Journey
         </div>
         
-        <div className="w-11" /> {/* Spacer */}
+        <button
+          onClick={handleSettings}
+          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+            timeOfDay.period === 'morning'
+              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+              : 'bg-white/10 hover:bg-white/20 text-white'
+          }`}
+        >
+          <Settings className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-8 px-6">
-        <div className="max-w-6xl mx-auto">
-          {/* Stats */}
+        <div className="max-w-4xl mx-auto">
+          {/* Welcome Section */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Sparkles className={`w-8 h-8 ${
+                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-purple-400'
+              }`} />
+            </div>
+            <h1 className={`text-3xl md:text-4xl font-bold mb-2 ${
+              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+            }`}>
+              Welcome back, {user?.email?.split('@')[0] || 'Friend'}
+            </h1>
+            <p className={`text-lg ${
+              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+            }`}>
+              Your mindful reflection journey continues
+            </p>
+          </div>
+
+          {/* Stats Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
@@ -132,87 +169,95 @@ const InsightsGallery: React.FC = () => {
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
-                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+              <MessageCircle className={`w-8 h-8 mx-auto mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
               }`} />
               <div className={`text-2xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {morningCount}
+                {chatCount}
               </div>
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Morning Insights
+                Conversations
               </div>
             </div>
 
             <div className={`p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
-                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-              }`} />
-              <div className={`text-2xl font-bold ${
+              {user?.isPro ? (
+                <Crown className={`w-8 h-8 mx-auto mb-2 ${
+                  timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                }`} />
+              ) : (
+                <Sparkles className={`w-8 h-8 mx-auto mb-2 ${
+                  timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+                }`} />
+              )}
+              <div className={`text-xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {eveningCount}
+                {user?.isPro ? 'Pro' : 'Free'}
               </div>
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Evening Reflections
+                Plan
               </div>
             </div>
           </div>
 
-          {/* Filter */}
-          <div className={`p-4 rounded-2xl mb-8 backdrop-blur-sm border border-white/20 ${
-            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className="flex items-center gap-4">
-              <Filter className={`w-5 h-5 ${
-                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
-              }`} />
-              <div className="flex gap-2">
-                {(['all', 'morning', 'evening'] as const).map((filterType) => (
+          {/* Favorite Insight Card */}
+          {pinnedInsight && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Star className={`w-5 h-5 fill-current ${
+                  timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                }`} />
+                <h2 className={`text-xl font-semibold ${
+                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Your Favorite Insight
+                </h2>
+              </div>
+              <div className="max-w-lg mx-auto">
+                <InsightCard 
+                  insight={pinnedInsight} 
+                  onTogglePin={handleTogglePin}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Recent Insights */}
+          {recentInsights.length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className={`text-xl font-semibold ${
+                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Recent Insights
+                </h2>
+                {insights.length > 3 && (
                   <button
-                    key={filterType}
-                    onClick={() => setFilter(filterType)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 capitalize ${
-                      filter === filterType
-                        ? (timeOfDay.period === 'morning'
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-purple-600 text-white')
-                        : (timeOfDay.period === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-gray-300')
-                    } backdrop-blur-sm`}
+                    onClick={handleViewAllInsights}
+                    className={`text-sm font-medium transition-colors ${
+                      timeOfDay.period === 'morning' 
+                        ? 'text-blue-600 hover:text-blue-700' 
+                        : 'text-blue-400 hover:text-blue-300'
+                    }`}
                   >
-                    {filterType === 'all' ? 'all' : filterType === 'morning' ? 'morning' : 'evening'}
+                    View All ({insights.length})
                   </button>
-                ))}
+                )}
               </div>
-            </div>
-          </div>
-
-          {/* Insights Grid */}
-          {filteredInsights.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredInsights.map((insight) => (
-                selectedCard?.id === insight.id ? (
-                  // Placeholder to maintain grid layout when card is expanded
-                  <div 
-                    key={`placeholder-${insight.id}`}
-                    className="aspect-[2/3] rounded-2xl opacity-0"
-                    aria-hidden="true"
-                  />
-                ) : (
+              <div className="grid md:grid-cols-3 gap-6">
+                {recentInsights.map((insight) => (
                   <motion.div 
                     key={insight.id} 
-                    layoutId={`card-${insight.id}`}
-                    className="animate-fade-in cursor-pointer"
-                    onClick={() => setSelectedCard(insight)}
+                    className="animate-fade-in"
                     whileHover={{ y: -4 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   >
@@ -221,11 +266,58 @@ const InsightsGallery: React.FC = () => {
                       onTogglePin={handleTogglePin}
                     />
                   </motion.div>
-                )
-              ))}
+                ))}
+              </div>
             </div>
-          ) : (
-            /* Empty State */
+          )}
+
+          {/* Action Buttons */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <button
+              onClick={handleChatArchive}
+              className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
+                timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              <Archive className={`w-8 h-8 mx-auto mb-3 ${
+                timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
+              }`} />
+              <h3 className={`text-lg font-semibold mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Chat Archive
+              </h3>
+              <p className={`text-sm ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Browse and search your past conversations
+              </p>
+            </button>
+
+            <button
+              onClick={() => navigate('/')}
+              className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-105 ${
+                timeOfDay.period === 'morning' ? 'bg-white/20 hover:bg-white/30' : 'bg-white/10 hover:bg-white/20'
+              }`}
+            >
+              <Sparkles className={`w-8 h-8 mx-auto mb-3 ${
+                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+              }`} />
+              <h3 className={`text-lg font-semibold mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                New Session
+              </h3>
+              <p className={`text-sm ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                Start a new mindful conversation
+              </p>
+            </button>
+          </div>
+
+          {/* Empty State */}
+          {insights.length === 0 && (
             <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
@@ -235,15 +327,15 @@ const InsightsGallery: React.FC = () => {
               <h3 className={`text-xl font-semibold mb-2 ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {filter === 'all' ? 'No insights yet' : `No ${filter} insights yet`}
+                Begin Your Journey
               </h3>
               <p className={`mb-6 ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
               }`}>
-                Complete your first session to see insights here.
+                Start your first mindful session to create beautiful insights.
               </p>
               <button
-                onClick={handleBack}
+                onClick={() => navigate('/')}
                 className={`px-6 py-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm ${
                   timeOfDay.period === 'morning'
                     ? 'bg-amber-500 hover:bg-amber-600 text-white'
@@ -256,38 +348,6 @@ const InsightsGallery: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Full-Screen Card Display */}
-      <AnimatePresence>
-        {selectedCard && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-8"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setSelectedCard(null);
-              }
-            }}
-          >
-            <motion.div
-              layoutId={`card-${selectedCard.id}`}
-              className="relative w-[400px] h-[600px] max-w-[90vw] max-h-[90vh]"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              initial={false}
-            >
-              <InsightCard 
-                insight={selectedCard} 
-                isExpanded={true}
-                onClose={() => setSelectedCard(null)}
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Privacy Notice - Bottom of page */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
