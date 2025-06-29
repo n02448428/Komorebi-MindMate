@@ -11,7 +11,7 @@ import UniversalNavigation from '../components/UniversalNavigation';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionLimitReached from '../components/SessionLimitReached';
-import { Sparkles, Settings } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -26,7 +26,6 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -95,23 +94,6 @@ const MainSession: React.FC = () => {
       setSessionStartTime(new Date(savedStartTime));
     }
 
-    // Load saved messages for the current session
-    const savedMessages = localStorage.getItem('current-session-messages');
-    if (savedMessages) {
-      try {
-        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-        if (parsedMessages.length > 0) {
-          setMessages(parsedMessages);
-          return; // Skip adding greeting if we restored messages
-        }
-      } catch (error) {
-        console.error('Error parsing saved messages:', error);
-      }
-    }
-
     // Add initial greeting message if no messages exist
     if (messages.length === 0) {
       const greetingMessage: Message = {
@@ -123,13 +105,6 @@ const MainSession: React.FC = () => {
       setMessages([greetingMessage]);
     }
   }, [user?.isPro, user, sessionType]);
-
-  // Save messages when they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('current-session-messages', JSON.stringify(messages));
-    }
-  }, [messages]);
 
   useEffect(() => {
     // Auto-start session if conditions are met
@@ -282,15 +257,11 @@ const MainSession: React.FC = () => {
         console.log('Video frame capture result:', videoStillUrl ? 'Success' : 'Failed');
       }
       
-      // Create a unique ID for this insight
-      const insightId = Date.now().toString();
-      const sessionId = Date.now().toString();
-      
       const insight: InsightCardType = {
-        id: insightId,
+        id: Date.now().toString(),
         quote: response.quote,
         type: sessionType,
-        sessionId: sessionId,
+        sessionId: Date.now().toString(),
         createdAt: new Date(),
         sceneType: currentScene,
         videoStillUrl: videoStillUrl || undefined,
@@ -304,9 +275,6 @@ const MainSession: React.FC = () => {
         existingInsights.push(insight);
         localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
       }
-      
-      // Also archive the session and link it to this insight
-      archiveCurrentSession(sessionId, insightId);
     } catch (error) {
       console.error('Error generating insight:', error);
       // Create a fallback insight with video capture
@@ -317,17 +285,13 @@ const MainSession: React.FC = () => {
           videoStillUrl = videoBackgroundRef.current.captureFrame();
         }
         
-        // Create unique IDs
-        const insightId = Date.now().toString();
-        const sessionId = Date.now().toString();
-        
         const fallbackInsight: InsightCardType = {
-          id: insightId,
+          id: Date.now().toString(),
           quote: sessionType === 'morning' 
             ? "Every moment is a fresh beginning, and today holds infinite possibilities for growth and joy."
             : "Today's experiences have shaped you in beautiful ways. Rest knowing you've grown through every challenge and triumph.",
           type: sessionType,
-          sessionId: sessionId,
+          sessionId: Date.now().toString(),
           createdAt: new Date(),
           sceneType: currentScene,
           videoStillUrl: videoStillUrl || undefined,
@@ -340,9 +304,6 @@ const MainSession: React.FC = () => {
           existingInsights.push(fallbackInsight);
           localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
         }
-        
-        // Also archive the session and link it to this insight
-        archiveCurrentSession(sessionId, insightId);
       } catch (fallbackError) {
         console.error('Fallback insight generation failed:', fallbackError);
         throw error;
@@ -419,42 +380,34 @@ const MainSession: React.FC = () => {
     return { quote };
   };
 
-  // Archive the current session with link to insight card
-  const archiveCurrentSession = (sessionId: string, insightId?: string) => {
-    if (!user || messages.length <= 1) return; // Skip if no meaningful content
-    
-    const sessionEndTime = new Date();
-    const sessionDuration = sessionStartTime 
-      ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
-      : undefined;
-
-    const archivedSession: ArchivedChatSession = {
-      id: sessionId,
-      type: sessionType,
-      messages: messages.filter(msg => msg.id !== 'greeting'), // Exclude greeting
-      createdAt: sessionStartTime || sessionEndTime,
-      sceneType: currentScene,
-      messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
-      duration: sessionDuration,
-      insightCardId: insightId, // Link to the insight
-    };
-
-    // Save to localStorage
-    const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
-    existingSessions.push(archivedSession);
-    
-    // Keep only the most recent 50 sessions to prevent localStorage bloat
-    if (existingSessions.length > 50) {
-      existingSessions.splice(0, existingSessions.length - 50);
-    }
-    
-    localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
-  };
-
   const handleNewSession = () => {
     // Before starting a new session, save the current session if it has meaningful content
-    if (messages.length > 1) { // More than just the greeting
-      archiveCurrentSession(Date.now().toString());
+    if (user && messages.length > 1) { // More than just the greeting
+      const sessionEndTime = new Date();
+      const sessionDuration = sessionStartTime 
+        ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : undefined;
+
+      const archivedSession: ArchivedChatSession = {
+        id: Date.now().toString(),
+        type: sessionType,
+        messages: messages.filter(msg => msg.id !== 'greeting'), // Exclude greeting
+        createdAt: sessionStartTime || sessionEndTime,
+        sceneType: currentScene,
+        messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
+        duration: sessionDuration,
+      };
+
+      // Save to localStorage
+      const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+      existingSessions.push(archivedSession);
+      
+      // Keep only the most recent 50 sessions to prevent localStorage bloat
+      if (existingSessions.length > 50) {
+        existingSessions.splice(0, existingSessions.length - 50);
+      }
+      
+      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
     }
 
     // Reset to just the greeting message
@@ -471,7 +424,6 @@ const MainSession: React.FC = () => {
     const startTime = new Date();
     setSessionStartTime(startTime);
     localStorage.setItem('session-start-time', startTime.toISOString());
-    localStorage.removeItem('current-session-messages'); // Clear saved messages
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: 0,
@@ -481,6 +433,7 @@ const MainSession: React.FC = () => {
   const handleUpgrade = () => {
     navigate('/pro-upgrade');
   };
+
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
   if (user && !user.isPro && hasCompletedBothToday) {
@@ -616,51 +569,140 @@ const MainSession: React.FC = () => {
         }`} />
       )}
       
-      {/* Universal Navigation */}
-      <UniversalNavigation 
-        videoEnabled={videoEnabled}
-        onToggleVideo={toggleVideoBackground}
-        onNextScene={handleNextScene}
-        onRandomScene={handleRandomScene}
-        onNewSession={handleNewSession}
-        currentScene={getSceneDisplayName(currentScene)}
-      />
+      {/* Header */}
+                  title="Start fresh session"
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+
+                {/* Separator */}
+                <div className={`w-px h-6 ${
+                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+                }`} />
+
+                {/* User Controls */}
+                {!user && (
+                  <button
+                    onClick={handleLogin}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <LogIn className="w-3 h-3" />
+                    <span className="text-xs font-medium">Sign In</span>
+                  </button>
+                )}
+                
+                {user && !user.isPro && (
+                  <button
+                    onClick={handleUpgrade}
+                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                    }`}
+                  >
+                    <Crown className="w-3 h-3" />
+                    <span className="text-xs font-medium">Pro</span>
+                  </button>
+                )}
+
+                {user && (
+                  <>
+                    <button
+                      onClick={handleInsights}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <User className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleSettings}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Universal Toggle Button - Always positioned in top right */}
+          <button
+            onClick={() => setShowControls(!showControls)}
+            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
+              sessionType === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+            title={showControls ? 'Hide controls' : 'Show controls'}
+          >
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
           {/* Session Type Display */}
-          <div className="text-center mb-4 flex-shrink-0">
-            <div className={`text-sm font-medium mb-1 ${
-              sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-            }`}>
-              Komorebi
-            </div>
-            <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
-              sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <Sparkles className={`w-5 h-5 ${
-                sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
-              }`} />
-              <span className={`text-lg font-semibold ${
-                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
-              </span>
-            </div>
-          </div>
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.3 }}
+                className="text-center mb-4 flex-shrink-0"
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  Komorebi
+                </div>
+                <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                }`}>
+                  <Sparkles className={`w-5 h-5 ${
+                    sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
+                  }`} />
+                  <span className={`text-lg font-semibold ${
+                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
             timeOfDay={sessionType}
+            isImmersive={!showControls}
             messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Insight Generation Button */}
           <AnimatePresence>
-            {showGenerateInsightButton && (
+            {showGenerateInsightButton && showControls && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -695,7 +737,7 @@ const MainSession: React.FC = () => {
 
           {/* Display Latest Insight Card */}
           <AnimatePresence>
-            {insightCard && (
+            {insightCard && showControls && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -724,7 +766,7 @@ const MainSession: React.FC = () => {
           
           {/* Login prompt for non-logged in users */}
           <AnimatePresence>
-            {!user && messages.length > 1 && (
+            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -741,7 +783,7 @@ const MainSession: React.FC = () => {
                     Sign in to save your insights and track your progress
                   </p>
                   <button
-                    onClick={() => navigate('/')}
+                    onClick={handleLogin}
                     className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
                   >
                     Sign In to Save
