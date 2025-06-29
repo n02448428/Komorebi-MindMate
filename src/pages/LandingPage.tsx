@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
+import { getTimeOfDay } from '../utils/timeUtils';
 
 const LandingPage: React.FC = () => {
   const { login, isLoading } = useAuth();
@@ -9,6 +10,7 @@ const LandingPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showLogin, setShowLogin] = useState(false);
+  const timeOfDay = getTimeOfDay();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground scene="ocean" timeOfDay="morning" />
+      <NatureVideoBackground scene="ocean" timeOfDay={timeOfDay.period} />
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
