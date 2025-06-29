@@ -6,60 +6,46 @@ At the top, add these missing imports:
 import { Settings, Crown, LogIn, ChevronLeft, ChevronRight, RefreshCw, User } from 'lucide-react';
 ```
 
-And here's the missing section that should go between the Header comment and the Main Content section:
+In the header section, add the missing opening JSX for the controls:
 
 ```javascript
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 pt-4 px-4">
-        <div className="flex items-center justify-end gap-2">
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2"
-              >
-                {/* Scene Controls */}
-                <button
-                  onClick={handleNextScene}
-                  className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <span className="text-xs font-medium">
-                    {getSceneDisplayName(currentScene)}
-                  </span>
-                </button>
-
-                {/* Video Toggle */}
-                <button
-                  onClick={toggleVideoBackground}
-                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  {videoEnabled ? (
-                    <Video className="w-4 h-4" />
-                  ) : (
-                    <VideoOff className="w-4 h-4" />
-                  )}
-                </button>
-
-                {/* New Session Button */}
-                <button
-                  onClick={handleNewSession}
+{/* Header */}
+<div className="fixed top-0 left-0 right-0 z-50 p-4">
+  <div className="flex items-center justify-between max-w-6xl mx-auto">
+    {/* Left side controls */}
+    <div className="relative flex items-center">
+      <AnimatePresence>
+        {showControls && (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center gap-2"
+          >
+            <button
 ```
 
-Also add these missing imports at the top:
+And add these missing functions:
 
 ```javascript
-import { Video, VideoOff } from 'lucide-react';
+const handleLogin = () => {
+  navigate('/login');
+};
+
+const handleInsights = () => {
+  navigate('/insights');
+};
+
+const handleSettings = () => {
+  navigate('/settings');
+};
 ```
 
-The rest of the code remains the same. These additions should complete the file structure and fix the syntax errors.
+Finally, add the missing state:
+
+```javascript
+const [showControls, setShowControls] = useState(true);
+```
+
+These additions should complete the component and fix the syntax errors. The component should now work as intended with all the necessary controls and functionality.
