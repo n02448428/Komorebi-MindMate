@@ -669,14 +669,16 @@ const MainSession: React.FC = () => {
                   animate="visible"
                   exit="hidden"
                   variants={controlsVariants}
-                  className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                  className={`backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
                     sessionType === 'morning' 
                       ? 'bg-white/20' 
                       : 'bg-white/10'
                   }`}
                 >
-                  {/* Background Controls */}
-                  <div className="flex gap-2">
+                  {/* Desktop: Single row layout, Mobile: 3x2 grid layout */}
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                    {/* First Row: Scene Controls */}
+                    <div className="flex gap-2 justify-center md:justify-start">
                     <button
                       onClick={toggleVideoBackground}
                       title={videoEnabled ? 'Hide video background' : 'Show video background'}
@@ -718,12 +720,14 @@ const MainSession: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Separator */}
-                  <div className={`w-px h-6 ${
+                  {/* Separator (only visible on desktop) */}
+                  <div className={`hidden md:block w-px h-6 ${
                     sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
                   }`} />
 
-                  {/* Session Controls */}
+                    {/* Second Row: Session & User Controls */}
+                    <div className="flex gap-2 justify-center items-center md:justify-start">
+                      {/* Session Controls */}
                   <button
                     onClick={handleNewSession}
                     title="Start fresh session"
@@ -736,8 +740,8 @@ const MainSession: React.FC = () => {
                     <RefreshCw className="w-4 h-4" />
                   </button>
 
-                  {/* Separator */}
-                  <div className={`w-px h-6 ${
+                      {/* Separator (only visible on desktop) */}
+                      <div className={`hidden md:block w-px h-6 ${
                     sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
                   }`} />
 
@@ -745,28 +749,28 @@ const MainSession: React.FC = () => {
                   {!user && (
                     <button
                       onClick={handleLogin}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      className={`px-2 py-1 md:px-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
                     >
                       <LogIn className="w-3 h-3" />
-                      <span className="text-xs font-medium">Sign In</span>
+                      <span className="text-xs font-medium hidden md:inline">Sign In</span>
                     </button>
                   )}
                   
                   {user && !user.isPro && (
                     <button
                       onClick={handleUpgrade}
-                      className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                      className={`px-2 py-1 md:px-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                           : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
                       }`}
                     >
                       <Crown className="w-3 h-3" />
-                      <span className="text-xs font-medium">Pro</span>
+                      <span className="text-xs font-medium hidden md:inline">Pro</span>
                     </button>
                   )}
 
@@ -794,6 +798,8 @@ const MainSession: React.FC = () => {
                       </button>
                     </>
                   )}
+                    </div>
+                  </div>
                 </motion.div>
 
                 {/* Toggle Button */}
