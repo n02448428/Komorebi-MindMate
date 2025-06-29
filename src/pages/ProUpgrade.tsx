@@ -339,8 +339,10 @@ const ProUpgrade: React.FC = () => {
 
       {/* Privacy Notice - Bottom of page */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
-        <p className={`text-xs opacity-30 ${
-          timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+        <p className={`text-xs px-3 py-1 rounded-full backdrop-blur-sm border ${
+          timeOfDay.period === 'morning' 
+            ? 'bg-gray-800/80 text-gray-200 border-gray-700/50' 
+            : 'bg-white/80 text-gray-800 border-white/50'
         }`}>
           🔒 All data stored locally & privately on your device
         </p>

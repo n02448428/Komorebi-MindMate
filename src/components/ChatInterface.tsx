@@ -164,7 +164,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className={`text-xs mt-2 text-center ${
             timeOfDay === 'morning' ? 'text-gray-600' : 'text-gray-400'
           } opacity-70`}>
-            Press Enter to send • Shift+Enter for new line
+            Press Enter to send
           </div>
         )}
       </div>
