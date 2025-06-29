@@ -85,7 +85,7 @@ const InsightsGallery: React.FC = () => {
   };
 
   const handleViewAllInsights = () => {
-    navigate('/insights-gallery');
+    navigate('/all-insights');
   };
 
   return (
