@@ -186,6 +186,33 @@ const InsightsGallery: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Insights Grid */}
+        {filteredInsights.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredInsights.map((insight) => (
+              <motion.div
+                key={insight.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <InsightCard
+                  insight={insight}
+                  onClick={() => setSelectedCard(insight)}
+                />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className={`text-center py-12 ${
+            timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-white/70'
+          }`}>
+            <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg">No insights yet</p>
+            <p className="text-sm mt-2">Your reflections will appear here after each session</p>
+          </div>
+        )}
       </div>
     </div>
   );
