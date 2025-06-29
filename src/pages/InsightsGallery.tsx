@@ -214,6 +214,15 @@ const InsightsGallery: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-xs opacity-30 ${
+          timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
+      </div>
     </div>
   );
 };

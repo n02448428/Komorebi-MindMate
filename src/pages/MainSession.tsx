@@ -887,6 +887,15 @@ const MainSession: React.FC = () => {
         </AnimatePresence>
       </div>
 
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-xs opacity-30 ${
+          sessionType === 'morning' ? 'text-gray-600' : 'text-gray-400'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
+      </div>
+
       {/* Main Content */}
       <div className="relative z-10 pt-28 pb-8 px-6 min-h-[calc(100vh-100px)]">
         <div className="w-full">
