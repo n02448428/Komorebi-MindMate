@@ -178,7 +178,7 @@ const InsightsGallery: React.FC = () => {
           </div>
 
           {/* Filter */}
-          <div className={`p-4 rounded-2xl mb-8 backdrop-blur-sm border border-white/20 ${
+          <div className={`p-4 rounded-2xl mb-6 backdrop-blur-sm border border-white/20 ${
             timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-4">
@@ -204,9 +204,30 @@ const InsightsGallery: React.FC = () => {
                   </button>
                 ))}
               </div>
+              
+              {/* Session Archive Button */}
+              {user && (
+                <button
+                  onClick={() => setShowSessionArchive(!showSessionArchive)}
+                  className={`ml-auto px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center gap-2 ${
+                    showSessionArchive
+                      ? (timeOfDay.period === 'morning'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-blue-600 text-white')
+                      : (timeOfDay.period === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-gray-300')
+                  } backdrop-blur-sm`}
+                >
+                  <Archive className="w-4 h-4" />
+                  Session Archive
+                </button>
+              )}
             </div>
           </div>
 
+          {/* Data Privacy Notice */}
+          {user && (
           {/* Insights Grid */}
           {filteredInsights.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -233,6 +254,164 @@ const InsightsGallery: React.FC = () => {
               ))}
             </div>
           ) : (
+                  className={`w-full p-4 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-between ${
+                    timeOfDay.period === 'morning' 
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-800' 
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Archive className={`w-6 h-6 ${
+                      timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+                    }`} />
+                    <div className="text-left">
+                      <div className="font-semibold">Session Archive</div>
+                      <div className={`text-sm ${
+                        timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                      }`}>
+                        View your conversation history ({archivedSessions.length} sessions)
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`transition-transform duration-200 ${showSessionArchive ? 'rotate-180' : ''}`}>
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* Session Archive Section */}
+            <AnimatePresence>
+              {showSessionArchive && user && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-8 overflow-hidden"
+                >
+                  <div className={`p-6 rounded-2xl backdrop-blur-sm border border-white/20 ${
+                    timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                  }`}>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className={`text-xl font-semibold ${
+                        timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                      }`}>
+                        Conversation Archive
+                      </h3>
+                      <button
+                        onClick={handleExportData}
+                        className={`px-4 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 text-sm font-medium ${
+                          timeOfDay.period === 'morning'
+                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                            : 'bg-white/10 hover:bg-white/20 text-white'
+                        }`}
+                      >
+                        Export Data
+                      </button>
+                    </div>
+                    
+                    <div className={`text-xs mb-4 p-3 rounded-xl border border-white/20 ${
+                      timeOfDay.period === 'morning' 
+                        ? 'bg-blue-500/10 text-blue-700' 
+                        : 'bg-blue-600/10 text-blue-300'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-medium">
+                          Retention Policy: {user.isPro ? 'Unlimited history' : '7 days for free users'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {archivedSessions.length > 0 ? (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {archivedSessions.map((session) => (
+                          <div
+                            key={session.id}
+                            className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 cursor-pointer transition-all duration-200 ${
+                              timeOfDay.period === 'morning'
+                                ? 'bg-white/10 hover:bg-white/20'
+                                : 'bg-black/10 hover:bg-black/20'
+                            } ${selectedSession?.id === session.id ? 'ring-2 ring-white/30' : ''}`}
+                            onClick={() => setSelectedSession(selectedSession?.id === session.id ? null : session)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  session.type === 'morning' 
+                                    ? 'bg-amber-500' 
+                                    : 'bg-purple-500'
+                                }`} />
+                                <div>
+                                  <div className={`font-medium text-sm ${
+                                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                                  }`}>
+                                    {session.type === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                                  </div>
+                                  <div className={`text-xs ${
+                                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                                  }`}>
+                                    {session.createdAt.toLocaleDateString()} • {session.messageCount} messages
+                                    {session.duration && ` • ${session.duration}min`}
+                                  </div>
+                                </div>
+                              </div>
+                              <MessageCircle className={`w-4 h-4 ${
+                                timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
+                              }`} />
+                            </div>
+                            
+                            {/* Expanded Session View */}
+                            {selectedSession?.id === session.id && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="mt-4 pt-4 border-t border-white/20"
+                              >
+                                <div className="space-y-3 max-h-64 overflow-y-auto">
+                                  {session.messages.map((message, index) => (
+                                    <div key={index} className={`text-xs ${
+                                      message.role === 'user' ? 'text-right' : 'text-left'
+                                    }`}>
+                                      <div className={`inline-block p-2 rounded-lg max-w-[80%] ${
+                                        message.role === 'user'
+                                          ? (timeOfDay.period === 'morning' 
+                                              ? 'bg-amber-500/20 text-gray-800' 
+                                              : 'bg-purple-500/20 text-white')
+                                          : (timeOfDay.period === 'morning' 
+                                              ? 'bg-gray-500/20 text-gray-700' 
+                                              : 'bg-gray-600/20 text-gray-200')
+                                      }`}>
+                                        {message.content}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Archive className={`w-12 h-12 mx-auto mb-3 ${
+                          timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                        <p className={`${
+                          timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                        }`}>
+                          No archived sessions yet. Complete a conversation to see it here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             /* Empty State */
             <div className={`p-12 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
