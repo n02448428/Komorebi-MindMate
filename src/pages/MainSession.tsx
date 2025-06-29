@@ -810,7 +810,7 @@ const MainSession: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-28 pb-8 px-6 min-h-[calc(100vh-100px)]">
+      <div className="relative z-10 pt-28 pb-4 px-4 md:px-6 h-[calc(100vh-7rem)] overflow-hidden">
         <div className="w-full">
           {/* Session Type Display */}
           <AnimatePresence>
@@ -843,7 +843,8 @@ const MainSession: React.FC = () => {
             )}
           </AnimatePresence>
 
-          <ChatInterface
+          <div className="h-[calc(100%-2rem)]">
+            <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
@@ -851,6 +852,7 @@ const MainSession: React.FC = () => {
             isImmersive={!showControls}
             messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
+          </div>
 
           {/* Insight Generation Button */}
           <AnimatePresence>
@@ -862,13 +864,13 @@ const MainSession: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="mt-6 text-center animate-fade-in"
               >
-                <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                <div className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 max-w-sm mx-auto ${
                   sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
                 }`}>
-                  <p className={`text-sm mb-3 ${
+                  <p className={`text-xs mb-2 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
                   }`}>
-                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                    Ready to capture an insight?
                   </p>
                   <button
                     onClick={handleGenerateInsightClick}
@@ -880,7 +882,7 @@ const MainSession: React.FC = () => {
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
+                    {isGeneratingInsight ? 'Creating...' : 'Create Insight'}
                   </button>
                 </div>
               </motion.div>
@@ -897,7 +899,7 @@ const MainSession: React.FC = () => {
                 transition={{ duration: 0.3 }}
                 className="mt-8 animate-fade-in"
               >
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                   <h2 className={`text-2xl font-semibold mb-2 ${
                     sessionType === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
@@ -909,7 +911,7 @@ const MainSession: React.FC = () => {
                     A reflection from our conversation
                   </p>
                 </div>
-                <div className="max-w-lg mx-auto">
+                <div className="max-w-sm mx-auto">
                   <InsightCard insight={insightCard} />
                 </div>
               </motion.div>

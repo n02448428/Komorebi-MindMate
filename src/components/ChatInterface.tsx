@@ -75,14 +75,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className={`flex flex-col h-full w-full mx-auto ${
       isImmersive 
-        ? 'max-h-[100vh] max-w-full' 
-        : 'max-h-[85vh] max-w-full sm:max-w-xl md:max-w-3xl'
+        ? 'max-h-[calc(100vh-8rem)] max-w-full' 
+        : 'max-h-[calc(100vh-12rem)] max-w-full sm:max-w-xl md:max-w-3xl'
     }`}>
       {/* Chat Messages */}
-      <div className={`flex-1 overflow-y-auto space-y-4 md:space-y-6 backdrop-blur-md bg-white/10 border border-white/20 ${
+      <div className={`flex-1 overflow-y-auto space-y-4 md:space-y-6 backdrop-blur-md bg-white/10 border border-white/20 scrollbar-thin ${
         isImmersive 
-          ? 'p-6 min-h-[70vh] rounded-3xl' 
-          : 'p-4 md:p-6 min-h-[50vh] sm:min-h-[400px] rounded-t-3xl'
+          ? 'p-4 md:p-6 min-h-[calc(60vh)] max-h-[calc(70vh)] rounded-3xl' 
+          : 'p-4 md:p-6 min-h-[calc(40vh)] max-h-[calc(50vh)] rounded-t-3xl'
       }`}>
         {messages.map((message, index) => (
           <div 
