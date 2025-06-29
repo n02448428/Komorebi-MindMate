@@ -666,12 +666,12 @@ const MainSession: React.FC = () => {
         </AnimatePresence>
 
         {/* Controls Container - Only shown when expanded, otherwise just the toggle button */}
-        <div className="flex items-center gap-3 relative">
-          {/* Universal Toggle Button - Positioned absolutely when collapsed */}
+        <div className="flex items-center gap-3 relative">  
+          {/* Universal Toggle Button - Always positioned absolutely on desktop, relatively on mobile */}
           <button
             onClick={() => setShowControls(!showControls)}
             className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
-              !showControls ? 'fixed top-6 right-6' : 'relative'
+              'fixed top-6 right-6 md:absolute md:top-0 md:right-0'
             } ${
               sessionType === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -679,7 +679,7 @@ const MainSession: React.FC = () => {
             }`}
             title={showControls ? 'Hide controls' : 'Show controls'}
           >
-            {showControls ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
 
           {/* Animated Controls Panel */}
@@ -690,7 +690,7 @@ const MainSession: React.FC = () => {
                 animate="visible"
                 exit="hidden"
                 variants={controlsVariants}
-                className={`grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:items-center backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                className={`grid grid-cols-3 gap-2 sm:flex sm:flex-row sm:items-center backdrop-blur-sm border border-white/20 rounded-2xl p-2 mr-14 md:mr-16 ${
                   sessionType === 'morning' 
                     ? 'bg-white/20' 
                     : 'bg-white/10'
