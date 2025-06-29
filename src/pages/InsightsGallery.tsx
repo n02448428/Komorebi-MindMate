@@ -41,12 +41,13 @@ const LandingPage: React.FC = () => {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
           </button>
-        )}
-      </div>
-
-      {/* Main Content */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
-        <UniversalMenu />
+        {showLogin ? (
+          /* Login Content */
+          <div className="w-full max-w-4xl mx-auto text-center">
+            <div className="mb-12">
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
+                Komorebi
+              </h1>
               <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
                 Experience the gentle art of self-discovery through conversations with AI, 
                 surrounded by the calming beauty of nature.
