@@ -135,12 +135,22 @@ export const useSessionState = ({
       
       // Use Supabase AI chat service
       console.log('🤖 Calling AI service...');
-      const response = await aiChatService.sendMessage(
-        content, 
-        sessionType, 
-        conversationHistory, 
-        profile?.name
-      );
+      
+      // Create a timeout promise that rejects after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('AI service timeout after 15 seconds')), 15000);
+      });
+      
+      // Race the AI service call against the timeout
+      const response = await Promise.race([
+        aiChatService.sendMessage(
+          content, 
+          sessionType, 
+          conversationHistory, 
+          profile?.name
+        ),
+        timeoutPromise
+      ]);
       
       console.log('✅ Received AI response:', response);
       
