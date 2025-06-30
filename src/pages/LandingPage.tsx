@@ -175,7 +175,7 @@ const LandingPage: React.FC = () => {
                         stableTimeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                       }`} />
                     )}
-                    <span className={`font-medium ${
+                    <span className={\`font-medium ${
                       profile?.is_pro 
                         ? (stableTimeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
                         : (stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
@@ -197,14 +197,14 @@ const LandingPage: React.FC = () => {
           )}
 
           {/* Appearance Settings */}
-          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+          <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
-              <Eye className={`w-6 h-6 ${
+              <Eye className={\`w-6 h-6 ${
                 stableTimeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
-              <h2 className={`text-xl font-semibold ${
+              <h2 className={\`text-xl font-semibold ${
                 stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Appearance
@@ -213,12 +213,12 @@ const LandingPage: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className={`font-medium ${
+                  <div className={\`font-medium ${
                     stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
                     Video Backgrounds
                   </div>
-                  <div className={`text-sm ${
+                  <div className={\`text-sm ${
                     stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                   }`}>
                     Show nature video backgrounds during sessions
@@ -226,7 +226,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <button
                   onClick={toggleVideoBackground}
-                  className={`p-3 rounded-2xl transition-all duration-200 ${
+                  className={\`p-3 rounded-2xl transition-all duration-200 ${
                     videoEnabled
                       ? (stableTimeOfDay.period === 'morning'
                           ? 'bg-green-500/20 text-green-700 border border-green-500/30'
@@ -243,24 +243,24 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Privacy Section */}
-          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+          <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
             stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
-              <Shield className={`w-6 h-6 ${
+              <Shield className={\`w-6 h-6 ${
                 stableTimeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
               }`} />
-              <h2 className={`text-xl font-semibold ${
+              <h2 className={\`text-xl font-semibold ${
                 stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Privacy & Data
               </h2>
             </div>
             <div className="space-y-4">
-              <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
+              <div className={\`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
                 stableTimeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
               }`}>
-                <div className={`text-sm ${
+                <div className={\`text-sm ${
                   stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
                 }`}>
                   Your conversations and insights are stored locally on your device and are completely private. 
@@ -273,7 +273,7 @@ const LandingPage: React.FC = () => {
                 <button 
                   onClick={handleDownloadAllData}
                   disabled={isDownloading}
-                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                     stableTimeOfDay.period === 'morning'
                       ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30'
                       : 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-600/30'
@@ -295,7 +295,7 @@ const LandingPage: React.FC = () => {
                 {/* Clear All Data Button */}
                 <button 
                   onClick={handleClearData}
-                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                     stableTimeOfDay.period === 'morning'
                       ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
                       : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
@@ -310,14 +310,14 @@ const LandingPage: React.FC = () => {
 
           {/* Account Actions */}
           {user && (
-            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <div className="flex items-center gap-3 mb-4">
-                <LogOut className={`w-6 h-6 ${
+                <LogOut className={\`w-6 h-6 ${
                   stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
                 }`} />
-                <h2 className={`text-xl font-semibold ${
+                <h2 className={\`text-xl font-semibold ${
                   stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Account
@@ -325,7 +325,7 @@ const LandingPage: React.FC = () => {
               </div>
               <button
                 onClick={handleLogout}
-                className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
                   stableTimeOfDay.period === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                     : 'bg-white/10 hover:bg-white/20 text-white'
@@ -337,12 +337,12 @@ const LandingPage: React.FC = () => {
 
           {/* App Info */}
           <div className="text-center pb-4">
-            <p className={`text-sm ${
+            <p className={\`text-sm ${
               stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
             }`}>
               Komorebi MindMate v1.0.0
             </p>
-            <p className={`text-xs mt-1 ${
+            <p className={\`text-xs mt-1 ${
               stableTimeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
             }`}>
               Your AI companion for mindful reflection
@@ -353,7 +353,7 @@ const LandingPage: React.FC = () => {
 
       {/* Privacy Notice - Bottom of page */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
-        <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
+        <p className={\`text-[10px] sm:text-xs whitespace-nowrap ${
           stableTimeOfDay.period === 'morning' 
             ? 'text-gray-900' 
             : 'text-white'
