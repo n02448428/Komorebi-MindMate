@@ -1,20 +1,34 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
-import { subscriptionService } from '../lib/supabase';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showCanceledMessage, setShowCanceledMessage] = useState(false);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
+  // Check for canceled payment
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('canceled') === 'true') {
+      setShowCanceledMessage(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Hide message after 5 seconds
+      setTimeout(() => setShowCanceledMessage(false), 5000);
+    }
+  }, [location.search]);
   const plans = [
     {
       id: 'monthly',
@@ -61,20 +75,36 @@ const ProUpgrade: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Simulate subscription creation (replace with actual RevenueCat integration)
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call Supabase Edge Function to create Stripe Checkout Session
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          planId: planId,
+          userEmail: user.email,
+        }),
+      });
       
-      const result = await subscriptionService.createSubscription(user.id, planId);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
       
-      if (result.success) {
-        alert('Welcome to Komorebi Pro! 🎉 Enjoy unlimited sessions and deeper insights.');
-        navigate('/');
+      const result = await response.json();
+      
+      if (result.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.url;
       } else {
-        throw new Error('Subscription failed');
+        throw new Error('No checkout URL received');
       }
     } catch (error) {
       console.error('Subscription error:', error);
-      alert('There was an issue processing your subscription. Please try again.');
+      alert(`Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -118,6 +148,19 @@ const ProUpgrade: React.FC = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
           <div className="text-center">
+            {/* Canceled Payment Message */}
+            {showCanceledMessage && (
+              <div className={`mb-6 p-4 rounded-2xl backdrop-blur-sm border border-yellow-400/50 ${
+                timeOfDay.period === 'morning' ? 'bg-yellow-100/80' : 'bg-yellow-900/50'
+              }`}>
+                <p className={`text-sm ${
+                  timeOfDay.period === 'morning' ? 'text-yellow-800' : 'text-yellow-200'
+                }`}>
+                  Payment was canceled. You can try again anytime!
+                </p>
+              </div>
+            )}
+            
             <div className="flex items-center justify-center gap-3 mb-3">
               <Crown className={`w-10 h-10 ${
                 timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'

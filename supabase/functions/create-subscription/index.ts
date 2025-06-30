@@ -1,18 +1,5 @@
-/*
-  # Create Subscription Function
-
-  1. Purpose
-    - Handles subscription creation through RevenueCat
-    - Processes payment and activates Pro features
-    - Manages subscription lifecycle
-
-  2. Security
-    - Validates user authentication
-    - Secure payment processing
-    - Webhook verification for RevenueCat
-*/
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +9,7 @@ const corsHeaders = {
 interface SubscriptionCreateRequest {
   userId: string
   planId: string
-  paymentToken?: string
+  userEmail: string
 }
 
 serve(async (req) => {
@@ -31,47 +18,62 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, planId, paymentToken }: SubscriptionCreateRequest = await req.json()
+    const { userId, planId, userEmail }: SubscriptionCreateRequest = await req.json()
 
-    // Get RevenueCat API key from environment
-    const revenueCatApiKey = Deno.env.get('REVENUECAT_API_KEY')
-    if (!revenueCatApiKey) {
-      throw new Error('RevenueCat API key not configured')
+    // Get Stripe secret key from environment
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    if (!stripeSecretKey) {
+      throw new Error('Stripe secret key not configured')
     }
 
-    // For demo purposes, simulate successful subscription creation
-    // In a real implementation, this would:
-    // 1. Validate the payment token
-    // 2. Create the subscription in RevenueCat
-    // 3. Handle any payment processing errors
-    // 4. Update user entitlements
+    // Initialize Stripe
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2023-10-16',
+    })
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // Mock successful subscription response
-    const subscriptionData = {
-      success: true,
-      subscriptionId: `sub_${Date.now()}`,
-      planId,
-      status: 'active',
-      expiresDate: new Date(Date.now() + (planId === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
-      entitlements: {
-        pro: {
-          is_active: true,
-          will_renew: true,
-          period_type: planId === 'yearly' ? 'annual' : 'monthly',
-        }
-      }
+    // Map plan IDs to Stripe Price IDs
+    // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
+    const priceMapping: Record<string, string> = {
+      'monthly': 'price_1234567890abcdef', // Replace with your actual monthly price ID
+      'yearly': 'price_0987654321fedcba',   // Replace with your actual yearly price ID
     }
 
-    // In a real app, you would also:
-    // - Update the user's subscription status in your database
-    // - Send confirmation emails
-    // - Log the transaction for analytics
+    const priceId = priceMapping[planId]
+    if (!priceId) {
+      throw new Error(`Invalid plan ID: ${planId}`)
+    }
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      customer_email: userEmail,
+      client_reference_id: userId,
+      success_url: `${req.headers.get('origin') || 'http://localhost:5173'}/session?success=true`,
+      cancel_url: `${req.headers.get('origin') || 'http://localhost:5173'}/upgrade?canceled=true`,
+      metadata: {
+        userId: userId,
+        planId: planId,
+      },
+      subscription_data: {
+        metadata: {
+          userId: userId,
+          planId: planId,
+        },
+      },
+    })
 
     return new Response(
-      JSON.stringify(subscriptionData),
+      JSON.stringify({
+        url: session.url,
+        sessionId: session.id,
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
@@ -81,8 +83,7 @@ serve(async (req) => {
     console.error('Subscription Creation Error:', error)
     return new Response(
       JSON.stringify({ 
-        success: false,
-        error: 'Failed to create subscription',
+        error: 'Failed to create checkout session',
         details: error.message 
       }),
       {
