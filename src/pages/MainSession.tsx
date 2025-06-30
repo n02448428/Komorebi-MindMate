@@ -43,35 +43,13 @@ const MainSession: React.FC = () => {
   
   // Check if user has completed BOTH sessions today (only block if both are done)
   const hasCompletedBothToday = user ? (
-    hasCompletedTodaysSession(sessionLimits.lastMorningSession, 'morning') &&
-    hasCompletedTodaysSession(sessionLimits.lastEveningSession, 'evening')
+    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
+    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
   ) : false;
 
   // Check if session time has expired (only for non-Pro users)
   const isSessionExpired = !user?.isPro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
-
-  // Framer Motion variants for control panel animation
-  const controlsVariants = {
-    hidden: {
-      x: '100%',
-      opacity: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    }
-  };
 
   useEffect(() => {
     // Load settings from localStorage

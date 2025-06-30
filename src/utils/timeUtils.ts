@@ -1,5 +1,3 @@
-import { hasCompletedTodaysInsight } from './timeUtils';
-
 import { startOfDay, addHours } from 'date-fns';
 
 export interface TimeOfDay {
@@ -52,8 +50,7 @@ export const getTimeOfDay = (userName?: string): TimeOfDay => {
 };
 
 export const hasCompletedTodaysSession = (
-  lastSessionDate?: Date,
-  sessionType?: 'morning' | 'evening'
+  lastSessionDate?: Date
 ): boolean => {
   if (!lastSessionDate) return false;
   
