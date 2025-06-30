@@ -86,24 +86,14 @@ const ProUpgrade: React.FC = () => {
   ];
 
   const handleUpgrade = async (planId: string) => {
-    if (!user) return;
+    if (!user) {
       alert('You need to sign in before upgrading to Pro. Please sign in and try again.');
       navigate('/');
+    }
     setIsLoading(true);
     try {
       // Call Supabase Edge Function to create Stripe Checkout Session
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          planId: planId,
-          userEmail: user.email,
-        }),
-      });
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
