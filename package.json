@@ -5,22 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@sentry/react": "^7.85.0",
-    "@sentry/tracing": "^7.85.0",
-    "@supabase/supabase-js": "^2.35.0",
-    "date-fns": "^2.30.0",
-    "framer-motion": "^10.16.16",
-    "html2canvas": "^1.4.1",
-    "lucide-react": "^0.263.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.1",
+    "lucide-react": "^0.263.1",
+    "@supabase/supabase-js": "^2.35.0",
+    "@sentry/react": "^7.85.0",
+    "@sentry/tracing": "^7.85.0",
+    "framer-motion": "^10.16.16",
     "react-markdown": "^9.0.1",
-    "react-router-dom": "^6.8.1"
+    "html2canvas": "^1.4.1",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^10.16.16"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -29,7 +30,6 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.14",
-    "cross-env": "^7.0.3",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
