@@ -57,7 +57,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/');
+      navigate('/auth');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -262,7 +262,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                 </div>
               ) : (
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/auth')}
                   className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${getButtonStyle()}`}
                   title="Sign In"
                 >
