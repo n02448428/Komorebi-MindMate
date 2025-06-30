@@ -13,7 +13,7 @@ interface AuthContextType {
   updateUserName: (name: string) => void;
   updateUserEmail: (email: string) => void;
   logout: () => void;
-  isLoading: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +32,7 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Check for existing session on mount
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('komorebi-user');
       }
     }
-    setIsLoading(false);
+    setLoading(false);
   }, []);
 
   const updateUserName = (name: string) => {
@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string): Promise<void> => {
-    setIsLoading(true);
+    setLoading(true);
     
     try {
       // Simulate API call delay
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Login error:', error);
       throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -108,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateUserName,
     updateUserEmail,
     logout,
-    isLoading,
+    loading,
   };
 
   return (

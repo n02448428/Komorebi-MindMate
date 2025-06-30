@@ -50,7 +50,7 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number,
   immediate?: boolean
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: number | null = null;
   
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
@@ -74,7 +74,7 @@ export function throttle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
   
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(this: any, ...args: Parameters<T>) {
     if (!inThrottle) {
       func.apply(this, args);
       inThrottle = true;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { InsightCard as InsightCardType, NatureScene } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
@@ -18,7 +18,11 @@ const InsightsGallery: React.FC = () => {
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
-  const getDisplayName = () => user?.name || user?.email?.split('@')[0] || 'Friend';
+  const getDisplayName = () => {
+    if (user?.name) return user.name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'Friend';
+  };
 
   useEffect(() => {
     // Load insights from localStorage
@@ -64,8 +68,6 @@ const InsightsGallery: React.FC = () => {
     localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
   };
 
-  const morningCount = insights.filter(i => i.type === 'morning').length;
-  const eveningCount = insights.filter(i => i.type === 'evening').length;
   const recentInsights = insights.slice(0, 3); // Show 3 most recent
 
   // Get archived chat sessions count

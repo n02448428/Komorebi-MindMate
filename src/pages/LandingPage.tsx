@@ -34,7 +34,10 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground scene="ocean" timeOfDay={timeOfDay.period} />
+      <NatureVideoBackground 
+        scene="ocean" 
+        timeOfDay={timeOfDay.period === 'morning' || timeOfDay.period === 'evening' ? timeOfDay.period : 'morning'} 
+      />
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">

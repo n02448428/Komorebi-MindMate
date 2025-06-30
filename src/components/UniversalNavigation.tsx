@@ -5,20 +5,15 @@ import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { 
   ChevronLeft, 
-  ChevronRight, 
   Home, 
   User, 
   Settings, 
   Crown, 
   LogIn, 
-  Eye, 
-  EyeOff, 
   SkipForward, 
   Shuffle, 
-  RefreshCw, 
   Archive, 
   Sparkles,
-  GalleryVertical as Gallery,
   Video,
   VideoOff,
   RotateCcw
@@ -63,7 +58,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
     try {
       await logout();
       navigate('/');
-    } catch (error) {
+    if (!user?.name && user?.email) {
       console.error('Error signing out:', error);
     }
   };

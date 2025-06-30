@@ -6,13 +6,12 @@ import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import UniversalNavigation from '../components/UniversalNavigation';
 import InsightCard from '../components/InsightCard';
 import { ArrowLeft, Search, Sparkles } from 'lucide-react';
 
 const AllInsights: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filteredInsights, setFilteredInsights] = useState<InsightCardType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArchivedChatSession } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession, getSceneDisplayName } from '../utils/sceneUtils';
+import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check, Trash2 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
@@ -147,7 +147,8 @@ Duration: ${Math.round(session.duration / 60)} minutes
     <div className="min-h-screen relative overflow-hidden">
       {/* Background Video */}
       <NatureVideoBackground 
-        scene={currentScene}
+        scene={currentScene} 
+        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'}
         className="absolute inset-0 z-0"
       />
       

@@ -212,7 +212,7 @@ const MainSession: React.FC = () => {
         }));
 
       // Use Supabase AI chat service
-      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, user?.name);
+      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, user?.name || undefined);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -408,7 +408,7 @@ const MainSession: React.FC = () => {
       const sessionEndTime = new Date();
       const sessionDuration = sessionStartTime 
         ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
-        : undefined;
+        : 0;
 
       const archivedSession: ArchivedChatSession = {
         id: Date.now().toString(),
@@ -417,7 +417,7 @@ const MainSession: React.FC = () => {
         createdAt: sessionStartTime || sessionEndTime,
         sceneType: currentScene,
         messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
-        duration: sessionDuration,
+       duration: sessionDuration || 0,
       };
 
       // Save to localStorage
