@@ -28,68 +28,67 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
 
   // Optimized: Memoize the capture frame function
   const captureFrame = useCallback((): string | null => {
-    captureFrame: (): string | null => {
-      const video = videoRef.current;
+    const video = videoRef.current;
+    
+    if (!video || error) {
+      console.warn('Video not available for frame capture:', { 
+        hasVideo: !!video, 
+        hasError: error 
+      });
+      return null;
+    }
+    
+    if (!isLoaded || video.readyState < 2) {
+      console.warn('Video not ready for frame capture:', { 
+        isLoaded, 
+        readyState: video?.readyState,
+        currentTime: video.currentTime 
+      });
+      return null;
+    }
+
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: alpha false is faster
       
-      if (!video || error) {
-        console.warn('Video not available for frame capture:', { 
-          hasVideo: !!video, 
-          hasError: error 
-        });
+      if (!ctx) {
+        console.error('Failed to get canvas context');
         return null;
       }
+
+      // Set canvas dimensions to match video
+      const width = video.videoWidth || 800;
+      const height = video.videoHeight || 600;
       
-      if (!isLoaded || video.readyState < 2) {
-        console.warn('Video not ready for frame capture:', { 
-          isLoaded, 
-          readyState: video?.readyState,
-          currentTime: video.currentTime 
-        });
-        return null;
-      }
+      canvas.width = width;
+      canvas.height = height;
 
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: alpha false is faster
-        
-        if (!ctx) {
-          console.error('Failed to get canvas context');
-          return null;
-        }
+      // Draw current video frame to canvas
+      ctx.drawImage(video, 0, 0, width, height);
 
-        // Set canvas dimensions to match video
-        const width = video.videoWidth || 800;
-        const height = video.videoHeight || 600;
-        
-        canvas.width = width;
-        canvas.height = height;
-
-        // Draw current video frame to canvas
-        ctx.drawImage(video, 0, 0, width, height);
-
-        // Optimization: Skip this check in production for better performance
-        if (import.meta.env.DEV) {
+      // Optimization: Skip this check in production for better performance
+      if (import.meta.env.DEV) {
         const imageData = ctx.getImageData(0, 0, Math.min(10, width), Math.min(10, height));
-          const hasContent = imageData.data.some(pixel => pixel !== 0);
+        const hasContent = imageData.data.some(pixel => pixel !== 0);
           
-          if (!hasContent) {
+        if (!hasContent) {
           console.warn('Captured frame appears to be empty');
         }
-        
-        // Convert to data URL (JPEG for smaller file size)
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        console.log('Successfully captured video frame:', { 
-          width, 
-          height, 
-          dataUrlLength: dataUrl.length,
-          hasContent 
-        });
-        
-        return dataUrl;
-      } catch (error) {
-        console.error('Error capturing video frame:', error);
-        return null;
       }
+      
+      // Convert to data URL (JPEG for smaller file size)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      console.log('Successfully captured video frame:', { 
+        width, 
+        height, 
+        dataUrlLength: dataUrl.length,
+        hasContent: true 
+      });
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Error capturing video frame:', error);
+      return null;
     }
   }, [isLoaded, error, videoRef]);
   
