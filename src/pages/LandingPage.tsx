@@ -155,6 +155,7 @@ const LandingPage: React.FC = () => {
                 {loading ? 'Starting...' : 'Try Demo'}
               </button>
               <button
+                onClick={openGetStartedModal}
                 className="px-8 py-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 border border-white/20"
               >
                 Get Started

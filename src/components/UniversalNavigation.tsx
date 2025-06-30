@@ -42,7 +42,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, logout, isGuest } = useAuth();
+  const { user, profile, signOut, isGuest } = useAuth();
   const [showControls, setShowControls] = useState(false);
   const timeOfDay = getTimeOfDay(profile?.name);
   

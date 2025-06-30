@@ -8,7 +8,7 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, 
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, logout, updateProfile } = useAuth();
+  const { user, profile, signOut, updateProfile } = useAuth();
   const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);

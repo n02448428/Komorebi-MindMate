@@ -210,7 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Sign up
-  const signUp = async (email: string, password: string, name?: string) => {
+  const signUp = async (email: string, password: string, _name?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,

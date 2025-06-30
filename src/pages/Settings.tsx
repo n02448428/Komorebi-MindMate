@@ -9,7 +9,7 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, 
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, logout, updateProfile, isGuest } = useAuth();
+  const { user, profile, signOut, updateProfile, isGuest } = useAuth();
   const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
@@ -109,7 +109,7 @@ const Settings: React.FC = () => {
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
+    if (user && updateProfile) {
       // Note: This is typically handled by Supabase Auth directly, not through profile updates.
       // For now, just update the local state and inform user this would require auth change
       alert("Email changes require authentication verification. This feature isn't fully implemented yet.");
