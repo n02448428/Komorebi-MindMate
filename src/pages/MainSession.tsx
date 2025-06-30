@@ -2,9 +2,8 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getStorageItem, setStorageItem, getSessionStorageItem, setSessionStorageItem } from '../utils/storageUtils';
-import { archiveCurrentSession, completeSession } from '../utils/sessionUtils';
+import { archiveCurrentSession } from '../utils/sessionUtils';
 
 // Custom hooks
 import { useSessionState } from '../hooks/useSessionState';
@@ -18,7 +17,6 @@ import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionHeader from '../components/SessionHeader';
 import SessionPrompts from '../components/SessionPrompts';
-import SessionStatusMessages from '../components/SessionStatusMessages';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
@@ -93,15 +91,6 @@ const MainSession: React.FC = () => {
     storage
   });
 
-  // Derived state
-  const sessionTimeLimit = getSessionTimeLimit(profile?.is_pro === true);
-  const hasCompletedBothToday = user ? (
-    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
-    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
-  ) : false;
-  const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
-    (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
-
   // Event handlers
   const handleNewSession = () => {
     // Archive current session if it has meaningful content
@@ -122,9 +111,6 @@ const MainSession: React.FC = () => {
         isGuest,
         storage
       );
-
-      // Mark current session type as completed for today  
-      completeSession(sessionType as 'morning' | 'evening', sessionLimits, saveSessionLimits);
     }
 
     resetSession();
@@ -160,11 +146,11 @@ const MainSession: React.FC = () => {
 
   // Auto-start session effect
   React.useEffect(() => {
-    if (!sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
+    if (!sessionStartTime) {
       const startTime = new Date();
       storage.set('session-start-time', startTime.toISOString());
     }
-  }, [sessionStartTime, hasCompletedBothToday, isSessionExpired]);
+  }, [sessionStartTime]);
 
   // Show controls after delay
   React.useEffect(() => {
@@ -172,88 +158,7 @@ const MainSession: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Render status messages
-  if (user && profile?.is_pro !== true && hasCompletedBothToday) {
-    return (
-      <div className="h-screen relative overflow-hidden">
-        {videoEnabled && (
-          <NatureVideoBackground 
-            ref={videoBackgroundRef}
-            scene={currentScene} 
-            timeOfDay={sessionType} 
-          />
-        )}
-        {!videoEnabled && (
-          <div className={`absolute inset-0 bg-gradient-to-br ${
-            sessionType === 'morning' 
-              ? 'from-amber-100 via-orange-50 to-yellow-100'
-              : 'from-indigo-900 via-purple-900 to-blue-900'
-          }`} />
-        )}
-        
-        <SessionHeader
-          sessionType={sessionType}
-          currentScene={currentScene}
-          videoEnabled={videoEnabled}
-          showControls={showControls}
-          onToggleControls={() => setShowControls(!showControls)}
-        />
-        
-        <SessionStatusMessages
-          sessionType={sessionType}
-          user={user}
-          profile={profile}
-          nextSessionTime={getNextAvailableSession()}
-          onUpgrade={handleUpgrade}
-          onInsights={handleInsights}
-          onSettings={handleSettings}
-          onNewSession={handleNewSession}
-        />
-      </div>
-    );
-  }
-
-  if (sessionStartTime && isSessionExpired) {
-    return (
-      <div className="h-screen relative overflow-hidden">
-        {videoEnabled && (
-          <NatureVideoBackground 
-            ref={videoBackgroundRef}
-            scene={currentScene} 
-            timeOfDay={sessionType} 
-          />
-        )}
-        {!videoEnabled && (
-          <div className={`absolute inset-0 bg-gradient-to-br ${
-            sessionType === 'morning' 
-              ? 'from-amber-100 via-orange-50 to-yellow-100'
-              : 'from-indigo-900 via-purple-900 to-blue-900'
-          }`} />
-        )}
-        
-        <SessionHeader
-          sessionType={sessionType}
-          currentScene={currentScene}
-          videoEnabled={videoEnabled}
-          showControls={showControls}
-          onToggleControls={() => setShowControls(!showControls)}
-        />
-        
-        <SessionStatusMessages
-          sessionType={sessionType}
-          user={user}
-          profile={profile}
-          sessionTimeLimit={sessionTimeLimit}
-          onUpgrade={handleUpgrade}
-          onInsights={handleInsights}
-          onSettings={handleSettings}
-          onNewSession={handleNewSession}
-        />
-      </div>
-    );
-  }
-
-  // Main session interface
+  // Main session interface - no session limits anymore
   return (
     <div className="h-screen relative overflow-hidden flex flex-col">
       {videoEnabled && (
@@ -299,7 +204,7 @@ const MainSession: React.FC = () => {
             isLoading={isLoading}
             timeOfDay={sessionType as 'morning' | 'evening'}
             isImmersive={!showControls}
-            messagesRemaining={profile?.is_pro === true ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+            messagesRemaining={undefined} // No message limits
           />
 
           {/* Session Prompts */}

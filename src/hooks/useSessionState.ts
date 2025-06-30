@@ -80,11 +80,9 @@ export const useSessionState = ({
   const handleSendMessage = async (content: string) => {
     console.log('🚀 Starting handleSendMessage with:', { content, messagesCount: messages.length });
     
-    const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
-      (new Date().getTime() - sessionStartTime.getTime()) > (15 * 60 * 1000);
-
-    if (isLoading || (profile?.is_pro !== true && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) {
-      console.log('❌ Message blocked:', { isLoading, messagesUsed: sessionLimits.messagesUsed, maxMessages: sessionLimits.maxMessages, isSessionExpired });
+    // Removed session limit checks - unlimited messages for all users
+    if (isLoading) {
+      console.log('❌ Message blocked: isLoading');
       return;
     }
 
@@ -136,7 +134,7 @@ export const useSessionState = ({
       // Use Supabase AI chat service
       console.log('🤖 Calling AI service...');
       
-      // Create a timeout promise that rejects after 15 seconds
+      // Create a timeout promise that rejects after 30 seconds
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('AI service timeout after 30 seconds')), 30000);
       });

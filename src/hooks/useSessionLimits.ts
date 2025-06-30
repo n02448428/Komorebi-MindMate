@@ -16,7 +16,7 @@ export const useSessionLimits = ({ user, isGuest, profile, storage }: UseSession
     morningCompleted: false,
     eveningCompleted: false,
     messagesUsed: 0,
-    maxMessages: profile?.is_pro === true ? 999 : 4,
+    maxMessages: 999999, // Unlimited messages for all users
   });
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const useSessionLimits = ({ user, isGuest, profile, storage }: UseSession
           ...parsed,
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
           lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
-          maxMessages: profile?.is_pro === true ? 999 : 4,
+          maxMessages: 999999, // Unlimited messages for all users
         });
       }
     } else {
@@ -38,7 +38,7 @@ export const useSessionLimits = ({ user, isGuest, profile, storage }: UseSession
         morningCompleted: false,
         eveningCompleted: false,
         messagesUsed: 0,
-        maxMessages: 4,
+        maxMessages: 999999, // Unlimited messages for all users
       });
     }
   }, [profile?.is_pro, user, isGuest]);
