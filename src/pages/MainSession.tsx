@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
-import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
-import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
+import { getTimeOfDay, hasCompletedTodaysSession, getSessionTimeLimit, getSceneForSession, getNextScene, natureScenes } from '../utils';
+import { getNextAvailableSession } from '../utils/timeUtils';
 import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
@@ -49,27 +48,6 @@ const MainSession: React.FC = () => {
   const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
-  // Framer Motion variants for control panel animation
-  const controlsVariants = {
-    hidden: {
-      x: '100%',
-      opacity: 0,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30
-      }
-    }
-  };
 
   useEffect(() => {
     // Load settings from localStorage
@@ -740,23 +718,14 @@ const MainSession: React.FC = () => {
       {!videoEnabled && (
         <div className={`absolute inset-0 bg-gradient-to-br ${
           sessionType === 'morning' 
-            ? 'from-amber-100 via-orange-50 to-yellow-100'
-            : 'from-indigo-900 via-purple-900 to-blue-900'
-        }`} />
+        <div className={`absolute left-6 top-6 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
+          {showControls && (
+            <div>
       )}
       
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        {/* Left side - Title (only shown when controls are visible) */}
-        <AnimatePresence>
-          {showControls && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute left-6 top-6"
-            >
+      {/* Session Controls */}
+      <div className="absolute inset-0 z-20">
+        {/* Left side - Branding */}
               <div className={`text-2xl font-bold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
@@ -766,29 +735,24 @@ const MainSession: React.FC = () => {
                 <div className={`text-sm font-medium mt-0.5 ${
                   sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
                 }`}>
-                  {getSceneDisplayName(currentScene)}
+                  {natureScenes[currentScene]?.name || currentScene}
                 </div>
               )}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
-
-        {/* Right side - Controls Container (always positioned on the right) */}
+        </div>
+        
+        {/* Right side - Controls Container */}
         <div className="absolute right-6 top-6 flex items-center gap-3">
-          {/* Animated Controls Panel */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                variants={controlsVariants}
-                className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+          <div className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 transition-all duration-300 ${
+            showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
+          } ${
                   sessionType === 'morning' 
                     ? 'bg-white/20' 
                     : 'bg-white/10'
-                }`}
-              >
+                }`}>
+            {showControls && (
+              <>
                 {/* Background Controls */}
                 <div className="flex gap-2">
                   <button
@@ -908,9 +872,9 @@ const MainSession: React.FC = () => {
                     </button>
                   </>
                 )}
-              </motion.div>
+              </>
             )}
-          </AnimatePresence>
+          </div>
 
           {/* Universal Toggle Button - Always positioned in top right */}
           <button
@@ -930,16 +894,9 @@ const MainSession: React.FC = () => {
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
-          {/* Session Type Display */}
-          <AnimatePresence>
+          <div className={`text-center mb-4 flex-shrink-0 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
             {showControls && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className="text-center mb-4 flex-shrink-0"
-              >
+              <div>
                 <div className={`text-sm font-medium mb-1 ${
                   sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
                 }`}>
@@ -957,9 +914,9 @@ const MainSession: React.FC = () => {
                     {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
                   </span>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
 
           <ChatInterface
             messages={messages}
