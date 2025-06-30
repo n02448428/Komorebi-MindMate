@@ -96,25 +96,11 @@ const InsightCard: React.FC<InsightCardProps> = ({
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   
-  // Memoized transforms to prevent recalculation
-  const rotateX = useMemo(() => 
-    useTransform(mouseY, [-150, 150], [15, -15]), 
-    [mouseY]
-  );
-  const rotateY = useMemo(() => 
-    useTransform(mouseX, [-150, 150], [-15, 15]), 
-    [mouseX]
-  );
-
-  // Holographic foil effect transforms
-  const holographicX = useMemo(() => 
-    useTransform(mouseX, [-150, 150], [0, 100]), 
-    [mouseX]
-  );
-  const holographicY = useMemo(() => 
-    useTransform(mouseY, [-150, 150], [0, 100]), 
-    [mouseY]
-  );
+  // Transform hooks for 3D effect and holographic foil
+  const rotateX = useTransform(mouseY, [-150, 150], [15, -15]);
+  const rotateY = useTransform(mouseX, [-150, 150], [-15, 15]);
+  const holographicX = useTransform(mouseX, [-150, 150], [0, 100]);
+  const holographicY = useTransform(mouseY, [-150, 150], [0, 100]);
 
   // Optimized mouse move handler
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
