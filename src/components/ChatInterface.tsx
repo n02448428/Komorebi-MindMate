@@ -31,7 +31,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
