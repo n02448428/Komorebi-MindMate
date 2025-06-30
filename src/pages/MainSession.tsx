@@ -1,50 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
-import ChatInterface from '../components/ChatInterface';
+import { getTimeOfDay } from '../utils/timeUtils';
+import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { Eye, EyeOff, SkipForward, Shuffle } from 'lucide-react';
-import { natureScenes, type NatureScene } from '../utils/sceneUtils';
-
-const getAllScenesForSession = (sessionType: 'morning' | 'evening') => {
-  return Object.keys(natureScenes).filter(scene => 
-    natureScenes[scene].timeOfDay.includes(sessionType)
-  ) as NatureScene[];
-};
+import ChatInterface from '../components/ChatInterface';
+import { Message, NatureScene } from '../types';
+import { Eye, EyeOff, SkipForward, Shuffle, Settings, User, Crown } from 'lucide-react';
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionType, setSessionType] = useState<'morning' | 'evening'>('morning');
-  const [currentScene, setCurrentScene] = useState<NatureScene>('forestMorning');
+  const { user, profile, loading: authLoading } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [currentScene, setCurrentScene] = useState<NatureScene>('ocean');
   const [videoEnabled, setVideoEnabled] = useState(true);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get('type') as 'morning' | 'evening';
-    const scene = params.get('scene') as NatureScene;
-    
-    if (type) {
-      setSessionType(type);
-    }
-    
-    if (scene && natureScenes[scene]) {
-      setCurrentScene(scene);
-    } else {
-      // Set default scene based on session type
-      const defaultScene = type === 'morning' ? 'forestMorning' : 'forestEvening';
-      setCurrentScene(defaultScene);
-    }
-
-    // Create new session
-    createSession(type || 'morning');
-  }, []);
+  const timeOfDay = getTimeOfDay(profile?.name);
+  const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
 
   useEffect(() => {
+    // Only proceed when auth loading is complete
+    if (authLoading) return;
+
+    // If no user after auth loading is complete, redirect to login
+    if (!user) {
+      navigate('/');
+      return;
+    }
+
+    // Initialize session
+    initializeSession();
+  }, [authLoading, user, navigate]);
+
+  useEffect(() => {
+    // Auto-hide controls after 3 seconds of inactivity
     const resetControlsTimeout = () => {
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
@@ -57,13 +50,8 @@ const MainSession: React.FC = () => {
       }, 3000);
     };
 
-    const handleMouseMove = () => {
-      resetControlsTimeout();
-    };
-
-    const handleKeyPress = () => {
-      resetControlsTimeout();
-    };
+    const handleMouseMove = () => resetControlsTimeout();
+    const handleKeyPress = () => resetControlsTimeout();
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('keydown', handleKeyPress);
@@ -80,52 +68,128 @@ const MainSession: React.FC = () => {
     };
   }, []);
 
-  const createSession = async (type: 'morning' | 'evening') => {
-    if (!user) return;
+  const initializeSession = () => {
+    // Load saved video setting
+    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+    if (savedVideoEnabled !== null) {
+      setVideoEnabled(JSON.parse(savedVideoEnabled));
+    }
+
+    // Set scene based on session type
+    const savedScene = localStorage.getItem('current-scene') as NatureScene;
+    if (savedScene) {
+      setCurrentScene(savedScene);
+    } else {
+      const initialScene = getSceneForSession(sessionType);
+      setCurrentScene(initialScene);
+      localStorage.setItem('current-scene', initialScene);
+    }
+
+    // Add initial greeting message
+    const greetingMessage: Message = {
+      id: 'greeting',
+      content: timeOfDay.greeting,
+      role: 'assistant',
+      timestamp: new Date(),
+    };
+    setMessages([greetingMessage]);
+
+    // Set session start time
+    const startTime = new Date();
+    setSessionStartTime(startTime);
+    localStorage.setItem('session-start-time', startTime.toISOString());
+  };
+
+  const handleSendMessage = async (content: string) => {
+    if (isLoading) return;
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content,
+      role: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('chat_sessions')
-        .insert({
-          user_id: user.id,
-          type,
-          scene_type: currentScene,
-          completed: false
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      setSessionId(data.id);
+      // Simulate AI response for now
+      setTimeout(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `Thank you for sharing that. I appreciate your openness and would love to explore this further with you. What feels most important to focus on right now?`,
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+        setIsLoading(false);
+      }, 1000);
     } catch (error) {
-      console.error('Error creating session:', error);
+      console.error('Error getting AI response:', error);
+      setIsLoading(false);
     }
   };
 
   const toggleVideoBackground = () => {
-    setVideoEnabled(!videoEnabled);
+    const newVideoEnabled = !videoEnabled;
+    setVideoEnabled(newVideoEnabled);
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
   };
 
   const handleNextScene = () => {
-    const availableScenes = getAllScenesForSession(sessionType);
-    const currentIndex = availableScenes.indexOf(currentScene);
-    const nextIndex = (currentIndex + 1) % availableScenes.length;
-    setCurrentScene(availableScenes[nextIndex]);
+    const scenes = Object.keys({ ocean: true, forest: true, desert: true, mountain: true, lake: true, meadow: true }) as NatureScene[];
+    const currentIndex = scenes.indexOf(currentScene);
+    const nextScene = scenes[(currentIndex + 1) % scenes.length];
+    setCurrentScene(nextScene);
+    localStorage.setItem('current-scene', nextScene);
   };
 
   const handleRandomScene = () => {
-    const availableScenes = getAllScenesForSession(sessionType);
-    const filteredScenes = availableScenes.filter(scene => scene !== currentScene);
-    const randomIndex = Math.floor(Math.random() * filteredScenes.length);
-    setCurrentScene(filteredScenes[randomIndex]);
+    const scenes = Object.keys({ ocean: true, forest: true, desert: true, mountain: true, lake: true, meadow: true }) as NatureScene[];
+    const otherScenes = scenes.filter(scene => scene !== currentScene);
+    const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
+    setCurrentScene(randomScene);
+    localStorage.setItem('current-scene', randomScene);
   };
 
-  if (!sessionId) {
+  const handleSettings = () => {
+    navigate('/settings');
+  };
+
+  const handleProfile = () => {
+    navigate('/insights');
+  };
+
+  const handleUpgrade = () => {
+    navigate('/upgrade');
+  };
+
+  // Show loading while auth is loading
+  if (authLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Starting your session...</p>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no user (shouldn't happen due to redirect, but just in case)
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Please sign in to continue</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Go to Sign In
+          </button>
         </div>
       </div>
     );
@@ -135,28 +199,24 @@ const MainSession: React.FC = () => {
     <div className="h-screen relative overflow-hidden flex flex-col">
       {/* Background */}
       {videoEnabled ? (
-        <NatureVideoBackground scene={currentScene} />
+        <NatureVideoBackground 
+          scene={currentScene} 
+          timeOfDay={sessionType} 
+        />
       ) : (
         <div className={`absolute inset-0 bg-gradient-to-br ${
           sessionType === 'morning' 
-            ? 'from-blue-100 via-green-50 to-yellow-50' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
             : 'from-indigo-900 via-purple-900 to-blue-900'
         }`} />
       )}
 
-      {/* Chat Interface */}
-      <div className="relative z-10 flex-1 flex flex-col">
-        <ChatInterface 
-          sessionId={sessionId} 
-          sessionType={sessionType}
-          onSessionComplete={() => navigate('/insights')}
-        />
-      </div>
-      
-      {/* Session Controls */}
-      <div className="absolute inset-0 z-20">
-        {/* Left side - Branding */}
-        <div className={`absolute left-6 top-6 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
+      {/* Header Controls */}
+      <div className="absolute top-0 left-0 right-0 z-50 p-6">
+        {/* Left side - Title */}
+        <div className={`absolute left-6 top-6 transition-all duration-300 ${
+          showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'
+        }`}>
           {showControls && (
             <div>
               <div className={`text-2xl font-bold ${
@@ -164,73 +224,126 @@ const MainSession: React.FC = () => {
               }`}>
                 Komorebi
               </div>
-              {videoEnabled && (
-                <div className={`text-sm font-medium mt-0.5 ${
-                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  {natureScenes[currentScene]?.name || currentScene}
-                </div>
-              )}
+              <div className={`text-sm font-medium mt-0.5 ${
+                sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>
+                {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right side - Controls Container */}
+        {/* Right side - Controls */}
         <div className="absolute right-6 top-6 flex items-center gap-3">
+          {/* Scene Controls */}
           <div className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 transition-all duration-300 ${
             showControls ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
           } ${
-            sessionType === 'morning' 
-              ? 'bg-white/20' 
-              : 'bg-white/10'
+            sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             {showControls && (
               <>
-                {/* Background Controls */}
-                <div className="flex gap-2">
+                <button
+                  onClick={toggleVideoBackground}
+                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                
+                {videoEnabled && (
+                  <>
+                    <button
+                      onClick={handleNextScene}
+                      title="Next scene"
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <SkipForward className="w-4 h-4" />
+                    </button>
+                    
+                    <button
+                      onClick={handleRandomScene}
+                      title="Random scene"
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+
+                {/* Separator */}
+                <div className={`w-px h-6 ${
+                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
+                }`} />
+
+                {/* User Controls */}
+                {profile?.is_pro !== true && (
                   <button
-                    onClick={toggleVideoBackground}
-                    title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                    className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                      sessionType === 'morning'
-                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
+                    onClick={handleUpgrade}
+                    className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-medium transition-all duration-200 flex items-center gap-1"
                   >
-                    {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <Crown className="w-3 h-3" />
+                    Pro
                   </button>
-                  
-                  {videoEnabled && (
-                    <>
-                      <button
-                        onClick={handleNextScene}
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={handleRandomScene}
-                        title="Random scene"
-                        className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <Shuffle className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
+                )}
+
+                <button
+                  onClick={handleProfile}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={handleSettings}
+                  className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
               </>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 pt-24 pb-4 px-6 flex-1 flex flex-col min-h-0">
+        <ChatInterface
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          timeOfDay={sessionType}
+          placeholder={`Share what's on your mind...`}
+        />
+      </div>
+
+      {/* Privacy Notice */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
+          sessionType === 'morning' ? 'text-gray-900' : 'text-white'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
       </div>
     </div>
   );
