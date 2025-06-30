@@ -5,7 +5,7 @@ import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
 
 const LandingPage: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { login, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -106,11 +106,11 @@ const LandingPage: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={handleQuickLogin}
-                disabled={isLoading}
+                disabled={loading}
                 className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50"
               >
                 <Play className="w-5 h-5" />
-                {isLoading ? 'Starting...' : 'Try Demo'}
+                {loading ? 'Starting...' : 'Try Demo'}
               </button>
               <button
                 onClick={() => setShowLogin(true)}
@@ -169,17 +169,17 @@ const LandingPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loading}
                   className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading ? 'Signing In...' : 'Sign In'}
+                  {loading ? 'Signing In...' : 'Sign In'}
                 </button>
               </form>
 
               <div className="mt-6 pt-6 border-t border-white/20">
                 <button
                   onClick={handleQuickLogin}
-                  disabled={isLoading}
+                  disabled={loading}
                   className="w-full p-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Quick Demo Access

@@ -14,7 +14,7 @@ export const aiChatService = {
           message,
           sessionType,
           conversationHistory,
-          userName,
+          userName: userName || undefined,
         },
       })
 

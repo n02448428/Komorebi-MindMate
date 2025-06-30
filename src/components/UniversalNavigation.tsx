@@ -44,7 +44,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showControls, setShowControls] = useState(false);
-  const timeOfDay = getTimeOfDay();
+  const timeOfDay = getTimeOfDay(user?.name);
   
   // Use sessionType prop if provided, otherwise derive from timeOfDay
   const currentSessionType = sessionType || (timeOfDay.period === 'morning' ? 'morning' : 'evening');

@@ -11,7 +11,6 @@ import { ArrowLeft, Search, Sparkles } from 'lucide-react';
 
 const AllInsights: React.FC = () => {
   const navigate = useNavigate();
-  const { } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filteredInsights, setFilteredInsights] = useState<InsightCardType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

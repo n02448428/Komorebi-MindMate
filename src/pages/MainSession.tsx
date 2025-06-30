@@ -417,7 +417,7 @@ const MainSession: React.FC = () => {
         createdAt: sessionStartTime || sessionEndTime,
         sceneType: currentScene,
         messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
-       duration: sessionDuration || 0,
+        duration: sessionDuration || 0,
       };
 
       // Save to localStorage
