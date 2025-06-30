@@ -701,7 +701,7 @@ const MainSession: React.FC = () => {
               {videoEnabled && (
                 <div className={`text-sm font-medium mt-0.5 ${
                   sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
+                } max-w-[120px] whitespace-pre-wrap`}>
                   {getSceneDisplayName(currentScene)}
                 </div>
               )}
