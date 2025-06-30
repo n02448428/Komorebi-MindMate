@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
@@ -16,6 +17,7 @@ import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkl
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const location = useLocation();
   const { user } = useAuth();
   const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
@@ -52,6 +54,35 @@ const MainSession: React.FC = () => {
   // Check if session time has expired (only for non-Pro users)
   const isSessionExpired = !user?.isPro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
+
+  // Check for successful payment redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('success') === 'true') {
+      // Show success message
+      const successMessage = "🎉 Welcome to Komorebi Pro! Your subscription is now active. Enjoy unlimited sessions and deeper insights!";
+      
+      // Add success message to chat
+      const celebrationMessage: Message = {
+        id: 'pro-celebration',
+        content: successMessage,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, celebrationMessage]);
+      
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+    
+    if (urlParams.get('canceled') === 'true') {
+      // Clean up URL for canceled payment
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [location.search]);
 
   // Check for successful payment redirect
   useEffect(() => {

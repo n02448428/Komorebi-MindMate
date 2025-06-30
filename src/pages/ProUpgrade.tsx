@@ -2,19 +2,34 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showCanceledMessage, setShowCanceledMessage] = useState(false);
   const [showCanceledMessage, setShowCanceledMessage] = useState(false);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+
+  // Check for canceled payment
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('canceled') === 'true') {
+      setShowCanceledMessage(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Hide message after 5 seconds
+      setTimeout(() => setShowCanceledMessage(false), 5000);
+    }
+  }, [location.search]);
 
   // Check for canceled payment
   React.useEffect(() => {
@@ -72,7 +87,8 @@ const ProUpgrade: React.FC = () => {
 
   const handleUpgrade = async (planId: string) => {
     if (!user) return;
-    
+      alert('You need to sign in before upgrading to Pro. Please sign in and try again.');
+      navigate('/');
     setIsLoading(true);
     try {
       // Call Supabase Edge Function to create Stripe Checkout Session
@@ -88,6 +104,22 @@ const ProUpgrade: React.FC = () => {
           userEmail: user.email,
         }),
       });
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          planId: planId,
+          userEmail: user.email,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create checkout session');
+      }
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -148,6 +180,19 @@ const ProUpgrade: React.FC = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
           <div className="text-center">
+            {/* Canceled Payment Message */}
+            {showCanceledMessage && (
+              <div className={`mb-6 p-4 rounded-2xl backdrop-blur-sm border border-yellow-400/50 ${
+                timeOfDay.period === 'morning' ? 'bg-yellow-100/80' : 'bg-yellow-900/50'
+              }`}>
+                <p className={`text-sm ${
+                  timeOfDay.period === 'morning' ? 'text-yellow-800' : 'text-yellow-200'
+                }`}>
+                  Payment was canceled. You can try again anytime!
+                </p>
+              </div>
+            )}
+            
             {/* Canceled Payment Message */}
             {showCanceledMessage && (
               <div className={`mb-6 p-4 rounded-2xl backdrop-blur-sm border border-yellow-400/50 ${

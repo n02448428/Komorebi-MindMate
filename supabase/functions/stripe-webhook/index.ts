@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+import Stripe from 'https://esm.sh/v128/stripe@12.18.0?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,9 +24,7 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    })
+    const stripe = new Stripe(stripeSecretKey)
 
     // Initialize Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
@@ -40,7 +38,7 @@ serve(async (req) => {
     }
 
     // Verify webhook signature
-    let event: Stripe.Event
+    let event
     try {
       event = stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret)
     } catch (err) {
@@ -53,7 +51,7 @@ serve(async (req) => {
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed':
-        const session = event.data.object as Stripe.Checkout.Session
+        const session = event.data.object
         
         if (session.mode === 'subscription' && session.subscription) {
           const userId = session.client_reference_id || session.metadata?.userId
@@ -65,7 +63,7 @@ serve(async (req) => {
           }
 
           // Get the subscription details
-          const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+          const subscription = await stripe.subscriptions.retrieve(session.subscription)
           
           // Update user's subscription status in database
           const { error: updateError } = await supabase
@@ -105,7 +103,7 @@ serve(async (req) => {
 
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
-        const subscriptionEvent = event.data.object as Stripe.Subscription
+        const subscriptionEvent = event.data.object
         const userIdFromSub = subscriptionEvent.metadata?.userId
         
         if (userIdFromSub) {

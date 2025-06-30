@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+import Stripe from 'https://esm.sh/v128/stripe@12.18.0?target=deno'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +10,7 @@ interface SubscriptionCreateRequest {
   userId: string
   planId: string
   userEmail: string
+  userEmail: string
 }
 
 serve(async (req) => {
@@ -19,6 +20,10 @@ serve(async (req) => {
 
   try {
     const { userId, planId, userEmail }: SubscriptionCreateRequest = await req.json()
+    
+    if (!userId || !planId) {
+      throw new Error('Missing required parameters: userId and planId are required')
+    }
 
     // Get Stripe secret key from environment
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
@@ -27,9 +32,14 @@ serve(async (req) => {
     }
 
     // Initialize Stripe
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16',
-    })
+    const stripe = new Stripe(stripeSecretKey)
+
+    // Map plan IDs to Stripe Price IDs
+    // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
+    const priceMapping: Record<string, string> = {
+      'monthly': 'price_1RfZPrBCN5mG3pauaN7vrQf1', // Replace with your actual monthly price ID
+      'yearly': 'price_1RfZPrBCN5mG3pauUhrThsAY',   // Replace with your actual yearly price ID
+    }
 
     // Map plan IDs to Stripe Price IDs
     // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
@@ -42,7 +52,7 @@ serve(async (req) => {
     if (!priceId) {
       throw new Error(`Invalid plan ID: ${planId}`)
     }
-
+    const session = await stripe.checkout.sessions.create({
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -61,14 +71,8 @@ serve(async (req) => {
         userId: userId,
         planId: planId,
       },
-      subscription_data: {
-        metadata: {
-          userId: userId,
-          planId: planId,
-        },
-      },
     })
-
+      line_items: [
     return new Response(
       JSON.stringify({
         url: session.url,
@@ -78,7 +82,11 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
-
+          userId: userId,
+      JSON.stringify({
+        url: session.url,
+        sessionId: session.id,
+      }),
   } catch (error) {
     console.error('Subscription Creation Error:', error)
     return new Response(
