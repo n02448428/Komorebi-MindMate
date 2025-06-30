@@ -42,9 +42,9 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const [showControls, setShowControls] = useState(false);
-  const timeOfDay = getTimeOfDay(user?.name);
+  const timeOfDay = getTimeOfDay(profile?.name);
   
   // Use sessionType prop if provided, otherwise derive from timeOfDay
   const currentSessionType = sessionType || (timeOfDay.period === 'morning' ? 'morning' : 'evening');
@@ -216,7 +216,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 
               {user ? (
                 <div className="flex items-center gap-2">
-                  {!user.isPro && (
+                  {!profile?.is_pro && (
                     <button
                       onClick={() => navigate('/upgrade')}
                       className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
