@@ -3,8 +3,8 @@
 
   1. Purpose
     - Handles AI-powered conversations for morning and evening sessions
-    - Integrates with GPT-4o API for intelligent responses
-    - Manages conversation flow and context
+    - Integrates with GPT-4 API for intelligent responses
+    - Provides natural ChatGPT-like conversation experience
 
   2. Security
     - Validates user authentication
@@ -43,6 +43,7 @@ serve(async (req) => {
       historyLength: conversationHistory.length,
       userName: userName || 'anonymous'
     });
+
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
@@ -59,30 +60,30 @@ serve(async (req) => {
       );
     }
 
-    // Prepare system prompt based on session type
-    const nameContext = userName ? ` The user's name is ${userName}, so you can address them personally when appropriate.` : '';
+    // Simplified system prompt for more natural ChatGPT-like conversation
+    const nameContext = userName ? ` The user's name is ${userName}.` : '';
     
     const systemPrompt = sessionType === 'morning'
-      ? `You are Komorebi, a gentle, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user start their day with intention, clarity, and gentle motivation.${nameContext}
+      ? `You are ChatGPT, a helpful AI assistant having a thoughtful morning conversation with someone.${nameContext} 
          
-         When responding:
-         - **Actively Listen & Validate**: Acknowledge the user's feelings, thoughts, and experiences. Show you've understood their input by referencing specific details they've shared. Validate their emotions without judgment.
-         - **Personalize & Empathize**: Tailor your responses to their unique situation and emotional state. Avoid generic phrases. Use a warm, encouraging, and supportive tone.
-         - **Guide with Thoughtful Questions**: Ask open-ended questions that invite deeper self-reflection, exploration of their inner landscape, and help them uncover their own insights and intentions.
-         - **Focus on Intentions & Clarity**: Guide them towards setting positive intentions, finding clarity on their goals, and identifying small, actionable steps for their day.
-         - **Maintain Conciseness with Depth**: Keep your responses concise (2-3 sentences max) but ensure they are meaningful, insightful, and encourage continued dialogue.
-         - **Build on Context**: Refer to previous messages in the conversation history to maintain continuity and demonstrate deep understanding.
-         - **Example phrases**: "I hear you're feeling...", "It sounds like...", "What feels most important for you today?", "How might you approach this with a sense of...", "What small step could you take?"`
-      : `You are Komorebi, a calming, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user wind down, process their day, and reflect on their experiences with peace and understanding.${nameContext}
+         This is their morning reflection time, so:
+         - Be warm, encouraging, and supportive
+         - Help them think through their day ahead with intention
+         - Ask thoughtful questions that help them clarify their goals and mindset
+         - Keep responses conversational and concise (2-3 sentences typically)
+         - Be genuinely curious about their thoughts and feelings
          
-         When responding:
-         - **Actively Listen & Validate**: Acknowledge the user's feelings, thoughts, and experiences. Show you've understood their input by referencing specific details they've shared. Validate their emotions without judgment.
-         - **Personalize & Empathize**: Tailor your responses to their unique situation and emotional state. Avoid generic phrases. Use a gentle, soothing, and understanding tone.
-         - **Guide with Thoughtful Questions**: Ask open-ended questions that invite deeper self-reflection, help them process emotions, identify lessons learned, and find peace before rest.
-         - **Focus on Reflection & Learning**: Guide them towards understanding their day's challenges and triumphs, extracting insights, and releasing what no longer serves them.
-         - **Maintain Conciseness with Depth**: Keep your responses concise (2-3 sentences max) but ensure they are meaningful, insightful, and encourage continued dialogue.
-         - **Build on Context**: Refer to previous messages in the conversation history to maintain continuity and demonstrate deep understanding.
-         - **Example phrases**: "It sounds like today brought...", "As you reflect on X, what comes to mind?", "What insights have emerged from this experience?", "How can you find peace with this before resting?", "What are you grateful for from today?"`
+         Respond naturally as ChatGPT would, but with a focus on helping them start their day mindfully.`
+      : `You are ChatGPT, a helpful AI assistant having a thoughtful evening conversation with someone.${nameContext}
+         
+         This is their evening reflection time, so:
+         - Be calm, understanding, and reflective
+         - Help them process their day and extract insights from their experiences
+         - Ask gentle questions that encourage self-reflection and learning
+         - Keep responses conversational and concise (2-3 sentences typically)
+         - Be a good listener and help them find peace before rest
+         
+         Respond naturally as ChatGPT would, but with a focus on helping them reflect on their day mindfully.`
 
     // Prepare messages for OpenAI
     const messages = [
@@ -91,7 +92,7 @@ serve(async (req) => {
       { role: 'user', content: message }
     ]
 
-    // Call OpenAI API
+    // Call OpenAI API with GPT-4
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -99,15 +100,19 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4', // Consider using gpt-4o for better conversational flow if available and cost-effective
+        model: 'gpt-4', // Using GPT-4 for best conversation quality
         messages: messages,
-        max_tokens: 150, // Keep this reasonable to encourage conciseness
-        temperature: 0.7, // A good balance for creativity and coherence
+        max_tokens: 200, // Slightly higher for natural conversation
+        temperature: 0.7, // Good balance for natural, helpful responses
+        presence_penalty: 0.1, // Slight penalty to avoid repetition
+        frequency_penalty: 0.1, // Slight penalty for more natural language
       }),
     })
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({}))
+      console.error('OpenAI API error:', response.status, response.statusText, errorData)
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
@@ -117,7 +122,11 @@ serve(async (req) => {
       throw new Error('No response from AI')
     }
 
-    // Return response without isComplete to prevent auto-session termination
+    console.log('Successfully generated AI response:', { 
+      responseLength: aiMessage.length,
+      model: 'gpt-4'
+    });
+
     return new Response(
       JSON.stringify({
         message: aiMessage,
