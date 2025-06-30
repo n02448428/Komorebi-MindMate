@@ -1,27 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   plugins: [react()],
-  // Optimized build configuration
   build: {
-    sourcemap: false, // Disable for smaller bundle
-    minify: 'terser', // Better compression
-    target: 'es2020', // Modern browsers only
+    sourcemap: false,
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        // Improved code splitting
         manualChunks: { 
-          react: ['react', 'react-dom'],
-          motion: ['framer-motion'],
-          router: ['react-router-dom'],
-          icons: ['lucide-react']
+          vendor: ['react', 'react-dom', 'framer-motion'] 
         }
       }
     }
-  },
-  // Enable aggressive tree-shaking
-  esbuild: {
-    drop: mode === 'production' ? ['console', 'debugger'] : [],
   }
-}))
+})
