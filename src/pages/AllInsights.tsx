@@ -277,7 +277,6 @@ const AllInsights: React.FC = () => {
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
           timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
-          timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
         }`}>
           Your conversations are private and secure
         </p>
