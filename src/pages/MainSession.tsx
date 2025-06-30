@@ -555,7 +555,7 @@ const MainSession: React.FC = () => {
   };
 
   const handleLogin = () => {
-    navigate('/');
+    navigate('/auth');
   };
 
   const handleInsights = () => {
@@ -652,30 +652,17 @@ const MainSession: React.FC = () => {
             Komorebi
           </div>
           <div className="flex gap-3">
-            {user && (
-              <>
-                <button
-                  onClick={handleInsights}
-                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <User className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={handleSettings}
-                  className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                    sessionType === 'morning'
-                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                      : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => navigate('/auth')}
+              className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              <LogIn className="w-3 h-3" />
+              <span className="text-xs font-medium">Sign In</span>
+            </button>
           </div>
         </div>
 
@@ -902,7 +889,7 @@ const MainSession: React.FC = () => {
                 {user && (
                   <>
                     <button
-                      onClick={handleInsights}
+                      onClick={() => navigate('/auth')}
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -919,26 +906,43 @@ const MainSession: React.FC = () => {
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
                     >
-                      <Settings className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Universal Toggle Button - Always positioned in top right */}
-          <button
-            onClick={() => setShowControls(!showControls)}
-            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
-              sessionType === 'morning'
-                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-            title={showControls ? 'Hide controls' : 'Show controls'}
-          >
-            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+          {user && (
+            <>
+              <button
+                onClick={handleInsights}
+                className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <User className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleSettings}
+                className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </>
+          )}
+          {!user && !isGuest && (
+            <button
+              onClick={handleLogin}
+              className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+            >
+              <LogIn className="w-3 h-3" />
+              <span className="text-xs font-medium">Sign In</span>
+            </button>
+          )}
         </div>
       </div>
 
