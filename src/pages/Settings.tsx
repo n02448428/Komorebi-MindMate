@@ -328,7 +328,7 @@ const Settings: React.FC = () => {
                       }`} />
                     )}
                     <span className={`font-medium ${
-                      user?.isPro 
+                      profile?.is_pro 
                         ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
                         : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
                     }`}>
