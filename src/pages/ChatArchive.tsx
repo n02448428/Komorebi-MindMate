@@ -446,6 +446,17 @@ Duration: ${Math.round(session.duration / 60)} minutes
           )}
         </div>
       </div>
+
+      {/* Privacy Notice - Bottom of page */}
+      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
+        <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
+          timeOfDay.period === 'morning' 
+            ? 'text-gray-900' 
+            : 'text-white'
+        }`}>
+          🔒 All data stored locally & privately on your device
+        </p>
+      </div>
     </div>
   );
 };
