@@ -718,14 +718,17 @@ const MainSession: React.FC = () => {
       {!videoEnabled && (
         <div className={`absolute inset-0 bg-gradient-to-br ${
           sessionType === 'morning' 
-        <div className={`absolute left-6 top-6 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
-          {showControls && (
-            <div>
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
       )}
       
       {/* Session Controls */}
       <div className="absolute inset-0 z-20">
         {/* Left side - Branding */}
+        <div className={`absolute left-6 top-6 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-5'}`}>
+          {showControls && (
+            <div>
               <div className={`text-2xl font-bold ${
                 sessionType === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
@@ -740,6 +743,7 @@ const MainSession: React.FC = () => {
               )}
             </div>
           )}
+        </div>
         </div>
         
         {/* Right side - Controls Container */}
