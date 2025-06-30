@@ -58,8 +58,10 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
     try {
       await logout();
       navigate('/');
-    if (!user?.name && user?.email) {
-      console.error('Error signing out:', error);
+    } catch (error) {
+      if (!user?.name && user?.email) {
+        console.error('Error signing out:', error);
+      }
     }
   };
 
