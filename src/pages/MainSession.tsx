@@ -859,7 +859,7 @@ const MainSession: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
+      <div className="relative z-10 pt-6 pb-2 px-6 flex-1 flex flex-col min-h-0 mt-56">
         <div className="w-full flex-1 flex flex-col min-h-0">
           {/* Session Type Display */}
           <AnimatePresence>
