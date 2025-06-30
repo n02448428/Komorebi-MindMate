@@ -26,7 +26,7 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(false);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
