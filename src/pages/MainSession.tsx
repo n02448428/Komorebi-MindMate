@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
+import { hasCompletedTodaysInsight } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
 import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
@@ -31,6 +32,7 @@ const MainSession: React.FC = () => {
     eveningCompleted: false,
     messagesUsed: 0,
     maxMessages: user?.isPro ? 999 : 4,
+    lastInsightGeneratedDate: undefined,
   });
 
   const timeOfDay = getTimeOfDay(user?.name);
@@ -41,8 +43,8 @@ const MainSession: React.FC = () => {
   
   // Check if user has completed BOTH sessions today (only block if both are done)
   const hasCompletedBothToday = user ? (
-    hasCompletedTodaysSession(sessionLimits.lastMorningSession) &&
-    hasCompletedTodaysSession(sessionLimits.lastEveningSession)
+    hasCompletedTodaysSession(sessionLimits.lastMorningSession, 'morning') &&
+    hasCompletedTodaysSession(sessionLimits.lastEveningSession, 'evening')
   ) : false;
 
   // Check if session time has expired (only for non-Pro users)
@@ -97,6 +99,7 @@ const MainSession: React.FC = () => {
           ...parsed,
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
           lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
+          lastInsightGeneratedDate: parsed.lastInsightGeneratedDate ? new Date(parsed.lastInsightGeneratedDate) : undefined,
           maxMessages: user?.isPro ? 999 : 4,
         });
       }
@@ -107,6 +110,7 @@ const MainSession: React.FC = () => {
         eveningCompleted: false,
         messagesUsed: 0,
         maxMessages: 4,
+        lastInsightGeneratedDate: undefined,
       });
     }
 
@@ -197,8 +201,8 @@ const MainSession: React.FC = () => {
       messagesUsed: newMessagesUsed,
     });
 
-    // Check if we should show the insight generation button (every 5 user messages)
-    if (newUserMessagesSinceLastInsight % 5 === 0 && newUserMessagesSinceLastInsight > 0) {
+    // Check if we should show the insight generation button (every 3 user messages)
+    if (newUserMessagesSinceLastInsight % 3 === 0 && newUserMessagesSinceLastInsight > 0) {
       setShowGenerateInsightButton(true);
     }
 
@@ -223,6 +227,13 @@ const MainSession: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
 
+      // Check if AI indicates session should complete and auto-end session
+      if (response.isComplete && !showGenerateInsightButton) {
+        // Give user a moment to read the final message, then end session
+        setTimeout(() => {
+          handleNewSession();
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage: Message = {
@@ -258,6 +269,13 @@ const MainSession: React.FC = () => {
   };
 
   const generateInsightCard = async (sessionMessages: Message[]) => {
+    // Check if free user has already generated insight today
+    if (!user?.isPro && sessionLimits.lastInsightGeneratedDate && hasCompletedTodaysInsight(sessionLimits.lastInsightGeneratedDate)) {
+      alert('You can only generate one insight per day on the free plan. Upgrade to Pro for unlimited insights!');
+      setShowGenerateInsightButton(true);
+      return;
+    }
+
     try {
       let response;
       
@@ -291,12 +309,25 @@ const MainSession: React.FC = () => {
       
       setInsightCard(insight);
       
+      // Update insight generation date for free users
+      const updatedLimits = {
+        ...sessionLimits,
+        lastInsightGeneratedDate: new Date(),
+      };
+      saveSessionLimits(updatedLimits);
+      
       // Only save to localStorage if user is logged in
       if (user) {
         const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
         existingInsights.push(insight);
         localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
       }
+
+      // End session after insight generation
+      setTimeout(() => {
+        handleNewSession();
+      }, 3000); // Give user time to view the insight
+      
     } catch (error) {
       console.error('Error generating insight:', error);
       // Create a fallback insight with video capture
@@ -321,14 +352,23 @@ const MainSession: React.FC = () => {
         
         setInsightCard(fallbackInsight);
         
+        // Update insight generation date for free users
+        const updatedLimits = {
+          ...sessionLimits,
+          lastInsightGeneratedDate: new Date(),
+        };
+        saveSessionLimits(updatedLimits);
+        
         if (user) {
           const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
           existingInsights.push(fallbackInsight);
           localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
         }
       } catch (fallbackError) {
-        console.error('Fallback insight generation failed:', fallbackError);
-        throw error;
+        // End session after insight generation
+        setTimeout(() => {
+          handleNewSession();
+        }, 3000);
       }
     }
   };
@@ -404,7 +444,7 @@ const MainSession: React.FC = () => {
 
   const handleNewSession = () => {
     // Before starting a new session, save the current session if it has meaningful content
-    if (user && messages.length > 1) { // More than just the greeting
+    if (messages.length > 1) { // More than just the greeting
       const sessionEndTime = new Date();
       const sessionDuration = sessionStartTime 
         ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
@@ -418,18 +458,30 @@ const MainSession: React.FC = () => {
         sceneType: currentScene,
         messageCount: messages.filter(msg => msg.role === 'user').length, // Count only user messages
         duration: sessionDuration || 0,
+        insightCardId: insightCard?.id, // Link to generated insight if any
       };
 
-      // Save to localStorage
-      const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
-      existingSessions.push(archivedSession);
-      
-      // Keep only the most recent 50 sessions to prevent localStorage bloat
-      if (existingSessions.length > 50) {
-        existingSessions.splice(0, existingSessions.length - 50);
+      // Save to localStorage only if user is logged in
+      if (user) {
+        const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+        existingSessions.push(archivedSession);
+        
+        // Keep only the most recent 50 sessions to prevent localStorage bloat
+        if (existingSessions.length > 50) {
+          existingSessions.splice(0, existingSessions.length - 50);
+        }
+        
+        localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
       }
-      
-      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
+
+      // Mark current session type as completed for today
+      const now = new Date();
+      const updatedLimits = {
+        ...sessionLimits,
+        messagesUsed: 0,
+        [sessionType === 'morning' ? 'lastMorningSession' : 'lastEveningSession']: now,
+      };
+      saveSessionLimits(updatedLimits);
     }
 
     // Reset to just the greeting message
@@ -446,10 +498,6 @@ const MainSession: React.FC = () => {
     const startTime = new Date();
     setSessionStartTime(startTime);
     localStorage.setItem('session-start-time', startTime.toISOString());
-    saveSessionLimits({
-      ...sessionLimits,
-      messagesUsed: 0,
-    });
   };
 
   const handleUpgrade = () => {
@@ -898,7 +946,7 @@ const MainSession: React.FC = () => {
                   <p className={`text-sm mb-3 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
                   }`}>
-                    You've shared 5 messages! Ready to capture an insight from our conversation?
+                    You've shared 3 messages! Ready to capture an insight from our conversation?
                   </p>
                   <button
                     onClick={handleGenerateInsightClick}

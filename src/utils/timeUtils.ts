@@ -1,3 +1,5 @@
+import { hasCompletedTodaysInsight } from './timeUtils';
+
 import { startOfDay, addHours } from 'date-fns';
 
 export interface TimeOfDay {
@@ -12,53 +14,32 @@ export const getTimeOfDay = (userName?: string): TimeOfDay => {
   const now = new Date();
   const hour = now.getHours();
   
-  // Default session times (can be enhanced with sunrise/sunset API)
-  const morningStart = 5; // 5 AM
-  const morningEnd = 11; // 11 AM
-  const eveningStart = 17; // 5 PM
-  const eveningEnd = 23; // 11 PM
-  const eveningCutoff = 20; // 8 PM - after this, switch to evening even if morning wasn't completed
+  // Updated session times for clearer boundaries
+  const morningStart = 6; // 6 AM
+  const eveningStart = 18; // 6 PM (18:00)
   
   let period: 'morning' | 'evening' | 'day' | 'night';
-  let isSessionTime = true; // Always allow sessions if user hasn't had one today
+  let isSessionTime = true;
   let nextSessionTime: Date | undefined;
   let greeting: string;
-  let shouldAutoStart = true; // Always auto-start if no session today
+  let shouldAutoStart = true;
   
   // Personalize greeting with user's name
   const personalGreeting = userName ? `, ${userName}` : '';
   
-  if (hour >= morningStart && hour < morningEnd) {
+  if (hour >= morningStart && hour < eveningStart) {
+    // 6 AM to 6 PM - Morning session period
     period = 'morning';
-    greeting = "Good morning! I'm here to help you start your day with intention and clarity. What's stirring in your heart as this new day begins?";
-  } else if (hour >= morningEnd && hour < eveningStart) {
-    // During day, but still allow sessions - prefer morning unless it's late
-    period = hour >= 14 ? 'evening' : 'morning'; // After 2 PM, switch to evening mode
-    greeting = period === 'morning' 
-      ? `Hello${personalGreeting}! Let's take a mindful moment to set an intention for the rest of your day. What would you like to focus on?`
-      : "Good afternoon! Let's pause and reflect together on how your day has been unfolding. What's on your mind?";
-  } else if (hour >= eveningStart && hour < eveningEnd) {
-    period = 'evening';
-    greeting = "Good evening! Welcome to this peaceful moment of reflection. How was your day, and what would you like to explore together?";
+    greeting = `Good morning${personalGreeting}! I'm here to help you start your day with intention and clarity. What's stirring in your heart as this new day begins?`;
   } else {
-    // Night time - still allow sessions but prefer evening mode
+    // 6 PM to 6 AM next day - Evening session period
     period = 'evening';
-    greeting = "Hello there! Even in these quiet nighttime hours, reflection can bring peace and clarity. What's on your mind tonight?";
-  }
-  
-  // Special case: if it's late in the day (after 8 PM), force evening session
-  if (hour >= eveningCutoff) {
-    period = 'evening';
-  }
-  
-  // Apply personalization to all greetings
-  if (userName) {
-    greeting = greeting.replace(/Good morning!/g, `Good morning, ${userName}!`);
-    greeting = greeting.replace(/Good afternoon!/g, `Good afternoon, ${userName}!`);
-    greeting = greeting.replace(/Good evening!/g, `Good evening, ${userName}!`);
-    greeting = greeting.replace(/Hello!/g, `Hello, ${userName}!`);
-    greeting = greeting.replace(/Hello there!/g, `Hello there, ${userName}!`);
-    greeting = greeting.replace(/^Hello(?!\s*(there|,))/, `Hello, ${userName}`);
+    if (hour >= eveningStart) {
+      greeting = `Good evening${personalGreeting}! Welcome to this peaceful moment of reflection. How was your day, and what would you like to explore together?`;
+    } else {
+      // Early morning hours (12 AM - 6 AM) - still evening session
+      greeting = `Hello${personalGreeting}! Even in these quiet nighttime hours, reflection can bring peace and clarity. What's on your mind tonight?`;
+    }
   }
   
   return {
@@ -71,7 +52,8 @@ export const getTimeOfDay = (userName?: string): TimeOfDay => {
 };
 
 export const hasCompletedTodaysSession = (
-  lastSessionDate?: Date
+  lastSessionDate?: Date,
+  sessionType?: 'morning' | 'evening'
 ): boolean => {
   if (!lastSessionDate) return false;
   
@@ -81,19 +63,30 @@ export const hasCompletedTodaysSession = (
   return today.getTime() === sessionDay.getTime();
 };
 
+export const hasCompletedTodaysInsight = (
+  lastInsightDate?: Date
+): boolean => {
+  if (!lastInsightDate) return false;
+  
+  const today = startOfDay(new Date());
+  const insightDay = startOfDay(lastInsightDate);
+  
+  return today.getTime() === insightDay.getTime();
+};
+
 export const getNextAvailableSession = (): Date => {
   const now = new Date();
   const hour = now.getHours();
   
-  if (hour < 5) {
-    // Before morning session
-    return addHours(startOfDay(now), 5);
-  } else if (hour < 17) {
-    // Before evening session
-    return addHours(startOfDay(now), 17);
+  if (hour < 6) {
+    // Before 6 AM - next morning session starts at 6 AM today
+    return addHours(startOfDay(now), 6);
+  } else if (hour < 18) {
+    // Between 6 AM and 6 PM - next evening session starts at 6 PM today
+    return addHours(startOfDay(now), 18);
   } else {
-    // After evening session, next morning
-    return addHours(startOfDay(now), 29); // 5 AM next day
+    // After 6 PM - next morning session starts at 6 AM tomorrow
+    return addHours(startOfDay(now), 30); // 6 AM next day
   }
 };
 

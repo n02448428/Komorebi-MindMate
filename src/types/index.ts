@@ -20,6 +20,7 @@ export interface SessionLimits {
   maxMessages: number;
   lastMorningSession?: Date;
   lastEveningSession?: Date;
+  lastInsightGeneratedDate?: Date;
 }
 
 export type NatureScene = 'ocean' | 'forest' | 'desert' | 'mountain' | 'lake' | 'meadow';
