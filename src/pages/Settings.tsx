@@ -322,7 +322,7 @@ const Settings: React.FC = () => {
                       ? 'bg-white/20'
                       : 'bg-white/10'
                   }`}>
-                    {user?.isPro && (
+                    {profile?.is_pro && (
                       <Crown className={`w-4 h-4 ${
                         timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                       }`} />
@@ -330,7 +330,7 @@ const Settings: React.FC = () => {
                     <span className={`font-medium ${
                       profile?.is_pro 
                         ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
-                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300') 
+                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
                     }`}>
                       {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
                     </span>
