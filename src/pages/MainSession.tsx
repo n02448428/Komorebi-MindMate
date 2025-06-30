@@ -700,17 +700,17 @@ const MainSession: React.FC = () => {
                 animate={{ width: 'auto', opacity: 1, padding: '0.5rem' }}
                 exit={{ width: 0, opacity: 0, padding: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`flex flex-wrap gap-x-2 gap-y-2 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden ${
+                className={`grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-x-2 md:gap-y-2 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden ${
                   sessionType === 'morning' 
                     ? 'bg-white/20' 
                     : 'bg-white/10'
-                } max-w-[calc(100vw-8rem)]`}
+                } w-auto max-w-[calc(100vw-8rem)]`}
               >
-                {/* Background Controls */}
+                {/* Video Toggle */}
                 <button
                   onClick={toggleVideoBackground}
                   title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                  className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                  className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -718,50 +718,55 @@ const MainSession: React.FC = () => {
                 >
                   {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+
+                {/* Next Scene */}
                 {videoEnabled && (
-                  <>
-                    <button
-                      onClick={handleNextScene}
-                      title="Next scene"
-                      className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      <SkipForward className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleRandomScene}
-                      title="Random scene"
-                      className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                    >
-                      <Shuffle className="w-4 h-4" />
-                    </button>
-                  </>
+                  <button
+                    onClick={handleNextScene}
+                    title="Next scene"
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </button>
                 )}
 
+                {/* Random Scene */}
+                {videoEnabled && (
+                  <button
+                    onClick={handleRandomScene}
+                    title="Random scene"
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    <Shuffle className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* New Session */}
                 <button
                   onClick={handleNewSession}
                   title="Start fresh session"
-                  className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                  sessionType === 'morning'
-                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
+                  className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                    sessionType === 'morning'
+                      ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                      : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
 
-                {/* User Controls */}
+                {/* Sign In / Pro Upgrade */}
                 {!user && (
                   <button
                     onClick={handleLogin}
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -775,7 +780,7 @@ const MainSession: React.FC = () => {
                 {user && !user.isPro && (
                   <button
                     onClick={handleUpgrade}
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                       sessionType === 'morning'
                         ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                         : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
@@ -786,10 +791,11 @@ const MainSession: React.FC = () => {
                   </button>
                 )}
 
+                {/* Your Journey */}
                 {user && (
                   <button
                     onClick={handleInsights}
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -800,10 +806,11 @@ const MainSession: React.FC = () => {
                   </button>
                 )}
                 
+                {/* Settings */}
                 {user && (
                   <button
                     onClick={handleSettings}
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                    className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -820,7 +827,7 @@ const MainSession: React.FC = () => {
           {/* Universal Toggle Button - Always in top right corner */}
           <button
             onClick={() => setShowControls(!showControls)}
-           className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center ${
+            className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center ${
               sessionType === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                 : 'bg-white/10 hover:bg-white/20 text-white'
