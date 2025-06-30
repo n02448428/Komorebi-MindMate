@@ -80,36 +80,7 @@ const MainSession: React.FC = () => {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, [location.search]);
-
-  // Check for successful payment redirect
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    if (urlParams.get('success') === 'true') {
-      // Show success message
-      const successMessage = "🎉 Welcome to Komorebi Pro! Your subscription is now active. Enjoy unlimited sessions and deeper insights!";
-      
-      // Add success message to chat
-      const celebrationMessage: Message = {
-        id: 'pro-celebration',
-        content: successMessage,
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, celebrationMessage]);
-      
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-    
-    if (urlParams.get('canceled') === 'true') {
-      // Clean up URL for canceled payment
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, [location.search]);
+  }, [location.search, setMessages]);
   useEffect(() => {
     // Load settings from localStorage
     const savedVideoEnabled = localStorage.getItem('video-background-enabled');
