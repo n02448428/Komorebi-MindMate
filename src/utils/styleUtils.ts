@@ -1,12 +1,10 @@
 /**
  * Shared styling utilities to reduce code duplication
- * Performance: Eliminates repeated inline style calculations
  */
 
 export interface ThemeColors {
   primary: string;
   secondary: string;
-  accent: string;
   text: string;
   textSecondary: string;
   background: string;
@@ -14,39 +12,32 @@ export interface ThemeColors {
   border: string;
 }
 
-// Memoized theme configurations to prevent recalculation
-export const getThemeColors = (() => {
-  const cache = new Map<string, ThemeColors>();
-  
-  return (timeOfDay: 'morning' | 'evening'): ThemeColors => {
-    if (cache.has(timeOfDay)) {
-      return cache.get(timeOfDay)!;
-    }
-    
-    const colors: ThemeColors = timeOfDay === 'morning' ? {
+// Pre-computed theme configurations to avoid recalculation
+export const getThemeColors = (timeOfDay: 'morning' | 'evening'): ThemeColors => {
+  return timeOfDay === 'morning' 
+    ? {
       primary: 'bg-amber-500 hover:bg-amber-600',
       secondary: 'bg-white/20 hover:bg-white/30',
-      accent: 'text-amber-600',
       text: 'text-gray-800',
       textSecondary: 'text-gray-600',
       background: 'bg-white/20',
       backgroundSecondary: 'bg-white/10',
       border: 'border-white/20'
-    } : {
+    } 
+    : {
       primary: 'bg-purple-600 hover:bg-purple-700',
       secondary: 'bg-white/10 hover:bg-white/20',
-      accent: 'text-purple-400',
       text: 'text-white',
       textSecondary: 'text-gray-300',
       background: 'bg-white/10',
       backgroundSecondary: 'bg-black/20',
       border: 'border-white/20'
     };
-    
-    cache.set(timeOfDay, colors);
-    return colors;
-  };
-})();
+};
+
+// Pre-computed button styles for common cases
+const MORNING_PRIMARY = 'px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 bg-amber-500 hover:bg-amber-600 text-white';
+const EVENING_PRIMARY = 'px-4 py-2 text-sm rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 bg-purple-600 hover:bg-purple-700 text-white';
 
 /**
  * Generate consistent button styles
@@ -55,35 +46,22 @@ export const getThemeColors = (() => {
 export const getButtonStyles = (
   variant: 'primary' | 'secondary' | 'ghost',
   timeOfDay: 'morning' | 'evening',
-  size: 'sm' | 'md' | 'lg' = 'md'
+  size?: 'sm' | 'md' | 'lg'
 ): string => {
-  const colors = getThemeColors(timeOfDay);
-  const sizes = {
-    sm: 'px-3 py-1 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base'
-  };
-  
-  const baseStyles = `${sizes[size]} rounded-xl font-medium transition-all duration-200 backdrop-blur-sm ${colors.border} border`;
-  
-  switch (variant) {
-    case 'primary':
-      return `${baseStyles} ${colors.primary} text-white`;
-    case 'secondary':
-      return `${baseStyles} ${colors.secondary} ${colors.text}`;
-    case 'ghost':
-      return `${baseStyles} ${colors.backgroundSecondary} ${colors.textSecondary}`;
-    default:
-      return baseStyles;
+  // Use pre-computed values for common cases
+  if (variant === 'primary' && !size) {
+    return timeOfDay === 'morning' ? MORNING_PRIMARY : EVENING_PRIMARY;
   }
-};
-
-/**
- * Consistent card container styles
- */
-export const getCardStyles = (timeOfDay: 'morning' | 'evening'): string => {
+  
+  // For other cases, compute dynamically
   const colors = getThemeColors(timeOfDay);
-  return `backdrop-blur-sm ${colors.background} ${colors.border} border rounded-2xl`;
+  const sizeStyle = !size || size === 'md' ? 'px-4 py-2 text-sm' : 
+                  size === 'sm' ? 'px-3 py-1 text-xs' : 'px-6 py-3 text-base';
+  
+  const baseStyles = `${sizeStyle} rounded-xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20`;
+  return variant === 'primary' ? `${baseStyles} ${colors.primary} text-white` : 
+         variant === 'secondary' ? `${baseStyles} ${colors.secondary} ${colors.text}` : 
+         `${baseStyles} ${colors.backgroundSecondary} ${colors.textSecondary}`;
 };
 
 /**

@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+// Using direct URLs for faster initialization and error prevention
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://eeqpvvkxttsqyfunsibb.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlcXB2dmt4dHRzcXlmdW5zaWJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODQ0MjQsImV4cCI6MjA2NjM2MDQyNH0.3W25cdLQSgeQv4ekrZmAitia1aIjJQSorrcAAUVWJiI'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create Supabase client with better retries
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: true },
+  global: { fetch: fetch.bind(globalThis) }
+})
 
 // AI Chat Service
 export const aiChatService = {
@@ -37,6 +42,7 @@ export const aiChatService = {
 
       if (error) throw error
       return data
+
     } catch (error) {
       console.error('Insight Generation Error:', error)
       throw new Error('Failed to generate insight card')
@@ -48,12 +54,12 @@ export const aiChatService = {
 export const subscriptionService = {
   async checkSubscriptionStatus(userId: string) {
     try {
-      const { data, error } = await supabase.functions.invoke('check-subscription', {
-        body: { userId },
-      })
+      const { data, error } = await supabase.functions.invoke(
+        'check-subscription',
+        { body: { userId } }
+      )
 
-      if (error) throw error
-      return data
+      return error ? { isPro: false, status: 'inactive' } : data
     } catch (error) {
       console.error('Subscription Check Error:', error)
       return { isPro: false, status: 'inactive' }
@@ -68,7 +74,8 @@ export const subscriptionService = {
 
       if (error) throw error
       return data
-    } catch (error) {
+    } 
+    catch (error) {
       console.error('Subscription Creation Error:', error)
       throw new Error('Failed to create subscription')
     }

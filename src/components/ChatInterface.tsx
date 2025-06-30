@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Loader2 } from 'lucide-react';
-import { Message } from '../types';
+import type { Message } from '../types';
 import ChatMessage from './ChatMessage';
 import TypingIndicator from './TypingIndicator';
 
@@ -29,7 +29,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -39,21 +39,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     if (!isLoading && inputRef.current) {
-      inputRef.current.focus();
+      // Slight delay to avoid conflict with animations
+      setTimeout(() => inputRef.current?.focus(), 10);
     }
   }, [isLoading]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && !isLoading && !disabled) {
       onSendMessage(inputValue.trim());
       setInputValue('');
-      // Reset textarea height
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-      }
+      
+      // Reset textarea height after the next render
+      setTimeout(() => {
+        if (inputRef.current) inputRef.current.style.height = 'auto';
+      }, 0);
     }
-  };
+  }, [inputValue, isLoading, disabled, onSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -79,7 +81,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         : 'h-[calc(100vh-14rem)] max-w-full sm:max-w-xl md:max-w-3xl'
     }`}>
       {/* Chat Messages */}
-      <div className={`flex-1 min-h-0 overflow-y-auto space-y-3 md:space-y-4 backdrop-blur-md bg-white/10 border border-white/20 ${
+      <div className={`flex-1 min-h-0 overflow-y-auto space-y-3 md:space-y-4 backdrop-blur-md will-change-scroll bg-white/10 border border-white/20 ${
         isImmersive 
           ? 'p-4 md:p-6 rounded-3xl' 
           : 'p-4 md:p-6 rounded-t-3xl'
@@ -93,6 +95,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <ChatMessage message={message} timeOfDay={timeOfDay} />
           </div>
         ))}
+
         
         {isLoading && <TypingIndicator timeOfDay={timeOfDay} />}
         

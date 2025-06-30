@@ -7,7 +7,7 @@ interface Profile {
   email: string;
   name?: string;
   is_pro?: boolean;
-  timezone?: string;
+  timezone?: string | null;
   last_session_type?: string;
   preferred_scene?: string;
   created_at?: string;
@@ -56,24 +56,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     };
 
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        } else {
-          setProfile(null);
-        }
-        
+    // Optimized initialization - check session then set up listener
+    getInitialSession().then(() => {
+      // Listen for auth changes after initial session check
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const newUser = session?.user ?? null;
+        setUser(newUser);
+        newUser ? await fetchProfile(newUser.id) : setProfile(null);
         setLoading(false);
       }
-    );
+      });
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    });
   }, []);
 
   const fetchProfile = async (userId: string) => {

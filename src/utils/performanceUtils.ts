@@ -3,24 +3,21 @@
  */
 
 // Performance monitoring utilities
-export class PerformanceMonitor {
-  private static measurements = new Map<string, number>();
+const measurements = new Map<string, number>();
+
+export const PerformanceMonitor = {
+  startMeasurement(name: string): void {
+    measurements.set(name, performance.now());
+  },
   
-  static startMeasurement(name: string): void {
-    this.measurements.set(name, performance.now());
-  }
-  
-  static endMeasurement(name: string): number {
-    const startTime = this.measurements.get(name);
-    if (!startTime) {
-      console.warn(`No start measurement found for: ${name}`);
-      return 0;
-    }
+  endMeasurement(name: string): number {
+    const startTime = measurements.get(name);
+    if (!startTime) return 0;
     
     const duration = performance.now() - startTime;
-    this.measurements.delete(name);
+    measurements.delete(name);
     
-    if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && duration > 100) { // Only log slow operations in dev
       console.log(`🎯 Performance: ${name} took ${duration.toFixed(2)}ms`);
     }
     
@@ -30,7 +27,7 @@ export class PerformanceMonitor {
   static measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
     this.startMeasurement(name);
     return fn().finally(() => {
-      this.endMeasurement(name);
+      PerformanceMonitor.endMeasurement(name);
     });
   }
   
@@ -40,7 +37,7 @@ export class PerformanceMonitor {
       return fn();
     } finally {
       this.endMeasurement(name);
-    }
+    };
   }
 }
 
@@ -67,40 +64,18 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-// Throttle utility for high-frequency events
+// Optimized throttle utility for high-frequency events
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
+  let lastCall = 0;
   
   return function executedFunction(this: any, ...args: Parameters<T>) {
-    if (!inThrottle) {
+    const now = Date.now();
+    if (now - lastCall >= limit) {
+      lastCall = now;
       func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
     }
   };
 }
-
-// Memory usage monitoring (development only)
-export const memoryMonitor = {
-  logUsage: () => {
-    if (import.meta.env.DEV && 'memory' in performance) {
-      const memory = (performance as any).memory;
-      console.log('📊 Memory Usage:', {
-        used: `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`,
-        total: `${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`,
-        limit: `${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`
-      });
-    }
-  },
-  
-  startMonitoring: (intervalMs: number = 10000) => {
-    if (import.meta.env.DEV) {
-      const interval = setInterval(() => memoryMonitor.logUsage(), intervalMs);
-      return () => clearInterval(interval);
-    }
-    return () => {};
-  }
-};

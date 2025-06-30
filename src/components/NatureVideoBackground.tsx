@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { NatureScene } from '../types';
 import { natureScenes, getSceneGradient } from '../utils/sceneUtils';
 
@@ -20,12 +20,14 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const sceneData = natureScenes[scene];
   const gradientClass = getSceneGradient(scene, timeOfDay);
 
-  // Expose captureFrame method through ref
-  useImperativeHandle(ref, () => ({
+
+  // Optimized: Memoize the capture frame function
+  const captureFrame = useCallback((): string | null => {
     captureFrame: (): string | null => {
       const video = videoRef.current;
       
@@ -40,7 +42,7 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
       if (!isLoaded || video.readyState < 2) {
         console.warn('Video not ready for frame capture:', { 
           isLoaded, 
-          readyState: video.readyState,
+          readyState: video?.readyState,
           currentTime: video.currentTime 
         });
         return null;
@@ -48,7 +50,7 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
 
       try {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimization: alpha false is faster
         
         if (!ctx) {
           console.error('Failed to get canvas context');
@@ -65,11 +67,12 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
         // Draw current video frame to canvas
         ctx.drawImage(video, 0, 0, width, height);
 
-        // Verify the canvas has content
+        // Optimization: Skip this check in production for better performance
+        if (import.meta.env.DEV) {
         const imageData = ctx.getImageData(0, 0, Math.min(10, width), Math.min(10, height));
-        const hasContent = imageData.data.some(pixel => pixel !== 0);
-        
-        if (!hasContent) {
+          const hasContent = imageData.data.some(pixel => pixel !== 0);
+          
+          if (!hasContent) {
           console.warn('Captured frame appears to be empty');
         }
         
@@ -88,15 +91,24 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
         return null;
       }
     }
+  }, [isLoaded, error, videoRef]);
+  
+  // Expose captureFrame method through ref
+  useImperativeHandle(ref, () => ({
+    captureFrame
   }));
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset states when scene changes
+    // Reset states and retry count when scene changes
     setIsLoaded(false);
     setError(false);
+    setRetryCount(0);
+    
+    // Preload the source - this helps with smoother transitions
+    video.preload = "auto";
 
     const handleLoadedData = () => {
       console.log(`Video loaded successfully: ${scene}`);
@@ -119,18 +131,24 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
     };
 
     const handleError = (e: Event) => {
-      console.error(`Video loading error for scene ${scene}:`, {
+      console.error(`Video loading error (attempt ${retryCount + 1}) for scene ${scene}:`, {
         error: e,
-        videoUrl: sceneData.videoUrl,
+        videoUrl: sceneData?.videoUrl,
         videoElement: video,
-        networkState: video.networkState,
-        readyState: video.readyState
+        networkState: video?.networkState,
+        readyState: video?.readyState
       });
-      setError(true);
+      
+      // Try to reload up to 2 times before giving up
+      if (retryCount < 2) {
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => video.load(), 1000);
+      } else {
+        setError(true);
+      }
     };
 
     const handlePlay = () => {
-      console.log(`Video playing: ${scene}`);
     };
 
     const handlePause = () => {
@@ -150,10 +168,11 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
-    // Force video to reload by setting the source
-    console.log(`Loading video: ${scene} - ${sceneData.videoUrl}`);
-    video.src = sceneData.videoUrl;
-    video.load();
+    // Set the source and load the video
+    if (sceneData?.videoUrl) {
+      video.src = sceneData.videoUrl;
+      video.load();
+    }
 
     return () => {
       video.removeEventListener('loadeddata', handleLoadedData);
@@ -170,7 +189,7 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
     return (
       <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} ${className}`}>
         <div className="absolute inset-0 bg-black/10" />
-        {/* Optional: Add a subtle pattern or texture for the fallback */}
+        {/* Subtle pattern for the fallback */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full -translate-y-32 translate-x-32" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/20 rounded-full translate-y-24 -translate-x-24" />
@@ -194,13 +213,14 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
         playsInline
         preload="metadata"
         crossOrigin="anonymous"
+        loading="lazy"
       >
-        <source src={sceneData.videoUrl} type="video/mp4" />
+        <source src={sceneData?.videoUrl} type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
       {/* Overlay Gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} transition-all duration-1000`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradientClass} transition-all duration-1000`} style={{ willChange: 'opacity' }} />
 
       {/* Additional overlay for text readability */}
       <div className={`absolute inset-0 transition-all duration-1000 ${

@@ -1,8 +1,9 @@
-import React from 'react';
-import { Message } from '../types';
+import React, { memo } from 'react';
+import type { Message } from '../types';
 import { Bot, User } from 'lucide-react';
 
 interface ChatMessageProps {
+  key?: string;
   message: Message;
   timeOfDay: 'morning' | 'evening';
 }
@@ -59,4 +60,4 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, timeOfDay }) => {
   );
 };
 
-export default ChatMessage;
+export default memo(ChatMessage);

@@ -1,333 +1,177 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
+import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, Edit3, Check } from 'lucide-react';
+import { getTimeOfDay } from '../utils/timeUtils';
+import { useNavigate } from 'react-router-dom';
 
-const Settings: React.FC = () => {
+const LandingPage: React.FC = () => {
+  const { login, signup, loading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [showLogin, setShowLogin] = useState(false);
+  const timeOfDay = getTimeOfDay();
   const navigate = useNavigate();
-  const { user, profile, logout, updateProfile } = useAuth();
-  const [userName, setUserName] = useState(profile?.name || '');
-  const [userEmail, setUserEmail] = useState(user?.email || '');
-  const [nameEditMode, setNameEditMode] = useState(false);
-  const [emailEditMode, setEmailEditMode] = useState(false);
-  const [nameSaved, setNameSaved] = useState(false);
-  const [emailSaved, setEmailSaved] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Stabilize timeOfDay and currentScene to prevent background changes while typing
-  const [stableTimeOfDay] = useState(() => getTimeOfDay(profile?.name));
-  const [currentScene] = useState(() => getSceneForSession(stableTimeOfDay.period === 'morning' ? 'morning' : 'evening'));
-
-  // Get video background setting
-  const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
-      localStorage.removeItem('insight-cards');
-      localStorage.removeItem('komorebi-chat-sessions');
-      localStorage.removeItem('session-limits');
-      localStorage.removeItem('session-start-time');
-      localStorage.removeItem('current-session-messages');
-      alert('All data has been cleared.');
-    }
-  };
-
-  const handleDownloadAllData = async () => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
-    setIsDownloading(true);
-    
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
     try {
-      // Gather all user data
-      const userData = {
-        user: {
-          name: profile?.name,
-          email: user?.email,
-          isPro: profile?.is_pro,
-          exportDate: new Date().toISOString()
-        },
-        insights: JSON.parse(localStorage.getItem('insight-cards') || '[]'),
-        chatSessions: JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]'),
-        sessionLimits: JSON.parse(localStorage.getItem('session-limits') || '{}'),
-        settings: {
-          videoBackgroundEnabled: JSON.parse(localStorage.getItem('video-background-enabled') || 'true'),
-          currentScene: localStorage.getItem('current-scene') || 'ocean'
-        }
-      };
-
-      // Create downloadable content
-      const dataString = JSON.stringify(userData, null, 2);
-      const blob = new Blob([dataString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `komorebi-data-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-    } catch (error) {
-      console.error('Download failed:', error);
-      alert('Failed to download data. Please try again.');
-    } finally {
-      setIsDownloading(false);
+      await login(email, password);
+    } catch (err) {
+      setError('Login failed. Please check your credentials and try again.');
     }
   };
 
-  const handleBack = () => {
-    navigate('/');
-  };
-
-  const toggleVideoBackground = () => {
-    const newVideoEnabled = !videoEnabled;
-    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
-    // Refresh the page to apply the change
-    window.location.reload();
-  };
-
-  const handleNameSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (updateProfile && user) {
-      updateProfile({ name: userName });
-      setNameSaved(true);
-      setNameEditMode(false);
-      setTimeout(() => setNameSaved(false), 3000);
-    }
-  };
-
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (user) {
-      // Note: This is typically handled by Supabase Auth directly, not through profile updates.
-      // For now, just update the local state and inform user this would require auth change
-      alert("Email changes require authentication verification. This feature isn't fully implemented yet.");
+  const handleQuickLogin = async () => {
+    setError('');
+    try {
+      // Create a temporary demo user with a unique email
+      const timestamp = Date.now();
+      const demoEmail = `demo-${timestamp}@komorebi.app`;
+      const demoPassword = 'password123';
       
-      // For now, just confirm the action visually
-      setEmailSaved(true);
-      setEmailEditMode(false);
-      setTimeout(() => setEmailSaved(false), 3000);
+      await signup(demoEmail, demoPassword, 'Demo User');
+    } catch (err) {
+      setError('Quick login failed. Please try again.');
     }
-  };
-
-  const handleNameEdit = () => {
-    setNameEditMode(true);
-    setNameSaved(false);
-  };
-
-  const handleEmailEdit = () => {
-    setEmailEditMode(true);
-    setEmailSaved(false);
   };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {videoEnabled && (
-        <NatureVideoBackground 
-          scene={currentScene} 
-          timeOfDay={stableTimeOfDay.period === 'morning' ? 'morning' : 'evening'} 
-        />
-      )}
-      {!videoEnabled && (
-        <div className={`absolute inset-0 bg-gradient-to-br ${
-          stableTimeOfDay.period === 'morning' 
-            ? 'from-amber-100 via-orange-50 to-yellow-100'
-            : 'from-indigo-900 via-purple-900 to-blue-900'
-        }`} />
-      )}
+      <NatureVideoBackground 
+        scene="ocean" 
+        timeOfDay={timeOfDay.period === 'morning' || timeOfDay.period === 'evening' ? timeOfDay.period : 'morning'} 
+      />
       
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
-        <button
-          onClick={handleBack}
-          className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-            stableTimeOfDay.period === 'morning'
-              ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-              : 'bg-white/10 hover:bg-white/20 text-white'
-          }`}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        
-        <div className={`text-2xl font-bold ${
-          stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-        }`}>
-          Settings
+      <div className="absolute top-0 left-0 right-0 z-10 p-6 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-8 h-8 text-amber-500" />
+          <span className="text-2xl font-bold text-gray-800">Komorebi</span>
         </div>
         
-        <div className="w-11" /> {/* Spacer */}
+        {!showLogin && (
+          <button
+            onClick={() => setShowLogin(true)}
+            className="px-4 py-2 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 border border-white/20"
+          >
+            Sign In
+          </button>
+        )}
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {/* Profile Section */}
-          {user && (
-            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-              stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <div className="flex items-center gap-3 mb-4">
-                <User className={`w-6 h-6 ${
-                  stableTimeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
-                }`} />
-                <h2 className={`text-xl font-semibold ${
-                  stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Profile
-                </h2>
-              </div>
-              <div className="space-y-4">
-                {/* Name Field */}
-                <form onSubmit={handleNameSubmit}>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                  }`}>
-                    Name
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      placeholder="Enter your name"
-                      readOnly={!nameEditMode}
-                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
-                        nameEditMode
-                          ? (stableTimeOfDay.period === 'morning'
-                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
-                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
-                          : (stableTimeOfDay.period === 'morning'
-                              ? 'bg-white/10 text-gray-700 cursor-pointer'
-                              : 'bg-black/10 text-gray-300 cursor-pointer')
-                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
-                      onClick={!nameEditMode ? handleNameEdit : undefined}
-                    />
-                    {!nameEditMode ? (
-                      <button
-                        type="button"
-                        onClick={handleNameEdit}
-                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
-                          stableTimeOfDay.period === 'morning'
-                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
-                            : 'text-gray-400 hover:text-white hover:bg-white/10'
-                        }`}
-                        title="Edit name"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
-                          stableTimeOfDay.period === 'morning'
-                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
-                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
-                        }`}
-                        title="Save name"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  {nameSaved && (
-                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
-                      stableTimeOfDay.period === 'morning'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-green-900/50 text-green-300'
-                    } animate-fade-in`}>
-                      Saved!
-                    </div>
-                  )}
-                </form>
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
+        {!showLogin ? (
+          /* Landing Content */
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-8">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-800 mb-6 leading-tight">
+                Your AI companion for
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
+                  mindful reflection
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
+                Experience the gentle art of self-discovery through conversations with AI, 
+                surrounded by the calming beauty of nature.
+              </p>
+            </div>
 
-                {/* Email Field */}
-                <form onSubmit={handleEmailSubmit}>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                  }`}>
-                    Email
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="email"
-                      value={userEmail}
-                      onChange={(e) => setUserEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      readOnly={!emailEditMode}
-                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
-                        emailEditMode
-                          ? (stableTimeOfDay.period === 'morning'
-                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
-                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
-                          : (stableTimeOfDay.period === 'morning'
-                              ? 'bg-white/10 text-gray-700 cursor-pointer'
-                              : 'bg-black/10 text-gray-300 cursor-pointer')
-                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
-                      onClick={!emailEditMode ? handleEmailEdit : undefined}
-                    />
-                    {!emailEditMode ? (
-                      <button
-                        type="button"
-                        onClick={handleEmailEdit}
-                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
-                          stableTimeOfDay.period === 'morning'
-                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
-                            : 'text-gray-400 hover:text-white hover:bg-white/10'
-                        }`}
-                        title="Edit email"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
-                          stableTimeOfDay.period === 'morning'
-                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
-                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
-                        }`}
-                        title="Save email"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  {emailSaved && (
-                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
-                      stableTimeOfDay.period === 'morning'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-green-900/50 text-green-300'
-                    } animate-fade-in`}>
-                      Saved!
-                    </div>
-                  )}
-                </form>
+            {/* Features */}
+            <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Morning Intentions</h3>
+                <p className="text-gray-700">
+                  Start each day with clarity and purpose through gentle AI-guided conversations.
+                </p>
+              </div>
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Evening Reflections</h3>
+                <p className="text-gray-700">
+                  Wind down with thoughtful reflection on your day's experiences and insights.
+                </p>
+              </div>
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Insight Cards</h3>
+                <p className="text-gray-700">
+                  Receive beautiful, shareable cards with personalized wisdom from your sessions.
+                </p>
+              </div>
+              <div className="backdrop-blur-sm bg-white/20 rounded-3xl p-6 border border-white/20">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">Nature Immersion</h3>
+                <p className="text-gray-700">
+                  Reflect surrounded by stunning nature scenes that enhance your mindful experience.
+                </p>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={handleQuickLogin}
+                disabled={loading}
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50"
+              >
+                <Play className="w-5 h-5" />
+                {loading ? 'Starting...' : 'Try Demo'}
+              </button>
+              <button
+                onClick={() => setShowLogin(true)}
+                className="px-8 py-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 border border-white/20"
+              >
+                Get Started
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mt-6">
+              Free to try • No credit card required • Private & secure
+            </p>
+          </div>
+        ) : (
+          /* Login Form */
+          <div className="w-full max-w-md mx-auto">
+            <div className="backdrop-blur-md bg-white/20 rounded-3xl p-8 border border-white/20">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                  Welcome to Komorebi
+                </h2>
+                <p className="text-gray-700">
+                  Sign in to begin your mindful journey
+                </p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
 
                 <div>
-                  <label className={`block text-sm font-medium mb-2 ${
-                    stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
-                  }`}>
-                    Plan
-                  </label>
-                  <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
-                    stableTimeOfDay.period === 'morning'
-                      ? 'bg-white/20'
-                      : 'bg-white/10'
-                  }`}>
-                    {profile?.is_pro && (
-                      <Crown className={`w-4 h-4 ${
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
+                    {error}
+                    </div>
+                  )}
                         stableTimeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                       }`} />
                     )}

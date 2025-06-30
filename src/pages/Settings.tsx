@@ -96,7 +96,7 @@ const Settings: React.FC = () => {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && updateProfile) {
+    if (user) {
       updateProfile({ name: userName });
       setNameSaved(true);
       setNameEditMode(false);

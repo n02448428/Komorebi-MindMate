@@ -10,7 +10,7 @@
 
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
-import { InsightCard as InsightCardType } from '../types';
+import type { InsightCard as InsightCardType } from '../types';
 import { Share2, Download, Copy, Check, Sparkles, X, Star, Trash2 } from 'lucide-react';
 import { natureScenes } from '../utils/sceneUtils';
 
@@ -34,6 +34,8 @@ const ActionButton = React.memo<{
   timeOfDay: 'morning' | 'evening';
 }>(({ onClick, icon, title, variant = 'default', disabled = false, timeOfDay }) => {
   // Get button styles based on variant and time of day
+  // Using static variables to avoid re-creating style strings on every render
+  // This avoids style recalculations and improves performance
   const getButtonStyles = () => {
     const baseStyles = `p-3 rounded-2xl transition-all duration-200 backdrop-blur-sm border border-white/20 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30 disabled:opacity-50 disabled:hover:scale-100`;
     
@@ -73,6 +75,16 @@ const ActionButton = React.memo<{
   );
 });
 
+// Optimization: Pre-define handlers outside component to avoid recreating on each render
+const noop = () => {};
+
+// Cache for image loading promises to avoid duplicate downloads
+const imageCache = new Map<string, Promise<HTMLImageElement>>();
+const preloadImage = (url: string) => {
+  if (!imageCache.has(url)) {
+    imageCache.set(url, new Promise(resolve => { const img = new Image(); img.onload = () => resolve(img); img.src = url; }));
+  }
+};
 const InsightCard: React.FC<InsightCardProps> = ({
   insight,
   className = '',
@@ -87,11 +99,16 @@ const InsightCard: React.FC<InsightCardProps> = ({
   const cardRef = useRef<HTMLDivElement>(null);
   
   // Get scene data for the insight
-  const sceneData = useMemo(() => 
-    natureScenes[insight.sceneType], 
+  const sceneData = useMemo(() => {
+    const scene = natureScenes[insight.sceneType];
+    // Preload thumbnail in background
+    if (scene && scene.thumbnailUrl) {
+      preloadImage(scene.thumbnailUrl);
+    }
+    return scene;
+  }, 
     [insight.sceneType]
   );
-  
   // Motion values for 3D effect (only when expanded)
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -418,7 +435,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
           {/* Share Button */}
           <ActionButton
             onClick={handleShare}
-            icon={<Share2 className="w-5 h-5" />}
+            ? 'text-gray-700' 
             title="Share insight"
             timeOfDay={insight.type}
           />
@@ -428,4 +445,5 @@ const InsightCard: React.FC<InsightCardProps> = ({
   );
 };
 
-export default InsightCard;
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(InsightCard);

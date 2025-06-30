@@ -1,14 +1,16 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import * as Sentry from '@sentry/react'
+import { BrowserTracing } from '@sentry/tracing'
 import App from './App.tsx'
-import './styles/globals.css'
 import './index.css'
 
 // Initialize Sentry for error monitoring
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN || '',
   environment: import.meta.env.MODE,
+  release: '1.0.0',
+  autoSessionTracking: true,
   integrations: [
     new Sentry.BrowserTracing(),
   ],
