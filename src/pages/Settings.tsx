@@ -345,7 +345,7 @@ const Settings: React.FC = () => {
                   </button>
                 )}
               </div>
-                <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
+            </div>
           )}
 
           {/* Appearance Settings */}
@@ -482,7 +482,6 @@ const Settings: React.FC = () => {
                     ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                     : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}>
-                  {profile?.is_pro && (
                 Sign Out
               </button>
             </div>
