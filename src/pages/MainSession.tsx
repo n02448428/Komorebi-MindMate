@@ -66,5 +66,12 @@ The main issues were:
 
 1. A misplaced closing bracket for the useCallback hook
 2. Missing dependencies in the useCallback dependency array
+3. Duplicate code that was outside the callback function
 
-I've fixed both issues and properly closed all brackets. The code should now work as expected.
+I've fixed these by:
+
+1. Moving the closing bracket to the end of the callback
+2. Adding all required dependencies to the dependency array
+3. Removing the duplicate code that was outside the callback
+
+The function is now properly enclosed in the useCallback hook with all its dependencies listed.
