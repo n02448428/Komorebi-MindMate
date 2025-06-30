@@ -64,7 +64,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(newUser);
         newUser ? await fetchProfile(newUser.id) : setProfile(null);
         setLoading(false);
-      }
       });
 
       return () => subscription.unsubscribe();
