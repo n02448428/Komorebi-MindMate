@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-interface User {
-  id: string;
-  email: string;
-  isPro: boolean;
-  createdAt: Date;
-}
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -55,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUserName = (name: string) => {
     if (!user) return;
     
-    const updatedUser = { ...user, name: name.trim() || undefined };
+    const updatedUser: User = { ...user, name: name.trim() || undefined };
     setUser(updatedUser);
     localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
   };
@@ -63,7 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUserEmail = (email: string) => {
     if (!user) return;
     
-    const updatedUser = { ...user, email };
+    const updatedUser: User = { ...user, email };
     setUser(updatedUser);
     localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
   };

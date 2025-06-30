@@ -50,7 +50,7 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number,
   immediate?: boolean
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: number | null = null;
   
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
@@ -60,7 +60,7 @@ export function debounce<T extends (...args: any[]) => any>(
     
     const callNow = immediate && !timeout;
     
-    if (timeout) clearTimeout(timeout);
+    if (timeout !== null) clearTimeout(timeout);
     timeout = setTimeout(later, wait);
     
     if (callNow) func(...args);
