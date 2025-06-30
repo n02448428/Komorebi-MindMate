@@ -70,9 +70,9 @@ const SessionControlsPanel: React.FC<SessionControlsPanelProps> = ({
       );
       console.log('🧪 AI Test Response:', response);
       alert(`AI responded: ${response.message}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('🧪 AI Test Failed:', error);
-      alert(`AI test failed: ${error.message}`);
+      alert(`AI test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

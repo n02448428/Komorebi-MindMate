@@ -68,7 +68,6 @@ export const aiChatService = {
     
     // Analyze conversation context
     const recentMessages = conversationHistory.slice(-4); // Last 4 messages for context
-    const userMessages = recentMessages.filter(msg => msg.role === 'user').map(msg => msg.content.toLowerCase()).join(' ');
     
     let response = '';
     

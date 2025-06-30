@@ -107,9 +107,6 @@ const MainSession: React.FC = () => {
     // Archive current session if it has meaningful content
     if (messages.length > 1) {
       const sessionEndTime = new Date();
-      const sessionDuration = sessionStartTime 
-        ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
-        : 0;
 
       archiveCurrentSession(
         Date.now().toString(),
