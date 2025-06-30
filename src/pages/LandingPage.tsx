@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Play, ArrowRight, LogIn, User, Crown, X } from 'lucide-react';
+import { Sparkles, Play, ArrowRight, User, Crown, X } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { useNavigate } from 'react-router-dom';
@@ -155,7 +155,6 @@ const LandingPage: React.FC = () => {
                 {loading ? 'Starting...' : 'Try Demo'}
               </button>
               <button
-                onClick={openGetStartedModal}
                 className="px-8 py-4 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 border border-white/20"
               >
                 Get Started
@@ -316,7 +315,6 @@ const LandingPage: React.FC = () => {
                   Already have an account?
                 </div>
                 <button
-                  onClick={handleQuickLogin}
                   onClick={showLoginForm}
                   className="w-full p-3 rounded-2xl border border-white/30 bg-white/10 hover:bg-white/20 text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 backdrop-blur-sm"
                 >

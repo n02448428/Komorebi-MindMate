@@ -56,7 +56,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await signOut();
       navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
@@ -237,7 +237,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                   <div className="relative group">
                     <button
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
-                      title={user.email || 'User menu'}
+                      title={user?.email || 'User menu'}
                     >
                       <User className="w-5 h-5" />
                     </button>
@@ -247,7 +247,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                       <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                         <div className="p-2">
                           <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
-                            {user.email}
+                            {user?.email}
                           </div>
                           <button
                             onClick={handleLogout}

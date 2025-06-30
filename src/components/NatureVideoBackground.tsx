@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { NatureScene } from '../types';
 import { natureScenes, getSceneGradient } from '../utils/sceneUtils';
 
@@ -212,7 +212,6 @@ const NatureVideoBackground = forwardRef<NatureVideoBackgroundRef, NatureVideoBa
         playsInline
         preload="metadata"
         crossOrigin="anonymous"
-        loading="lazy"
       >
         <source src={sceneData?.videoUrl} type="video/mp4" />
         Your browser does not support the video tag.

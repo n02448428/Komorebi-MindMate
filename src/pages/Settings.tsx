@@ -26,7 +26,7 @@ const Settings: React.FC = () => {
   const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/');
   };
 
@@ -109,7 +109,7 @@ const Settings: React.FC = () => {
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && updateProfile) {
+    if (user) {
       // Note: This is typically handled by Supabase Auth directly, not through profile updates.
       // For now, just update the local state and inform user this would require auth change
       alert("Email changes require authentication verification. This feature isn't fully implemented yet.");

@@ -45,9 +45,15 @@ interface AuthContextType {
   preferences: UserPreferences | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<{ error?: AuthError }>;
+  signUp: (email: string, password: string, name?: string) => Promise<{ error?: AuthError }>;
   signIn: (email: string, password: string) => Promise<{ error?: AuthError }>;
   signOut: () => Promise<{ error?: AuthError }>;
+  // Aliases for backward compatibility
+  login: (email: string, password: string) => Promise<{ error?: AuthError }>;
+  signup: (email: string, password: string, name?: string) => Promise<{ error?: AuthError }>;
+  logout: () => Promise<{ error?: AuthError }>;
+  isGuest: boolean;
+  startGuestSession: () => void;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
   updatePreferences: (updates: Partial<UserPreferences>) => Promise<{ error?: any }>;
   refreshProfile: () => Promise<void>;
@@ -74,6 +80,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Fetch user profile
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -183,7 +190,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -203,13 +210,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Sign up
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, name?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    return { error };
+    return { error: error || undefined };
   };
 
   // Sign in
@@ -219,13 +226,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       password,
     });
 
-    return { error };
+    return { error: error || undefined };
   };
 
   // Sign out
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    return { error };
+    setIsGuest(false);
+    return { error: error || undefined };
+  };
+
+  // Aliases for backward compatibility
+  const login = signIn;
+  const signup = signUp;
+  const logout = signOut;
+
+  // Guest session functionality
+  const startGuestSession = () => {
+    setIsGuest(true);
   };
 
   // Update profile
@@ -298,6 +316,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signUp,
     signIn,
     signOut,
+    login,
+    signup,
+    logout,
+    isGuest,
+    startGuestSession,
     updateProfile,
     updatePreferences,
     refreshProfile,

@@ -52,11 +52,11 @@ const MainSession: React.FC = () => {
 
   // Choose storage based on user status (localStorage for logged in users, sessionStorage for guests)
   const storage = {
-    get: <T,>(key: string, defaultValue: T): T => {
+    get: <T>(key: string, defaultValue: T): T => {
       if (user) return getStorageItem(key, defaultValue);
       return getSessionStorageItem(key, defaultValue);
     },
-    set: <T,>(key: string, value: T): void => {
+    set: <T>(key: string, value: T): void => {
       if (user) setStorageItem(key, value);
       else setSessionStorageItem(key, value);
     }
@@ -334,7 +334,7 @@ const MainSession: React.FC = () => {
       
       // Only save to localStorage if user is logged in
       if (user || isGuest) {
-        const existingInsights = storage.get('insight-cards', []);
+        const existingInsights = storage.get<InsightCardType[]>('insight-cards', []);
         existingInsights.push(insight);
         storage.set('insight-cards', existingInsights);
       }
@@ -370,7 +370,7 @@ const MainSession: React.FC = () => {
         setInsightCard(fallbackInsight);
         
         if (user || isGuest) {
-          const existingInsights = storage.get('insight-cards', []);
+          const existingSessions = storage.get<ArchivedChatSession[]>('komorebi-chat-sessions', []);
           existingInsights.push(fallbackInsight);
           storage.set('insight-cards', existingInsights);
         }

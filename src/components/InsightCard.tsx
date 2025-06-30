@@ -76,7 +76,6 @@ const ActionButton = React.memo<{
 });
 
 // Optimization: Pre-define handlers outside component to avoid recreating on each render
-const noop = () => {};
 
 // Cache for image loading promises to avoid duplicate downloads
 const imageCache = new Map<string, Promise<HTMLImageElement>>();

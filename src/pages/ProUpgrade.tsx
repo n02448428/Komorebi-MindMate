@@ -25,7 +25,7 @@ const Settings: React.FC = () => {
   const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/');
   };
 
