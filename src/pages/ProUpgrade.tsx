@@ -1,14 +1,35 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, Edit3, Check } from 'lucide-react';
+import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
-const Settings: React.FC = () => {
+const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCanceledMessage, setShowCanceledMessage] = useState(false);
+
+  const timeOfDay = getTimeOfDay();
+  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+
+  // Check for canceled payment
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('canceled') === 'true') {
+      setShowCanceledMessage(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+      
+      // Hide message after 5 seconds
+      setTimeout(() => setShowCanceledMessage(false), 5000);
+    }
+  }, [location.search]);
+
   const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
@@ -40,11 +61,8 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleDownloadAllData = async () => {
-    if (!user) {
       navigate('/');
       return;
-    }
     setIsDownloading(true);
     
     try {
