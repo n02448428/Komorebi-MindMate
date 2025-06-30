@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
+import { supabase } from '../lib/supabase';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -30,57 +30,142 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session on mount
-    const savedUser = localStorage.getItem('komorebi-user');
-    if (savedUser) {
+    // Check for existing Supabase session on mount
+    const fetchSession = async () => {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser({
-          ...parsedUser,
-          createdAt: new Date(parsedUser.createdAt)
-        });
+        setLoading(true);
+        
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Get user profile data
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            throw error;
+          }
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: profile?.name || undefined,
+            isPro: profile?.is_pro || false,
+            createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
+          });
+        }
       } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('komorebi-user');
+        console.error('Session fetch error:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    fetchSession();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          // Get user profile after sign-in
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: profile?.name || undefined,
+            isPro: profile?.is_pro || false,
+            createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const updateUserName = (name: string) => {
-    if (!user) return;
-    
-    const updatedUser: User = { ...user, name: name.trim() || undefined };
-    setUser(updatedUser);
-    localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
+    if (!user || !name.trim()) return;
+
+    // Update in Supabase
+    supabase
+      .from('profiles')
+      .update({ name: name.trim() })
+      .eq('id', user.id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error updating user name:', error);
+          return;
+        }
+
+        // Update local state
+        setUser({ ...user, name: name.trim() });
+      });
   };
 
   const updateUserEmail = (email: string) => {
     if (!user) return;
     
-    const updatedUser: User = { ...user, email };
-    setUser(updatedUser);
-    localStorage.setItem('komorebi-user', JSON.stringify(updatedUser));
+    // Update in Supabase Auth
+    supabase.auth.updateUser({ email })
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error updating user email:', error);
+          return;
+        }
+
+        // Update local state
+        setUser({ ...user, email });
+      });
   };
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock authentication - in real app, this would be an API call
-      if (email && password) {
-        const mockUser: User = {
-          id: 'user_' + Date.now(),
-          email,
-          isPro: email.includes('pro') || email === 'dev@example.com',
-          createdAt: new Date(),
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem('komorebi-user', JSON.stringify(mockUser));
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Get user profile data
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+          console.error('Error fetching user profile:', profileError);
+        }
+
+        // Set user data
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: profile?.name || undefined,
+          isPro: profile?.is_pro || false,
+          createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
+        });
       } else {
         throw new Error('Invalid credentials');
       }
@@ -92,9 +177,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('komorebi-user');
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out:', error);
+        throw error;
+      }
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const value = {
