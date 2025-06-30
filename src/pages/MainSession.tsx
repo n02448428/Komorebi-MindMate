@@ -6,6 +6,7 @@ import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { getSceneForSession, getNextScene, getSceneDisplayName, getAllScenesForSession } from '../utils/sceneUtils';
+import { getStorageItem, setStorageItem, getSessionStorageItem, setSessionStorageItem } from '../utils/storageUtils';
 import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
@@ -14,7 +15,7 @@ import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkl
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isGuest } = useAuth();
   const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +50,18 @@ const MainSession: React.FC = () => {
   const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
+  // Choose storage based on user status (localStorage for logged in users, sessionStorage for guests)
+  const storage = {
+    get: <T,>(key: string, defaultValue: T): T => {
+      if (user) return getStorageItem(key, defaultValue);
+      return getSessionStorageItem(key, defaultValue);
+    },
+    set: <T,>(key: string, value: T): void => {
+      if (user) setStorageItem(key, value);
+      else setSessionStorageItem(key, value);
+    }
+  };
+
   // Framer Motion variants for control panel animation
   const controlsVariants = {
     hidden: {
@@ -73,26 +86,26 @@ const MainSession: React.FC = () => {
 
   useEffect(() => {
     // Load settings from localStorage
-    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+    const savedVideoEnabled = storage.get('video-background-enabled', 'true');
     if (savedVideoEnabled !== null) {
-      setVideoEnabled(JSON.parse(savedVideoEnabled));
+      setVideoEnabled(typeof savedVideoEnabled === 'string' ? JSON.parse(savedVideoEnabled) : savedVideoEnabled);
     }
 
-    const savedScene = localStorage.getItem('current-scene') as NatureScene;
+    const savedScene = storage.get('current-scene', '') as NatureScene;
     if (savedScene) {
       setCurrentScene(savedScene);
     } else {
       // Set initial scene based on session type
       const initialScene = getSceneForSession(sessionType);
       setCurrentScene(initialScene);
-      localStorage.setItem('current-scene', initialScene);
+      storage.set('current-scene', initialScene);
     }
 
     // Load session limits from localStorage only if user is logged in
-    if (user) {
-      const savedLimits = localStorage.getItem('session-limits');
+    if (user || isGuest) {
+      const savedLimits = storage.get('session-limits', null);
       if (savedLimits) {
-        const parsed = JSON.parse(savedLimits);
+        const parsed = typeof savedLimits === 'string' ? JSON.parse(savedLimits) : savedLimits;
         setSessionLimits({
           ...parsed,
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
@@ -111,16 +124,16 @@ const MainSession: React.FC = () => {
     }
 
     // Load session start time
-    const savedStartTime = localStorage.getItem('session-start-time');
+    const savedStartTime = storage.get('session-start-time', null);
     if (savedStartTime) {
-      setSessionStartTime(new Date(savedStartTime));
+      setSessionStartTime(new Date(typeof savedStartTime === 'string' ? savedStartTime : savedStartTime));
     }
 
     // Load saved messages for the current session
-    const savedMessages = localStorage.getItem('current-session-messages');
+    const savedMessages = storage.get('current-session-messages', null);
     if (savedMessages) {
       try {
-        const parsedMessages = JSON.parse(savedMessages).map((msg: any) => ({
+        const parsedMessages = (typeof savedMessages === 'string' ? JSON.parse(savedMessages) : savedMessages).map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
         }));
@@ -143,12 +156,12 @@ const MainSession: React.FC = () => {
       };
       setMessages([greetingMessage]);
     }
-  }, [profile?.is_pro === true, user, sessionType]);
+  }, [profile?.is_pro === true, user, isGuest, sessionType]);
 
   // Save messages when they change
   useEffect(() => {
     if (messages.length > 0) {
-      localStorage.setItem('current-session-messages', JSON.stringify(messages));
+      storage.set('current-session-messages', messages);
     }
   }, [messages]);
 
@@ -157,23 +170,23 @@ const MainSession: React.FC = () => {
     if (timeOfDay.shouldAutoStart && !sessionStartTime && !hasCompletedBothToday && !isSessionExpired) {
       const startTime = new Date();
       setSessionStartTime(startTime);
-      // Store session start time
-      localStorage.setItem('session-start-time', startTime.toISOString());
+      // Store session start time      
+      storage.set('session-start-time', startTime.toISOString());
     }
   }, [timeOfDay.shouldAutoStart, sessionStartTime, hasCompletedBothToday, isSessionExpired]);
 
   const saveSessionLimits = (limits: SessionLimits) => {
     setSessionLimits(limits);
     // Only save to localStorage if user is logged in
-    if (user) {
-      localStorage.setItem('session-limits', JSON.stringify(limits));
+    if (user || isGuest) {
+      storage.set('session-limits', limits);
     }
   };
 
   const handleNextScene = () => {
     const nextScene = getNextScene(currentScene, sessionType);
     setCurrentScene(nextScene);
-    localStorage.setItem('current-scene', nextScene);
+    storage.set('current-scene', nextScene);
   };
 
   const handleRandomScene = () => {
@@ -181,13 +194,13 @@ const MainSession: React.FC = () => {
     const otherScenes = availableScenes.filter(scene => scene !== currentScene);
     const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
     setCurrentScene(randomScene);
-    localStorage.setItem('current-scene', randomScene);
+    storage.set('current-scene', randomScene);
   };
 
   const toggleVideoBackground = () => {
     const newVideoEnabled = !videoEnabled;
     setVideoEnabled(newVideoEnabled);
-    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
+    storage.set('video-background-enabled', JSON.stringify(newVideoEnabled));
   };
 
   const handleSendMessage = async (content: string) => {
@@ -197,7 +210,7 @@ const MainSession: React.FC = () => {
     if (!sessionStartTime) {
       const startTime = new Date();
       setSessionStartTime(startTime);
-      localStorage.setItem('session-start-time', startTime.toISOString());
+      storage.set('session-start-time', startTime.toISOString());
     }
 
     // Add user message
@@ -320,10 +333,10 @@ const MainSession: React.FC = () => {
       setInsightCard(insight);
       
       // Only save to localStorage if user is logged in
-      if (user) {
-        const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+      if (user || isGuest) {
+        const existingInsights = storage.get('insight-cards', []);
         existingInsights.push(insight);
-        localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+        storage.set('insight-cards', existingInsights);
       }
       
       // Also archive the session and link it to this insight
@@ -356,10 +369,10 @@ const MainSession: React.FC = () => {
         
         setInsightCard(fallbackInsight);
         
-        if (user) {
-          const existingInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+        if (user || isGuest) {
+          const existingInsights = storage.get('insight-cards', []);
           existingInsights.push(fallbackInsight);
-          localStorage.setItem('insight-cards', JSON.stringify(existingInsights));
+          storage.set('insight-cards', existingInsights);
         }
         
         // Also archive the session and link it to this insight
@@ -461,15 +474,17 @@ const MainSession: React.FC = () => {
     };
 
     // Save to localStorage
-    const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
-    existingSessions.push(archivedSession);
-    
-    // Keep only the most recent 50 sessions to prevent localStorage bloat
-    if (existingSessions.length > 50) {
-      existingSessions.splice(0, existingSessions.length - 50);
+    if (user || isGuest) {
+      const existingSessions = storage.get('komorebi-chat-sessions', []);
+      existingSessions.push(archivedSession);
+      
+      // Keep only the most recent 50 sessions to prevent localStorage bloat
+      if (existingSessions.length > 50) {
+        existingSessions.splice(0, existingSessions.length - 50);
+      }
+      
+      storage.set('komorebi-chat-sessions', existingSessions);
     }
-    
-    localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
   };
 
   const handleNewSession = () => {
@@ -492,8 +507,8 @@ const MainSession: React.FC = () => {
       };
 
       // Save to localStorage only if user is logged in
-      if (user) {
-        const existingSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
+      if (user || isGuest) {
+        const existingSessions = storage.get('komorebi-chat-sessions', []);
         existingSessions.push(archivedSession);
         
         // Keep only the most recent 50 sessions to prevent localStorage bloat
@@ -501,7 +516,7 @@ const MainSession: React.FC = () => {
           existingSessions.splice(0, existingSessions.length - 50);
         }
         
-        localStorage.setItem('komorebi-chat-sessions', JSON.stringify(existingSessions));
+        storage.set('komorebi-chat-sessions', existingSessions);
       }
 
       // Mark current session type as completed for today
@@ -528,7 +543,7 @@ const MainSession: React.FC = () => {
     const startTime = new Date();
     setSessionStartTime(startTime);
     localStorage.setItem('session-start-time', startTime.toISOString());
-    localStorage.removeItem('current-session-messages'); // Clear saved messages
+    storage.set('current-session-messages', null); // Clear saved messages
     saveSessionLimits({
       ...sessionLimits,
       messagesUsed: 0,
@@ -1034,34 +1049,65 @@ const MainSession: React.FC = () => {
             )}
           </AnimatePresence>
           
-          {/* Login prompt for non-logged in users */}
+          {/* Login prompt for guest users */}
           <AnimatePresence>
-            {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
+            {isGuest && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className="mt-4 text-center flex-shrink-0"
+                className="mt-4 text-center flex-shrink-0 animate-pulse"
               >
                 <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
-                  sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+                  sessionType === 'morning' ? 'bg-white/20 border-amber-400/50' : 'bg-white/10 border-amber-400/50'
                 }`}>
                   <p className={`text-sm mb-3 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
                   }`}>
-                    Sign in to save your insights and track your progress
+                    <strong>Guest Mode:</strong> Your data will be lost when you close the browser. 
+                    Create a free account to save your insights and conversations.
                   </p>
                   <button
-                    onClick={handleLogin}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                    onClick={() => navigate('/')}
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
                   >
-                    Sign In to Save
+                    Sign Up Now
                   </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+
+          {!user && !isGuest && messages.length > 1 && showControls && ( // Show for completely anonymous users
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4 text-center flex-shrink-0"
+            >
+              <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
+                sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              }`}>
+                <p className={`text-sm mb-3 ${
+                  sessionType === 'morning' ? 'text-gray-700' : 'text-white'
+                }`}>
+                  Sign in to save your insights and track your progress
+                </p>
+                <button
+                  onClick={handleLogin}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                >
+                  Sign In to Save
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 

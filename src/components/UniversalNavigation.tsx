@@ -42,7 +42,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, logout } = useAuth();
+  const { user, profile, logout, isGuest } = useAuth();
   const [showControls, setShowControls] = useState(false);
   const timeOfDay = getTimeOfDay(profile?.name);
   
@@ -214,9 +214,9 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                 <Settings className="w-5 h-5" />
               </button>
 
-              {user ? (
+              {user || isGuest ? (
                 <div className="flex items-center gap-2">
-                 {profile?.is_pro !== true && (
+                  {user && profile?.is_pro !== true && (
                     <button
                       onClick={() => navigate('/upgrade')}
                       className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
@@ -226,6 +226,13 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                       <span className="hidden sm:inline">Pro</span>
                     </button>
                   )}
+                    
+                    {isGuest && (
+                      <button
+                        onClick={() => navigate('/')}
+                        className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
+                        title="Create free account to save your data">Sign Up</button>
+                    )}
 
                   <div className="relative group">
                     <button
@@ -235,20 +242,22 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                       <User className="w-5 h-5" />
                     </button>
                     
-                    {/* Dropdown menu */}
-                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-                      <div className="p-2">
-                        <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
-                          {user.email}
+                    {user && (
+                      /* Dropdown menu - only for logged in users */
+                      <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                        <div className="p-2">
+                          <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
+                            {user.email}
+                          </div>
+                          <button
+                            onClick={handleLogout}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:bg-white/10 ${getTextColor()}`}
+                          >
+                            Sign Out
+                          </button>
                         </div>
-                        <button
-                          onClick={handleLogout}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:bg-white/10 ${getTextColor()}`}
-                        >
-                          Sign Out
-                        </button>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               ) : (

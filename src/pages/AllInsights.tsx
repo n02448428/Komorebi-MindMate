@@ -7,9 +7,11 @@ import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import InsightCard from '../components/InsightCard';
 import { ArrowLeft, Search, Sparkles } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const AllInsights: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isGuest } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [filteredInsights, setFilteredInsights] = useState<InsightCardType[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,11 +21,17 @@ const AllInsights: React.FC = () => {
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
+  // Function to get the correct storage based on user status
+  const getStorage = () => {
+    return user ? localStorage : (isGuest ? sessionStorage : localStorage);
+  };
+
   useEffect(() => {
     // Load insights from localStorage
+    const storage = getStorage();
     const loadInsights = () => {
       try {
-        const stored = localStorage.getItem('insight-cards');
+        const stored = storage.getItem('insight-cards');
         if (stored) {
           const parsedInsights = JSON.parse(stored).map((insight: any) => ({
             ...insight,
@@ -42,7 +50,7 @@ const AllInsights: React.FC = () => {
     };
 
     loadInsights();
-  }, []);
+  }, [user, isGuest]);
 
   // Filter insights when search query changes
   useEffect(() => {
@@ -105,9 +113,10 @@ const AllInsights: React.FC = () => {
         // Update state
         const updatedInsights = insights.filter(insight => insight.id !== insightId);
         setInsights(updatedInsights);
+        const storage = getStorage();
         
         // Update localStorage
-        localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
+        storage.setItem('insight-cards', JSON.stringify(updatedInsights));
       } catch (error) {
         console.error('Error deleting insight:', error);
       } finally {
@@ -126,6 +135,14 @@ const AllInsights: React.FC = () => {
       
       {/* Content Container */}
       <div className="relative z-10 min-h-screen">
+        {isGuest && (
+          <div className={`fixed top-20 left-0 right-0 z-20 mx-auto max-w-md p-3 rounded-xl text-center ${
+            timeOfDay.period === 'morning' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-900/30 text-amber-200 border border-amber-700/50'
+          }`}>
+            <p className="text-sm">Guest mode: Your insights will be lost when you close your browser. <button onClick={() => navigate('/')} className="font-medium underline">Create an account</button> to save them.</p>
+          </div>
+        )}
+        
         {/* Header with Back Button and Search */}
         <div className="p-6 pt-20">
           <div className="flex items-center gap-4">
@@ -206,7 +223,7 @@ const AllInsights: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredInsights.map((insight) => (
                 <motion.div
-                  key={insight.id}
+                  key={`${insight.id}-${insight.createdAt.getTime()}`}
                   layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -259,15 +276,4 @@ const AllInsights: React.FC = () => {
       {/* Privacy Notice - Bottom of page */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
-          timeOfDay.period === 'morning' 
-            ? 'text-gray-900' 
-            : 'text-white'
-        }`}>
-          🔒 All data stored locally & privately on your device
-        </p>
-      </div>
-    </div>
-  );
-};
-
-export default AllInsights;
+          timeOfDay.perio

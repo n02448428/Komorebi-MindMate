@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
+import { clearAllStorageData, clearAllSessionStorageData } from '../utils/storageUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, Edit3, Check } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, logout, updateProfile } = useAuth();
+  const { user, profile, logout, updateProfile, isGuest } = useAuth();
   const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
@@ -31,11 +32,11 @@ const Settings: React.FC = () => {
 
   const handleClearData = () => {
     if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
-      localStorage.removeItem('insight-cards');
-      localStorage.removeItem('komorebi-chat-sessions');
-      localStorage.removeItem('session-limits');
-      localStorage.removeItem('session-start-time');
-      localStorage.removeItem('current-session-messages');
+      if (user) {
+        clearAllStorageData();
+      } else if (isGuest) {
+        clearAllSessionStorageData();
+      }
       alert('All data has been cleared.');
     }
   };
@@ -44,6 +45,8 @@ const Settings: React.FC = () => {
     setIsDownloading(true);
     
     try {
+      const storage = user ? localStorage : (isGuest ? sessionStorage : localStorage);
+      
       // Gather all user data
       const userData = {
         user: {
@@ -52,12 +55,12 @@ const Settings: React.FC = () => {
           isPro: profile?.is_pro,
           exportDate: new Date().toISOString()
         },
-        insights: JSON.parse(localStorage.getItem('insight-cards') || '[]'),
-        chatSessions: JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]'),
-        sessionLimits: JSON.parse(localStorage.getItem('session-limits') || '{}'),
+        insights: JSON.parse(storage.getItem('insight-cards') || '[]'),
+        chatSessions: JSON.parse(storage.getItem('komorebi-chat-sessions') || '[]'),
+        sessionLimits: JSON.parse(storage.getItem('session-limits') || '{}'),
         settings: {
-          videoBackgroundEnabled: JSON.parse(localStorage.getItem('video-background-enabled') || 'true'),
-          currentScene: localStorage.getItem('current-scene') || 'ocean'
+          videoBackgroundEnabled: JSON.parse(storage.getItem('video-background-enabled') || 'true'),
+          currentScene: storage.getItem('current-scene') || 'ocean'
         }
       };
 
@@ -370,10 +373,15 @@ const Settings: React.FC = () => {
                   }`}>
                     Video Backgrounds
                   </div>
+                  {isGuest && (
+                    <div className={`mb-4 p-2 rounded-lg ${timeOfDay.period === 'morning' ? 'bg-amber-100/80 text-amber-800' : 'bg-amber-900/30 text-amber-200'}`}>
+                      <p className="text-sm">You are in guest mode. Your data will be lost when you close your browser unless you create an account.</p>
+                    </div>
+                  )}
                   <div className={`text-sm ${
                     timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                   }`}>
-                    Show nature video backgrounds during sessions
+                    We never share your personal reflections with anyone.{isGuest ? ' As a guest, your data is stored in temporary browser storage.' : ''}
                   </div>
                 </div>
                 <button

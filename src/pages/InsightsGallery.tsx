@@ -11,7 +11,7 @@ import { ArrowLeft, Star, MessageCircle, Calendar, Sparkles, Crown, Settings, Ar
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isGuest } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [pinnedInsight, setPinnedInsight] = useState<InsightCardType | null>(null);
 
@@ -24,9 +24,15 @@ const InsightsGallery: React.FC = () => {
     return 'Friend';
   };
 
+  // Function to get the correct storage based on user status
+  const getStorage = () => {
+    return user ? localStorage : (isGuest ? sessionStorage : localStorage);
+  };
+
   useEffect(() => {
     // Load insights from localStorage
-    const savedInsights = JSON.parse(localStorage.getItem('insight-cards') || '[]');
+    const storage = getStorage();
+    const savedInsights = JSON.parse(storage.getItem('insight-cards') || '[]');
     const parsedInsights = savedInsights.map((insight: any) => ({
       ...insight,
       createdAt: new Date(insight.createdAt),
@@ -45,7 +51,7 @@ const InsightsGallery: React.FC = () => {
     // Find pinned insight
     const pinned = parsedInsights.find((insight: InsightCardType) => insight.isPinned);
     setPinnedInsight(pinned || null);
-  }, []);
+  }, [user, isGuest]);
 
   const handleTogglePin = (insightId: string) => {
     const updatedInsights = insights.map(insight => {
@@ -65,10 +71,11 @@ const InsightsGallery: React.FC = () => {
     setPinnedInsight(newPinned || null);
     
     // Save to localStorage
-    localStorage.setItem('insight-cards', JSON.stringify(updatedInsights));
+    const storage = getStorage();
+    storage.setItem('insight-cards', JSON.stringify(updatedInsights));
   };
 
-  const recentInsights = insights.slice(0, 3); // Show 3 most recent
+  const recentInsights = insights.slice(0, 4); // Show 4 most recent
 
   // Get archived chat sessions count
   const archivedSessions = JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]');
@@ -236,8 +243,15 @@ const InsightsGallery: React.FC = () => {
           )}
 
           {/* Recent Insights */}
-          {recentInsights.length > 0 && (
+          {recentInsights.length > 0 ? (
             <div>
+              {isGuest && (
+                <div className={`text-center mb-6 p-3 rounded-xl ${
+                  timeOfDay.period === 'morning' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-900/30 text-amber-200 border border-amber-700/50'
+                }`}>
+                  <p className="text-sm">Guest mode: Your insights will be lost when you close your browser. <button onClick={() => navigate('/')} className="font-medium underline">Create an account</button> to save them.</p>
+                </div>
+              )}
               <div className="flex items-center justify-between mb-4">
                 <h2 className={`text-xl font-semibold ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
@@ -272,6 +286,24 @@ const InsightsGallery: React.FC = () => {
                   </motion.div>
                 ))}
               </div>
+            </div>
+          ) : (
+            <div className={`p-6 rounded-3xl backdrop-blur-sm border border-white/20 text-center ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <Sparkles className={`w-12 h-12 mx-auto mb-4 ${
+                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+              }`} />
+              <h3 className={`text-xl font-semibold mb-2 ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>No insights yet</h3>
+              <p className={`mb-6 ${
+                timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+              }`}>Start a reflection session to create your first insight</p>
+              <button
+                onClick={() => navigate('/session')}
+                className={`px-6 py-3 rounded-xl ${timeOfDay.period === 'morning' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-purple-600 hover:bg-purple-700'} text-white font-medium`}
+              >Start Reflection</button>
             </div>
           )}
 

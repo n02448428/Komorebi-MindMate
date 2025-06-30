@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 import { ArchivedChatSession } from '../types';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
+import { useAuth } from '../context/AuthContext';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { ArrowLeft, Search, MessageCircle, Clock, Calendar, Filter, Sparkles, Sun, Moon, Copy, Download, Check, Trash2 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
 
 const ChatArchive: React.FC = () => {
   const navigate = useNavigate();
+  const { user, isGuest } = useAuth();
   const [archivedSessions, setArchivedSessions] = useState<ArchivedChatSession[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'morning' | 'evening'>('all');
@@ -23,8 +25,9 @@ const ChatArchive: React.FC = () => {
   useEffect(() => {
     // Load archived sessions from localStorage
     const loadArchivedSessions = () => {
+      const storage = user ? localStorage : (isGuest ? sessionStorage : localStorage);
       try {
-        const stored = localStorage.getItem('komorebi-chat-sessions');
+        const stored = storage.getItem('komorebi-chat-sessions');
         if (stored) {
           const sessions = JSON.parse(stored) as ArchivedChatSession[];
           // Sort by date, newest first
@@ -39,7 +42,7 @@ const ChatArchive: React.FC = () => {
     };
 
     loadArchivedSessions();
-  }, []);
+  }, [user, isGuest]);
 
   const filteredSessions = archivedSessions.filter(session => {
     const matchesSearch = searchTerm === '' || 
@@ -103,8 +106,9 @@ const ChatArchive: React.FC = () => {
       // Update state
       const updatedSessions = archivedSessions.filter(s => s.id !== sessionId);
       setArchivedSessions(updatedSessions);
+      const storage = user ? localStorage : (isGuest ? sessionStorage : localStorage);
       // Update localStorage
-      localStorage.setItem('komorebi-chat-sessions', JSON.stringify(updatedSessions));
+      storage.setItem('komorebi-chat-sessions', JSON.stringify(updatedSessions));
       setDeletingSessionId(null);
     }
   };
@@ -178,6 +182,14 @@ Duration: ${Math.round(session.duration / 60)} minutes
               Chat Archive
             </h1>
           </div>
+
+          {isGuest && (
+            <div className={`mb-4 p-3 rounded-xl text-center ${
+              timeOfDay.period === 'morning' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-900/30 text-amber-200 border border-amber-700/50'
+            }`}>
+              <p className="text-sm">Guest mode: Your conversation history will be lost when you close your browser. <button onClick={() => navigate('/')} className="font-medium underline">Create an account</button> to save it.</p>
+            </div>
+          )}
 
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
