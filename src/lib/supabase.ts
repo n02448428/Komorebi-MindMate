@@ -67,8 +67,6 @@ export const aiChatService = {
     const nameContext = userName ? ` ${userName}` : '';
     
     // Analyze conversation context
-    const recentMessages = conversationHistory.slice(-4); // Last 4 messages for context
-    
     let response = '';
     
     if (sessionType === 'morning') {
