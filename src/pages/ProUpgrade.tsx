@@ -40,8 +40,11 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleDownloadAllData = async () => {
+    if (!user) {
       navigate('/');
       return;
+    }
     setIsDownloading(true);
     
     try {
