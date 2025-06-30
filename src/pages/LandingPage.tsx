@@ -170,199 +170,45 @@ const LandingPage: React.FC = () => {
                 {error && (
                   <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
                     {error}
-                    </div>
-                  )}
-                        stableTimeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-                      }`} />
-                    )}
-                    <span className={\`font-medium ${
-                      profile?.is_pro 
-                        ? (stableTimeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
-                        : (stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
-                    }`}>
-                      {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
-                    </span>
                   </div>
-                </div>
-                {!profile?.is_pro && (
-                  <button
-                    onClick={() => navigate('/upgrade')}
-                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
-                  >
-                    Upgrade to Pro
-                  </button>
                 )}
-              </div>
-            </div>
-          )}
 
-          {/* Appearance Settings */}
-          <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-            stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className="flex items-center gap-3 mb-4">
-              <Eye className={\`w-6 h-6 ${
-                stableTimeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-              }`} />
-              <h2 className={\`text-xl font-semibold ${
-                stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                Appearance
-              </h2>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className={\`font-medium ${
-                    stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    Video Backgrounds
-                  </div>
-                  <div className={\`text-sm ${
-                    stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    Show nature video backgrounds during sessions
-                  </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 backdrop-blur-sm"
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => setShowLogin(false)}
+                  className="text-gray-700 hover:text-gray-900 text-sm transition-colors"
+                >
+                  Back to home
+                </button>
+              </div>
+
+              <div className="mt-8">
+                <div className="text-center text-sm text-gray-600 mb-4">
+                  Don't have an account yet?
                 </div>
                 <button
-                  onClick={toggleVideoBackground}
-                  className={\`p-3 rounded-2xl transition-all duration-200 ${
-                    videoEnabled
-                      ? (stableTimeOfDay.period === 'morning'
-                          ? 'bg-green-500/20 text-green-700 border border-green-500/30'
-                          : 'bg-green-600/20 text-green-300 border border-green-600/30')
-                      : (stableTimeOfDay.period === 'morning'
-                          ? 'bg-gray-500/20 text-gray-700 border border-gray-500/30'
-                          : 'bg-gray-600/20 text-gray-300 border border-gray-600/30')
-                  } backdrop-blur-sm`}
+                  onClick={handleQuickLogin}
+                  disabled={loading}
+                  className="w-full p-3 rounded-2xl border border-white/30 bg-white/10 hover:bg-white/20 text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 backdrop-blur-sm"
                 >
-                  {videoEnabled ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                  {loading ? 'Creating account...' : 'Create Free Account'}
                 </button>
               </div>
             </div>
           </div>
-
-          {/* Privacy Section */}
-          <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-            stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className={\`w-6 h-6 ${
-                stableTimeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
-              }`} />
-              <h2 className={\`text-xl font-semibold ${
-                stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                Privacy & Data
-              </h2>
-            </div>
-            <div className="space-y-4">
-              <div className={\`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
-                stableTimeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
-              }`}>
-                <div className={\`text-sm ${
-                  stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
-                }`}>
-                  Your conversations and insights are stored locally on your device and are completely private. 
-                  We never share your personal reflections with anyone.
-                </div>
-              </div>
-              
-              <div className="grid gap-3">
-                {/* Download All Data Button */}
-                <button 
-                  onClick={handleDownloadAllData}
-                  disabled={isDownloading}
-                  className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    stableTimeOfDay.period === 'morning'
-                      ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30'
-                      : 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-600/30'
-                  } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isDownloading ? (
-                    <>
-                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Preparing Download...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      Download All Data
-                    </>
-                  )}
-                </button>
-
-                {/* Clear All Data Button */}
-                <button 
-                  onClick={handleClearData}
-                  className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    stableTimeOfDay.period === 'morning'
-                      ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
-                      : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
-                  } backdrop-blur-sm`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Clear All Data
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Actions */}
-          {user && (
-            <div className={\`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-              stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-            }`}>
-              <div className="flex items-center gap-3 mb-4">
-                <LogOut className={\`w-6 h-6 ${
-                  stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
-                }`} />
-                <h2 className={\`text-xl font-semibold ${
-                  stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Account
-                </h2>
-              </div>
-              <button
-                onClick={handleLogout}
-                className={\`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                  stableTimeOfDay.period === 'morning'
-                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}>
-                Sign Out
-              </button>
-            </div>
-          )}
-
-          {/* App Info */}
-          <div className="text-center pb-4">
-            <p className={\`text-sm ${
-              stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
-            }`}>
-              Komorebi MindMate v1.0.0
-            </p>
-            <p className={\`text-xs mt-1 ${
-              stableTimeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
-            }`}>
-              Your AI companion for mindful reflection
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Privacy Notice - Bottom of page */}
-      <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
-        <p className={\`text-[10px] sm:text-xs whitespace-nowrap ${
-          stableTimeOfDay.period === 'morning' 
-            ? 'text-gray-900' 
-            : 'text-white'
-        }`}>
-          🔒 All data stored locally & privately on your device
-        </p>
+        )}
       </div>
     </div>
   );
 };
 
-export default Settings;
+export default LandingPage;

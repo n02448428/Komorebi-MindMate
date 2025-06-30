@@ -435,7 +435,7 @@ const InsightCard: React.FC<InsightCardProps> = ({
           {/* Share Button */}
           <ActionButton
             onClick={handleShare}
-            ? 'text-gray-700' 
+            icon={<Share2 className="w-5 h-5" />}
             title="Share insight"
             timeOfDay={insight.type}
           />
