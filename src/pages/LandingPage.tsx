@@ -205,9 +205,10 @@ const Settings: React.FC = () => {
                       readOnly={!nameEditMode}
                       className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
                         nameEditMode
+                          ? (stableTimeOfDay.period === 'morning'
                               ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
                               : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
-                          : (timeOfDay.period === 'morning'
+                          : (stableTimeOfDay.period === 'morning'
                               ? 'bg-white/10 text-gray-700 cursor-pointer'
                               : 'bg-black/10 text-gray-300 cursor-pointer')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
@@ -218,7 +219,7 @@ const Settings: React.FC = () => {
                         type="button"
                         onClick={handleNameEdit}
                         className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
-                          timeOfDay.period === 'morning'
+                          stableTimeOfDay.period === 'morning'
                             ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
                             : 'text-gray-400 hover:text-white hover:bg-white/10'
                         }`}
@@ -230,7 +231,7 @@ const Settings: React.FC = () => {
                       <button
                         type="submit"
                         className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
-                          timeOfDay.period === 'morning'
+                          stableTimeOfDay.period === 'morning'
                             ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
                             : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
                         }`}
@@ -242,7 +243,7 @@ const Settings: React.FC = () => {
                   </div>
                   {nameSaved && (
                     <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
-                      timeOfDay.period === 'morning'
+                      stableTimeOfDay.period === 'morning'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-green-900/50 text-green-300'
                     } animate-fade-in`}>
@@ -254,7 +255,7 @@ const Settings: React.FC = () => {
                 {/* Email Field */}
                 <form onSubmit={handleEmailSubmit}>
                   <label className={`block text-sm font-medium mb-2 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                    stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
                   }`}>
                     Email
                   </label>
@@ -267,10 +268,10 @@ const Settings: React.FC = () => {
                       readOnly={!emailEditMode}
                       className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
                         emailEditMode
-                          ? (timeOfDay.period === 'morning'
+                          ? (stableTimeOfDay.period === 'morning'
                               ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
                               : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
-                          : (timeOfDay.period === 'morning'
+                          : (stableTimeOfDay.period === 'morning'
                               ? 'bg-white/10 text-gray-700 cursor-pointer'
                               : 'bg-black/10 text-gray-300 cursor-pointer')
                       } focus:outline-none focus:ring-2 focus:ring-white/30`}
@@ -281,7 +282,7 @@ const Settings: React.FC = () => {
                         type="button"
                         onClick={handleEmailEdit}
                         className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
-                          timeOfDay.period === 'morning'
+                          stableTimeOfDay.period === 'morning'
                             ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
                             : 'text-gray-400 hover:text-white hover:bg-white/10'
                         }`}
@@ -293,7 +294,7 @@ const Settings: React.FC = () => {
                       <button
                         type="submit"
                         className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
-                          timeOfDay.period === 'morning'
+                          stableTimeOfDay.period === 'morning'
                             ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
                             : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
                         }`}
@@ -305,7 +306,7 @@ const Settings: React.FC = () => {
                   </div>
                   {emailSaved && (
                     <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
-                      timeOfDay.period === 'morning'
+                      stableTimeOfDay.period === 'morning'
                         ? 'bg-green-100 text-green-800'
                         : 'bg-green-900/50 text-green-300'
                     } animate-fade-in`}>
@@ -316,24 +317,24 @@ const Settings: React.FC = () => {
 
                 <div>
                   <label className={`block text-sm font-medium mb-2 ${
-                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                    stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
                   }`}>
                     Plan
                   </label>
                   <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
-                    timeOfDay.period === 'morning'
+                    stableTimeOfDay.period === 'morning'
                       ? 'bg-white/20'
                       : 'bg-white/10'
                   }`}>
                     {profile?.is_pro && (
                       <Crown className={`w-4 h-4 ${
-                        timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                        stableTimeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                       }`} />
                     )}
                     <span className={`font-medium ${
                       profile?.is_pro 
-                        ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
-                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
+                        ? (stableTimeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
+                        : (stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
                     }`}>
                       {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
                     </span>
@@ -353,14 +354,14 @@ const Settings: React.FC = () => {
 
           {/* Appearance Settings */}
           <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
               <Eye className={`w-6 h-6 ${
-                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+                stableTimeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
               }`} />
               <h2 className={`text-xl font-semibold ${
-                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Appearance
               </h2>
@@ -369,12 +370,12 @@ const Settings: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <div className={`font-medium ${
-                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                    stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
                     Video Backgrounds
                   </div>
                   <div className={`text-sm ${
-                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                    stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
                   }`}>
                     Show nature video backgrounds during sessions
                   </div>
@@ -383,10 +384,10 @@ const Settings: React.FC = () => {
                   onClick={toggleVideoBackground}
                   className={`p-3 rounded-2xl transition-all duration-200 ${
                     videoEnabled
-                      ? (timeOfDay.period === 'morning'
+                      ? (stableTimeOfDay.period === 'morning'
                           ? 'bg-green-500/20 text-green-700 border border-green-500/30'
                           : 'bg-green-600/20 text-green-300 border border-green-600/30')
-                      : (timeOfDay.period === 'morning'
+                      : (stableTimeOfDay.period === 'morning'
                           ? 'bg-gray-500/20 text-gray-700 border border-gray-500/30'
                           : 'bg-gray-600/20 text-gray-300 border border-gray-600/30')
                   } backdrop-blur-sm`}
@@ -399,24 +400,24 @@ const Settings: React.FC = () => {
 
           {/* Privacy Section */}
           <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
           }`}>
             <div className="flex items-center gap-3 mb-4">
               <Shield className={`w-6 h-6 ${
-                timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
+                stableTimeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
               }`} />
               <h2 className={`text-xl font-semibold ${
-                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
                 Privacy & Data
               </h2>
             </div>
             <div className="space-y-4">
               <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
-                timeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
+                stableTimeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
               }`}>
                 <div className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
+                  stableTimeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
                 }`}>
                   Your conversations and insights are stored locally on your device and are completely private. 
                   We never share your personal reflections with anyone.
@@ -429,7 +430,7 @@ const Settings: React.FC = () => {
                   onClick={handleDownloadAllData}
                   disabled={isDownloading}
                   className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    timeOfDay.period === 'morning'
+                    stableTimeOfDay.period === 'morning'
                       ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30'
                       : 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-600/30'
                   } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -451,7 +452,7 @@ const Settings: React.FC = () => {
                 <button 
                   onClick={handleClearData}
                   className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                    timeOfDay.period === 'morning'
+                    stableTimeOfDay.period === 'morning'
                       ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
                       : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
                   } backdrop-blur-sm`}
@@ -466,14 +467,14 @@ const Settings: React.FC = () => {
           {/* Account Actions */}
           {user && (
             <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
-              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+              stableTimeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
               <div className="flex items-center gap-3 mb-4">
                 <LogOut className={`w-6 h-6 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+                  stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
                 }`} />
                 <h2 className={`text-xl font-semibold ${
-                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                  stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
                   Account
                 </h2>
@@ -481,7 +482,7 @@ const Settings: React.FC = () => {
               <button
                 onClick={handleLogout}
                 className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
-                  timeOfDay.period === 'morning'
+                  stableTimeOfDay.period === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                     : 'bg-white/10 hover:bg-white/20 text-white'
                 }`}>
@@ -493,12 +494,12 @@ const Settings: React.FC = () => {
           {/* App Info */}
           <div className="text-center pb-4">
             <p className={`text-sm ${
-              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+              stableTimeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
             }`}>
               Komorebi MindMate v1.0.0
             </p>
             <p className={`text-xs mt-1 ${
-              timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
+              stableTimeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
             }`}>
               Your AI companion for mindful reflection
             </p>
@@ -509,7 +510,7 @@ const Settings: React.FC = () => {
       {/* Privacy Notice - Bottom of page */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
-          timeOfDay.period === 'morning' 
+          stableTimeOfDay.period === 'morning' 
             ? 'text-gray-900' 
             : 'text-white'
         }`}>
