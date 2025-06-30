@@ -87,6 +87,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      // For demo purposes, allow a special dev login that works without Supabase
+      if (email === 'dev@example.com' && password === 'password') {
+        const mockUser = {
+          id: 'dev-user-id',
+          email: 'dev@example.com',
+        };
+        
+        const mockProfile = {
+          id: 'dev-user-id',
+          email: 'dev@example.com',
+          name: 'Developer',
+          is_pro: true,
+          created_at: new Date().toISOString()
+        };
+        
+        setUser(mockUser as User);
+        setProfile(mockProfile);
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
