@@ -47,6 +47,7 @@ export const useSessionState = ({
           timestamp: new Date(msg.timestamp)
         }));
         if (parsedMessages.length > 0) {
+          console.log('Loaded saved messages:', parsedMessages.length);
           setMessages(parsedMessages);
           return; // Skip adding greeting if we restored messages
         }
@@ -63,6 +64,7 @@ export const useSessionState = ({
         role: 'assistant',
         timestamp: new Date(),
       };
+      console.log('Adding greeting message');
       setMessages([greetingMessage]);
     }
   }, [profile?.is_pro, user, isGuest, sessionType]);
@@ -70,21 +72,28 @@ export const useSessionState = ({
   // Save messages when they change
   useEffect(() => {
     if (messages.length > 0) {
+      console.log('Saving messages to storage:', messages.length);
       storage.set('current-session-messages', messages);
     }
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
+    console.log('🚀 Starting handleSendMessage with:', { content, messagesCount: messages.length });
+    
     const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
       (new Date().getTime() - sessionStartTime.getTime()) > (15 * 60 * 1000);
 
-    if (isLoading || (profile?.is_pro !== true && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+    if (isLoading || (profile?.is_pro !== true && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) {
+      console.log('❌ Message blocked:', { isLoading, messagesUsed: sessionLimits.messagesUsed, maxMessages: sessionLimits.maxMessages, isSessionExpired });
+      return;
+    }
 
     // Start session timer if not already started
     if (!sessionStartTime) {
       const startTime = new Date();
       setSessionStartTime(startTime);
       storage.set('session-start-time', startTime.toISOString());
+      console.log('⏱️ Started session timer');
     }
 
     // Add user message
@@ -95,6 +104,7 @@ export const useSessionState = ({
       timestamp: new Date(),
     };
 
+    console.log('👤 Adding user message:', userMessage);
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -108,21 +118,35 @@ export const useSessionState = ({
       messagesUsed: newMessagesUsed,
     });
 
+    console.log('📊 Updated counters:', { newMessagesUsed, newUserMessagesSinceLastInsight });
+
     try {
       // Convert messages to conversation history format (excluding the greeting message)
-      // Include the current user message that was just added
-      const conversationHistory = [...messages, userMessage]
+      // Build conversation history from CURRENT messages (don't include the new user message twice)
+      const conversationHistory = messages
         .filter(msg => msg.id !== 'greeting')
         .map(msg => ({
           role: msg.role,
           content: msg.content
         }));
 
-      console.log('Conversation history being sent:', conversationHistory);
-      // Use Supabase AI chat service
-      const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, profile?.name);
+      console.log('📝 Conversation history being sent:', conversationHistory.length, 'messages');
+      console.log('📝 Last few messages:', conversationHistory.slice(-2));
       
-      console.log('Received AI response:', response);
+      // Use Supabase AI chat service
+      console.log('🤖 Calling AI service...');
+      const response = await aiChatService.sendMessage(
+        content, 
+        sessionType, 
+        conversationHistory, 
+        profile?.name
+      );
+      
+      console.log('✅ Received AI response:', response);
+      
+      if (!response || !response.message) {
+        throw new Error('Invalid response format from AI service');
+      }
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -131,37 +155,49 @@ export const useSessionState = ({
         timestamp: new Date(),
       };
 
+      console.log('🤖 Adding AI message:', aiMessage);
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('❌ Error in handleSendMessage:', error);
       
-      // This should not happen now with the fallback system, but just in case
+      // Final fallback - create a basic response
       try {
-        const fallbackResponse = await aiChatService.getLocalAIResponse(content, sessionType, [], profile?.name);
+        console.log('🔄 Trying direct fallback...');
+        const fallbackResponse = aiChatService.getLocalAIResponse(content, sessionType, [], profile?.name);
+        console.log('🔄 Direct fallback response:', fallbackResponse);
+        
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           content: fallbackResponse.message,
           role: 'assistant',
           timestamp: new Date(),
         };
+        console.log('🔄 Adding fallback message:', aiMessage);
         setMessages(prev => [...prev, aiMessage]);
       } catch (fallbackError) {
-        console.error('Even fallback failed:', fallbackError);
+        console.error('❌ Even direct fallback failed:', fallbackError);
+        
+        // Absolute last resort - hardcoded response
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "I'm here with you. Let's continue our conversation. What would you like to explore?",
+          content: sessionType === 'morning' 
+            ? "I'm here with you this morning. What's stirring in your heart as this new day begins?"
+            : "I'm here for this evening reflection. How was your day, and what would you like to explore together?",
           role: 'assistant',
           timestamp: new Date(),
         };
+        console.log('🆘 Adding emergency message:', errorMessage);
         setMessages(prev => [...prev, errorMessage]);
       }
     } finally {
+      console.log('✨ Setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   const resetSession = () => {
+    console.log('🔄 Resetting session');
     // Reset to just the greeting message
     const greetingMessage: Message = {
       id: 'greeting',

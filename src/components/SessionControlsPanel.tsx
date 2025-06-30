@@ -2,8 +2,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   EyeOff, Eye, SkipForward, Shuffle, RefreshCw, LogIn, Crown, 
-  User, Settings 
+  User, Settings, MessageCircle
 } from 'lucide-react';
+import { aiChatService } from '../lib/supabase';
 
 interface SessionControlsPanelProps {
   sessionType: 'morning' | 'evening';
@@ -57,6 +58,24 @@ const SessionControlsPanel: React.FC<SessionControlsPanelProps> = ({
     }
   };
 
+  // Test AI response function for debugging
+  const handleTestAI = async () => {
+    console.log('🧪 Testing AI response...');
+    try {
+      const response = await aiChatService.sendMessage(
+        'Hello, this is a test message',
+        sessionType,
+        [],
+        'TestUser'
+      );
+      console.log('🧪 AI Test Response:', response);
+      alert(`AI responded: ${response.message}`);
+    } catch (error) {
+      console.error('🧪 AI Test Failed:', error);
+      alert(`AI test failed: ${error.message}`);
+    }
+  };
+
   return (
     <AnimatePresence>
       {showControls && (
@@ -71,6 +90,21 @@ const SessionControlsPanel: React.FC<SessionControlsPanelProps> = ({
               : 'bg-white/10'
           }`}
         >
+            {/* AI Test Button (only in development) */}
+            {import.meta.env.DEV && (
+              <button
+                onClick={handleTestAI}
+                title="Test AI Response"
+                className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700'
+                    : 'bg-green-600/20 hover:bg-green-600/30 text-green-300'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+              </button>
+            )}
+            
             {/* Background Controls */}
             <div className="flex gap-2">
               <button
