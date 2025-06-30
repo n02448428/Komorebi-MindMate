@@ -766,7 +766,7 @@ const MainSession: React.FC = () => {
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
+                    }\`}
                   >
                     {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -780,7 +780,7 @@ const MainSession: React.FC = () => {
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
+                        }\`}
                       >
                         <SkipForward className="w-4 h-4" />
                       </button>
@@ -792,7 +792,7 @@ const MainSession: React.FC = () => {
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
+                        }\`}
                       >
                         <Shuffle className="w-4 h-4" />
                       </button>
@@ -803,7 +803,7 @@ const MainSession: React.FC = () => {
                 {/* Separator */}
                 <div className={\`w-px h-6 ${
                   sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
+                }\`} />
 
                 {/* Session Controls */}
                 <button
@@ -813,7 +813,7 @@ const MainSession: React.FC = () => {
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
+                  }\`}
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
@@ -821,7 +821,7 @@ const MainSession: React.FC = () => {
                 {/* Separator */}
                 <div className={\`w-px h-6 ${
                   sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
+                }\`} />
 
                 {/* User Controls */}
                 {!user && (
@@ -831,7 +831,7 @@ const MainSession: React.FC = () => {
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
+                    }\`}
                   >
                     <LogIn className="w-3 h-3" />
                     <span className="text-xs font-medium">Sign In</span>
@@ -845,7 +845,7 @@ const MainSession: React.FC = () => {
                       sessionType === 'morning'
                         ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                         : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
-                    }`}
+                    }\`}
                   >
                     <Crown className="w-3 h-3" />
                     <span className="text-xs font-medium">Pro</span>
@@ -860,7 +860,7 @@ const MainSession: React.FC = () => {
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
+                      }\`}
                     >
                       <User className="w-4 h-4" />
                     </button>
@@ -870,7 +870,7 @@ const MainSession: React.FC = () => {
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
+                      }\`}
                     >
                       <Settings className="w-4 h-4" />
                     </button>
@@ -887,7 +887,7 @@ const MainSession: React.FC = () => {
               sessionType === 'morning'
                 ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                 : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
+            }\`}
             title={showControls ? 'Hide controls' : 'Show controls'}
           >
             {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -898,23 +898,23 @@ const MainSession: React.FC = () => {
       {/* Main Content */}
       <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
-          <div className={\`text-center mb-4 flex-shrink-0 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <div className={\`text-center mb-4 flex-shrink-0 transition-all duration-300 ${showControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}\`}>
             {showControls && (
               <div>
                 <div className={\`text-sm font-medium mb-1 ${
                   sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
+                }\`}>
                   Komorebi
                 </div>
                 <div className={\`inline-flex items-center gap-2 px-6 py-3 rounded-2xl backdrop-blur-sm border border-white/20 ${
                   sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                }`}>
+                }\`}>
                   <Sparkles className={\`w-5 h-5 ${
                     sessionType === 'morning' ? 'text-amber-600' : 'text-purple-400'
-                  }`} />
+                  }\`} />
                   <span className={\`text-lg font-semibold ${
                     sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
+                  }\`}>
                     {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
                   </span>
                 </div>
@@ -943,10 +943,10 @@ const MainSession: React.FC = () => {
               >
                 <div className={\`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
                   sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                }`}>
+                }\`}>
                   <p className={\`text-sm mb-3 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-                  }`}>
+                  }\`}>
                     You've shared 5 messages! Ready to capture an insight from our conversation?
                   </p>
                   <button
@@ -956,7 +956,7 @@ const MainSession: React.FC = () => {
                       sessionType === 'morning'
                         ? 'bg-amber-500 hover:bg-amber-600 text-white'
                         : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    } disabled:opacity-50 disabled:cursor-not-allowed\`}
                   >
                     <Sparkles className="w-4 h-4" />
                     {isGeneratingInsight ? 'Creating Insight...' : 'Generate Insight Card'}
@@ -979,12 +979,12 @@ const MainSession: React.FC = () => {
                 <div className="text-center mb-4">
                   <h2 className={\`text-xl md:text-2xl font-semibold mb-2 ${
                     sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
+                  }\`}>
                     Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
                   </h2>
                   <p className={\`text-sm ${
                     sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
+                  }\`}>
                     A reflection from our conversation
                   </p>
                 </div>
@@ -1007,10 +1007,10 @@ const MainSession: React.FC = () => {
               >
                 <div className={\`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
                   sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
-                }`}>
+                }\`}>
                   <p className={\`text-sm mb-3 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
-                  }`}>
+                  }\`}>
                     Sign in to save your insights and track your progress
                   </p>
                   <button
@@ -1032,7 +1032,7 @@ const MainSession: React.FC = () => {
           sessionType === 'morning' 
             ? 'text-gray-900' 
             : 'text-white'
-        }`}>
+        }\`}>
           🔒 All data stored locally & privately on your device
         </p>
       </div>
