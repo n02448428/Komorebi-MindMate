@@ -13,28 +13,13 @@ const LandingPage: React.FC = () => {
     password: '',
     name: ''
   });
-    password: '',
-    name: ''
-  });
   const [error, setError] = useState('');
   const [showLogin, setShowLogin] = useState(false);
-  const [isSignUpMode, setIsSignUpMode] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
   const [isSignUpMode, setIsSignUpMode] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const timeOfDay = getTimeOfDay();
 
   // Reset form errors when switching modes
-  useEffect(() => {
-    setError('');
-  }, [isSignUpMode]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAuth = async (e: React.FormEvent) => {
   useEffect(() => {
     setError('');
   }, [isSignUpMode]);
@@ -53,14 +38,7 @@ const LandingPage: React.FC = () => {
       } else {
         await login(formData.email, formData.password);
       }
-        await signup(formData.email, formData.password, formData.name);
-      } else {
-        await login(formData.email, formData.password);
-      }
     } catch (err) {
-      const message = isSignUpMode
-        ? 'Sign up failed. Please try a different email or password.'
-        : 'Login failed. Please check your credentials and try again.';
       const message = isSignUpMode
         ? 'Sign up failed. Please try a different email or password.'
         : 'Login failed. Please check your credentials and try again.';
@@ -70,7 +48,6 @@ const LandingPage: React.FC = () => {
 
   const handleQuickLogin = async () => {
     setError('');
-    setDemoLoading(true);
     setDemoLoading(true);
     try {
       // Create a temporary demo user with a unique email
@@ -82,13 +59,7 @@ const LandingPage: React.FC = () => {
     } catch (err) {
       setError('Quick login failed. Please try again.');
       setDemoLoading(false);
-      setDemoLoading(false);
     }
-  };
-
-  const toggleAuthMode = () => {
-    setIsSignUpMode(!isSignUpMode);
-    setError('');
   };
 
   const toggleAuthMode = () => {
@@ -194,7 +165,6 @@ const LandingPage: React.FC = () => {
           <div className="w-full max-w-md mx-auto">
             <div className="backdrop-blur-md bg-white/20 rounded-3xl p-8 border border-white/20">
               {/* Form Header */}
-              {/* Form Header */}
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
                   {isSignUpMode ? "Create Your Account" : "Welcome Back"}
@@ -220,44 +190,25 @@ const LandingPage: React.FC = () => {
                   </div>
                 )}
 
-              {/* Auth Form */}
-              <form onSubmit={handleAuth} className="space-y-4">
-                {/* Name Field (only for signup) */}
-                {isSignUpMode && (
-                  <div>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                      placeholder="Your name"
-                    />
-                  </div>
-                )}
-
                 {/* Email Field */}
                 <div>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
-                    name="email"
-                    value={formData.email}
                     onChange={handleChange}
+                    className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
                     placeholder="Email address"
-                    placeholder="Email address"
+                    required
                   />
                 </div>
 
-                {/* Password Field */}
                 {/* Password Field */}
                 <div>
                   <input
                     type="password"
                     name="password"
                     value={formData.password}
-                    onChange={handleChange}
                     onChange={handleChange}
                     className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
                     placeholder="Password"
@@ -266,14 +217,12 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Error Message */}
-                {/* Error Message */}
                 {error && (
                   <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
                     {error}
                   </div>
                 )}
 
-                {/* Submit Button */}
                 {/* Submit Button */}
                 <button
                   type="submit"
@@ -282,19 +231,6 @@ const LandingPage: React.FC = () => {
                 >
                   {loading ? (isSignUpMode ? 'Creating Account...' : 'Signing In...') : (isSignUpMode ? 'Sign Up' : 'Sign In')}
                 </button>
-                
-                {/* Auth Mode Toggle */}
-                <div className="text-center mt-4">
-                  <button 
-                    type="button"
-                    onClick={toggleAuthMode}
-                    className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
-                  >
-                    {isSignUpMode 
-                      ? "Already have an account? Sign In" 
-                      : "Don't have an account? Sign Up"}
-                  </button>
-                </div>
                 
                 {/* Auth Mode Toggle */}
                 <div className="text-center mt-4">
