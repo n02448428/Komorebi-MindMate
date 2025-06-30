@@ -38,7 +38,8 @@ export const aiChatService = {
         },
       });
       
-      const { data, error } = await Promise.race([functionCall, timeoutPromise]);
+      const result = await Promise.race([functionCall, timeoutPromise]) as { data: any; error: any };
+      const { data, error } = result;
 
       if (error) {
         console.error('❌ [AI Service] Supabase function error:', error);
@@ -64,7 +65,7 @@ export const aiChatService = {
   },
 
   // Local fallback AI response system
-  getLocalAIResponse(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[], userName?: string) {
+  getLocalAIResponse(message: string, sessionType: 'morning' | 'evening', _conversationHistory: any[], userName?: string) {
     console.log('🏠 [Local AI] Generating response:', { 
       messageLength: message.length, 
       sessionType, 

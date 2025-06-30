@@ -193,6 +193,16 @@ const MainSession: React.FC = () => {
           videoEnabled={videoEnabled}
           showControls={showControls}
           onToggleControls={() => setShowControls(!showControls)}
+          user={user}
+          profile={profile}
+          onToggleVideo={toggleVideoBackground}
+          onNextScene={handleNextScene}
+          onRandomScene={handleRandomScene}
+          onNewSession={handleNewSession}
+          onLogin={handleLogin}
+          onUpgrade={handleUpgrade}
+          onInsights={handleInsights}
+          onSettings={handleSettings}
         />
         
         <SessionStatusMessages
@@ -233,6 +243,16 @@ const MainSession: React.FC = () => {
           videoEnabled={videoEnabled}
           showControls={showControls}
           onToggleControls={() => setShowControls(!showControls)}
+          user={user}
+          profile={profile}
+          onToggleVideo={toggleVideoBackground}
+          onNextScene={handleNextScene}
+          onRandomScene={handleRandomScene}
+          onNewSession={handleNewSession}
+          onLogin={handleLogin}
+          onUpgrade={handleUpgrade}
+          onInsights={handleInsights}
+          onSettings={handleSettings}
         />
         
         <SessionStatusMessages
