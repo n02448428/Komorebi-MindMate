@@ -139,7 +139,7 @@ const AllInsights: React.FC = () => {
           <div className={`fixed top-20 left-0 right-0 z-20 mx-auto max-w-md p-3 rounded-xl text-center ${
             timeOfDay.period === 'morning' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-amber-900/30 text-amber-200 border border-amber-700/50'
           }`}>
-            <p className="text-sm">Guest mode: Your insights will be lost when you close your browser. <button onClick={() => navigate('/')} className="font-medium underline">Create an account</button> to save them.</p>
+            <p className="text-sm">Guest mode: Your insights will be lost when you close your browser. <button onClick={() => navigate('/auth')} className="font-medium underline">Create an account</button> to save them.</p>
           </div>
         )}
         

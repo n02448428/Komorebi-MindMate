@@ -1069,7 +1069,7 @@ const MainSession: React.FC = () => {
                     Create a free account to save your insights and conversations.
                   </p>
                   <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/auth')}
                     className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                       sessionType === 'morning'
                         ? 'bg-amber-500 hover:bg-amber-600 text-white'
@@ -1100,7 +1100,7 @@ const MainSession: React.FC = () => {
                   Sign in to save your insights and track your progress
                 </p>
                 <button
-                  onClick={handleLogin}
+                  onClick={() => navigate('/auth')}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
                 >
                   Sign In to Save
