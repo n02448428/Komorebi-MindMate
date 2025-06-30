@@ -62,7 +62,7 @@ const LandingPage: React.FC = () => {
           /* Landing Content */
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-8">
-              <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6 leading-tight">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-gray-800 mb-6 leading-tight">
                 Your AI companion for
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">
                   mindful reflection
@@ -204,8 +204,8 @@ const LandingPage: React.FC = () => {
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-xs ${
           timeOfDay.period === 'morning' 
-            ? 'text-white' 
-            : 'text-gray-900'
+            ? 'text-gray-900' 
+            : 'text-white'
         }`}>
           🔒 All data stored locally & privately on your device
         </p>

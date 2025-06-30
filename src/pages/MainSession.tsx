@@ -664,50 +664,49 @@ const MainSession: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        {/* Left side - Title (only shown when controls are visible) */}
-        <AnimatePresence>
-          {showControls && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="absolute left-6 top-6"
-            >
-              <div className={`text-2xl font-bold ${
-                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-              }`}>
-                Komorebi
-              </div>
-              {videoEnabled && (
-                <div className={`text-sm font-medium mt-0.5 ${
-                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  {getSceneDisplayName(currentScene)}
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Right side - Controls Container (always positioned on the right) */}
-        <div className="absolute right-6 top-6 flex items-center gap-3">
-          {/* Animated Controls Panel */}
+        <div className="flex items-center justify-between w-full">
+          {/* Left side - Title (only shown when controls are visible) */}
           <AnimatePresence>
             {showControls && (
               <motion.div
-                initial="hidden"
-                animate="visible"
-                exit="hidden"
-                variants={controlsVariants}
-                className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
-                  sessionType === 'morning' 
-                    ? 'bg-white/20' 
-                    : 'bg-white/10'
-                }`}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
               >
-                {/* Background Controls */}
-                <div className="flex gap-2">
+                <div className={`text-2xl font-bold ${
+                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Komorebi
+                </div>
+                {videoEnabled && (
+                  <div className={`text-sm font-medium mt-0.5 ${
+                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    {getSceneDisplayName(currentScene)}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Right side - Controls Container */}
+          <div className="relative flex items-center gap-3">
+            {/* Animated Controls Panel */}
+            <AnimatePresence>
+              {showControls && (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  variants={controlsVariants}
+                  className={`absolute right-full mr-3 grid grid-cols-3 gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+                    sessionType === 'morning' 
+                      ? 'bg-white/20' 
+                      : 'bg-white/10'
+                  }`}
+                >
+                  {/* Background Controls */}
                   <button
                     onClick={toggleVideoBackground}
                     title={videoEnabled ? 'Hide video background' : 'Show video background'}
@@ -719,7 +718,6 @@ const MainSession: React.FC = () => {
                   >
                     {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                  
                   {videoEnabled && (
                     <>
                       <button
@@ -733,7 +731,6 @@ const MainSession: React.FC = () => {
                       >
                         <SkipForward className="w-4 h-4" />
                       </button>
-                      
                       <button
                         onClick={handleRandomScene}
                         title="Random scene"
@@ -747,17 +744,10 @@ const MainSession: React.FC = () => {
                       </button>
                     </>
                   )}
-                </div>
 
-                {/* Separator */}
-                <div className={`w-px h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
-
-                {/* Session Controls */}
-                <button
-                  onClick={handleNewSession}
-                  title="Start fresh session"
+                  <button
+                    onClick={handleNewSession}
+                    title="Start fresh session"
                   className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
@@ -767,42 +757,36 @@ const MainSession: React.FC = () => {
                   <RefreshCw className="w-4 h-4" />
                 </button>
 
-                {/* Separator */}
-                <div className={`w-px h-6 ${
-                  sessionType === 'morning' ? 'bg-gray-400/30' : 'bg-white/30'
-                }`} />
+                  {/* User Controls */}
+                  {!user && (
+                    <button
+                      onClick={handleLogin}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                      title="Sign In"
+                    >
+                      <LogIn className="w-4 h-4" />
+                    </button>
+                  )}
+                  
+                  {user && !user.isPro && (
+                    <button
+                      onClick={handleUpgrade}
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                          : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                      }`}
+                      title="Upgrade to Pro"
+                    >
+                      <Crown className="w-4 h-4" />
+                    </button>
+                  )}
 
-                {/* User Controls */}
-                {!user && (
-                  <button
-                    onClick={handleLogin}
-                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
-                      sessionType === 'morning'
-                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
-                  >
-                    <LogIn className="w-3 h-3" />
-                    <span className="text-xs font-medium">Sign In</span>
-                  </button>
-                )}
-                
-                {user && !user.isPro && (
-                  <button
-                    onClick={handleUpgrade}
-                    className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
-                      sessionType === 'morning'
-                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
-                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
-                    }`}
-                  >
-                    <Crown className="w-3 h-3" />
-                    <span className="text-xs font-medium">Pro</span>
-                  </button>
-                )}
-
-                {user && (
-                  <>
+                  {user && (
                     <button
                       onClick={handleInsights}
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
@@ -810,9 +794,13 @@ const MainSession: React.FC = () => {
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
+                      title="Your Journey"
                     >
                       <User className="w-4 h-4" />
                     </button>
+                  )}
+                  
+                  {user && (
                     <button
                       onClick={handleSettings}
                       className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
@@ -820,27 +808,28 @@ const MainSession: React.FC = () => {
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
+                      title="Settings"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* Universal Toggle Button - Always positioned in top right */}
-          <button
-            onClick={() => setShowControls(!showControls)}
-            className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${
-              sessionType === 'morning'
-                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                : 'bg-white/10 hover:bg-white/20 text-white'
-            }`}
-            title={showControls ? 'Hide controls' : 'Show controls'}
-          >
-            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </button>
+            {/* Universal Toggle Button */}
+            <button
+              onClick={() => setShowControls(!showControls)}
+              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+                sessionType === 'morning'
+                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                  : 'bg-white/10 hover:bg-white/20 text-white'
+              }`}
+              title={showControls ? 'Hide controls' : 'Show controls'}
+            >
+              {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -986,8 +975,8 @@ const MainSession: React.FC = () => {
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-xs ${
           sessionType === 'morning' 
-            ? 'text-white' 
-            : 'text-gray-900'
+            ? 'text-gray-900' 
+            : 'text-white'
         }`}>
           🔒 All data stored locally & privately on your device
         </p>

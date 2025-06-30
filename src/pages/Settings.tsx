@@ -504,8 +504,8 @@ const Settings: React.FC = () => {
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-xs ${
           timeOfDay.period === 'morning' 
-            ? 'text-white' 
-            : 'text-gray-900'
+            ? 'text-gray-900' 
+            : 'text-white'
         }`}>
           🔒 All data stored locally & privately on your device
         </p>
