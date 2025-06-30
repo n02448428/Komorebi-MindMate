@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // AI Chat Service
 export const aiChatService = {
   async sendMessage(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[], userName?: string) {
-    console.log('🤖 [AI Service] Starting request:', { 
+    console.log('🤖 AI Service called with:', { 
       messageLength: message.length, 
       sessionType, 
       historyLength: conversationHistory.length, 
@@ -21,52 +21,43 @@ export const aiChatService = {
     });
     
     try {
-      console.log('🌐 [AI Service] Attempting Supabase function call...');
+      console.log('🌐 Attempting Supabase function call...');
       
-      // Create a timeout for the function call
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout after 60 seconds')), 60000);
-      });
-      
-      // Race the function call against timeout
-      const functionCall = supabase.functions.invoke('ai-chat', {
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message,
           sessionType,
           conversationHistory,
           userName: userName || undefined,
         },
-      });
-      
-      const result = await Promise.race([functionCall, timeoutPromise]) as { data: any; error: any };
-      const { data, error } = result;
+      })
 
       if (error) {
-        console.error('❌ [AI Service] Supabase function error:', error);
+        console.error('❌ Supabase function error:', error);
         // If Supabase function fails, use local fallback
-        console.warn('🔄 [AI Service] Using local fallback due to error');
+        console.warn('🔄 Using local fallback AI response');
         return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
       }
       
-      console.log('✅ [AI Service] Supabase response received:', data);
+      console.log('✅ Supabase AI response received:', data);
       
       // Validate response
       if (!data || !data.message) {
-        console.warn('⚠️ [AI Service] Invalid response format, using fallback:', data);
+        console.warn('⚠️ Invalid response from AI service, using fallback:', data);
         return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
       }
       
       return data;
     } catch (error) {
-      console.error('❌ [AI Service] Complete failure:', error);
-      console.warn('🔄 [AI Service] Using local fallback due to exception');
+      console.error('❌ AI Chat Service Error:', error);
+      console.warn('🔄 AI service failed completely, using local fallback');
       return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
     }
   },
 
   // Local fallback AI response system
-  getLocalAIResponse(message: string, sessionType: 'morning' | 'evening', _conversationHistory: any[], userName?: string) {
-    console.log('🏠 [Local AI] Generating response:', { 
+  getLocalAIResponse(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[], userName?: string) {
+    console.log('🏠 Local AI response generator called:', { 
       messageLength: message.length, 
       sessionType, 
       userName: userName || 'anonymous' 
@@ -76,6 +67,9 @@ export const aiChatService = {
     const nameContext = userName ? ` ${userName}` : '';
     
     // Analyze conversation context
+    const recentMessages = conversationHistory.slice(-4); // Last 4 messages for context
+    const userMessages = recentMessages.filter(msg => msg.role === 'user').map(msg => msg.content.toLowerCase()).join(' ');
+    
     let response = '';
     
     if (sessionType === 'morning') {
@@ -129,7 +123,7 @@ export const aiChatService = {
       source: 'local_fallback'
     };
     
-    console.log('🏠 [Local AI] Response generated:', responseData);
+    console.log('🏠 Local AI response generated:', responseData);
     return responseData;
   },
 

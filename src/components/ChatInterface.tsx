@@ -12,7 +12,7 @@ interface ChatInterfaceProps {
   disabled?: boolean;
   timeOfDay: 'morning' | 'evening';
   isImmersive?: boolean;
-  messagesUntilInsight?: number;
+  messagesRemaining?: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -23,7 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   disabled = false,
   timeOfDay,
   isImmersive = false,
-  messagesUntilInsight
+  messagesRemaining
 }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,15 +46,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    console.log('💬 [ChatInterface] Submit triggered:', { 
-      hasInput: !!inputValue.trim(), 
-      inputLength: inputValue.trim().length,
-      isLoading, 
-      disabled 
-    });
-    
+    console.log('💬 ChatInterface handleSubmit called:', { inputValue: inputValue.trim(), isLoading, disabled });
     if (inputValue.trim() && !isLoading && !disabled) {
-      console.log('💬 [ChatInterface] Calling onSendMessage');
+      console.log('💬 Calling onSendMessage with:', inputValue.trim());
       onSendMessage(inputValue.trim());
       setInputValue('');
       
@@ -63,14 +57,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (inputRef.current) inputRef.current.style.height = 'auto';
       }, 0);
     } else {
-      console.log('💬 [ChatInterface] Submit blocked - conditions not met');
+      console.log('💬 Submit blocked:', { hasInput: !!inputValue.trim(), isLoading, disabled });
     }
   }, [inputValue, isLoading, disabled, onSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      console.log('💬 [ChatInterface] Enter key pressed');
+      console.log('💬 Enter key pressed, calling handleSubmit');
       handleSubmit(e);
     }
   };
@@ -117,11 +111,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className={`flex-shrink-0 backdrop-blur-md bg-white/10 border border-white/20 p-3 md:p-4 ${
         isImmersive ? 'rounded-3xl mt-4' : 'rounded-b-3xl border-x border-b'
       }`}>
-        {messagesUntilInsight !== undefined && messagesUntilInsight > 0 && (
+        {messagesRemaining !== undefined && messagesRemaining <= 2 && (
           <div className={`text-xs text-center mb-2 ${
             timeOfDay === 'morning' ? 'text-amber-700' : 'text-amber-300'
           }`}>
-            {messagesUntilInsight} messages until insight card generation available
+            {messagesRemaining} messages remaining in free session
           </div>
         )}
         

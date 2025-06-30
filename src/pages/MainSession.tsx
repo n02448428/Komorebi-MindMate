@@ -106,6 +106,10 @@ const MainSession: React.FC = () => {
   const handleNewSession = () => {
     // Archive current session if it has meaningful content
     if (messages.length > 1) {
+      const sessionEndTime = new Date();
+      const sessionDuration = sessionStartTime 
+        ? Math.round((sessionEndTime.getTime() - sessionStartTime.getTime()) / (1000 * 60))
+        : 0;
 
       archiveCurrentSession(
         Date.now().toString(),
@@ -193,16 +197,6 @@ const MainSession: React.FC = () => {
           videoEnabled={videoEnabled}
           showControls={showControls}
           onToggleControls={() => setShowControls(!showControls)}
-          user={user}
-          profile={profile}
-          onToggleVideo={toggleVideoBackground}
-          onNextScene={handleNextScene}
-          onRandomScene={handleRandomScene}
-          onNewSession={handleNewSession}
-          onLogin={handleLogin}
-          onUpgrade={handleUpgrade}
-          onInsights={handleInsights}
-          onSettings={handleSettings}
         />
         
         <SessionStatusMessages
@@ -243,16 +237,6 @@ const MainSession: React.FC = () => {
           videoEnabled={videoEnabled}
           showControls={showControls}
           onToggleControls={() => setShowControls(!showControls)}
-          user={user}
-          profile={profile}
-          onToggleVideo={toggleVideoBackground}
-          onNextScene={handleNextScene}
-          onRandomScene={handleRandomScene}
-          onNewSession={handleNewSession}
-          onLogin={handleLogin}
-          onUpgrade={handleUpgrade}
-          onInsights={handleInsights}
-          onSettings={handleSettings}
         />
         
         <SessionStatusMessages
@@ -315,7 +299,7 @@ const MainSession: React.FC = () => {
             isLoading={isLoading}
             timeOfDay={sessionType as 'morning' | 'evening'}
             isImmersive={!showControls}
-            messagesUntilInsight={userMessagesSinceLastInsight > 0 ? 5 - (userMessagesSinceLastInsight % 5) : 5}
+            messagesRemaining={profile?.is_pro === true ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Session Prompts */}

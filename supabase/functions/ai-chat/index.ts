@@ -34,38 +34,26 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // Declare sessionType outside try block for catch block access
-  let sessionType: 'morning' | 'evening' = 'morning'
-
   try {
-    const { message, sessionType: requestSessionType, conversationHistory, userName }: ChatRequest = await req.json()
-    
-    // Assign the actual sessionType from request
-    sessionType = requestSessionType
+    const { message, sessionType, conversationHistory, userName }: ChatRequest = await req.json()
 
-    console.log('[EdgeFunction] AI Chat called:', { 
+    console.log('AI Chat function called with:', { 
       messageLength: message.length, 
       sessionType, 
       historyLength: conversationHistory.length,
       userName: userName || 'anonymous'
     });
-    
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
-      console.error('[EdgeFunction] OpenAI API key not configured');
-      
-      // Return a proper fallback response instead of error
+      console.error('OpenAI API key not configured');
       return new Response(
         JSON.stringify({
-          message: sessionType === 'morning' 
-            ? "I'm here with you this morning. What intentions would you like to explore today?"
-            : "Welcome to this evening's reflection. What's been on your mind today?",
-          timestamp: new Date().toISOString(),
-          source: 'fallback'
+          error: 'OpenAI API key not configured',
+          details: 'The AI service is not properly configured. Please contact support.'
         }),
         {
-          status: 200,
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       );
@@ -104,7 +92,6 @@ serve(async (req) => {
     ]
 
     // Call OpenAI API
-    console.log('[EdgeFunction] Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -112,7 +99,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o', // Faster and more efficient for conversational AI
+        model: 'gpt-4', // Consider using gpt-4o for better conversational flow if available and cost-effective
         messages: messages,
         max_tokens: 150, // Keep this reasonable to encourage conciseness
         temperature: 0.7, // A good balance for creativity and coherence
@@ -120,7 +107,6 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
-      console.error('[EdgeFunction] OpenAI API error:', response.status, response.statusText);
       throw new Error(`OpenAI API error: ${response.statusText}`)
     }
 
@@ -128,18 +114,14 @@ serve(async (req) => {
     const aiMessage = data.choices[0]?.message?.content
 
     if (!aiMessage) {
-      console.error('[EdgeFunction] No AI message in response');
       throw new Error('No response from AI')
     }
 
-    console.log('[EdgeFunction] Success - AI response received');
-    
     // Return response without isComplete to prevent auto-session termination
     return new Response(
       JSON.stringify({
         message: aiMessage,
         timestamp: new Date().toISOString(),
-        source: 'openai'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -147,19 +129,14 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('[EdgeFunction] AI Chat Error:', error)
-    
-    // Return fallback response instead of error (sessionType is now accessible)
+    console.error('AI Chat Error:', error)
     return new Response(
       JSON.stringify({
-        message: sessionType === 'morning' 
-          ? "I'm here to help you set intentions for your day. What would you like to explore?"
-          : "Let's take a moment to reflect on your day together. What comes to mind?",
-        timestamp: new Date().toISOString(),
-        source: 'error_fallback'
+        error: 'Failed to process chat message',
+        details: error.message
       }),
       {
-        status: 200,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
-import { NatureScene } from '../types';
 import { getSceneDisplayName } from '../utils/sceneUtils';
 import SessionControlsPanel from './SessionControlsPanel';
 
