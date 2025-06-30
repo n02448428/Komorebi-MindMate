@@ -11,16 +11,16 @@ import { ArrowLeft, Star, MessageCircle, Calendar, Sparkles, Crown, Settings, Ar
 
 const InsightsGallery: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [insights, setInsights] = useState<InsightCardType[]>([]);
   const [pinnedInsight, setPinnedInsight] = useState<InsightCardType | null>(null);
 
   const timeOfDay = getTimeOfDay();
   const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
 
-  const getDisplayName = () => {
-    if (user?.name) return user.name;
-    if (user?.email) return user.email.split('@')[0];
+  const getDisplayName = (): string => {
+    if (profile?.name) return profile.name;
+    if (user?.email) return user.email.split('@')[0] || 'Friend';
     return 'Friend';
   };
 
@@ -191,7 +191,7 @@ const InsightsGallery: React.FC = () => {
             <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              {user?.isPro ? (
+              {profile?.is_pro ? (
                 <Crown className={`w-8 h-8 mx-auto mb-2 ${
                   timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                 }`} />
@@ -203,7 +203,7 @@ const InsightsGallery: React.FC = () => {
               <div className={`text-lg md:text-xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {user?.isPro ? 'Pro' : 'Free'}
+                {profile?.is_pro ? 'Pro' : 'Free'}
               </div>
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'

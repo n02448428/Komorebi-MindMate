@@ -8,8 +8,8 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, 
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout, updateUserName, updateUserEmail } = useAuth();
-  const [userName, setUserName] = useState(user?.name || '');
+  const { user, profile, logout, updateProfile } = useAuth();
+  const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
   const [emailEditMode, setEmailEditMode] = useState(false);
@@ -18,7 +18,7 @@ const Settings: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Stabilize timeOfDay and currentScene to prevent background changes while typing
-  const [timeOfDay] = useState(() => getTimeOfDay(user?.name));
+  const [timeOfDay] = useState(() => getTimeOfDay(profile?.name));
   const [currentScene] = useState(() => getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening'));
 
   // Get video background setting
@@ -96,8 +96,8 @@ const Settings: React.FC = () => {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (updateUserName && user) {
-      updateUserName(userName);
+    if (updateProfile && user) {
+      updateProfile({ name: userName });
       setNameSaved(true);
       setNameEditMode(false);
       setTimeout(() => setNameSaved(false), 3000);
@@ -106,8 +106,12 @@ const Settings: React.FC = () => {
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (updateUserEmail && user) {
-      updateUserEmail(userEmail);
+    if (user && updateProfile) {
+      // Note: This is typically handled by Supabase Auth directly, not through profile updates.
+      // For now, just update the local state and inform user this would require auth change
+      alert("Email changes require authentication verification. This feature isn't fully implemented yet.");
+      
+      // For now, just confirm the action visually
       setEmailSaved(true);
       setEmailEditMode(false);
       setTimeout(() => setEmailSaved(false), 3000);
@@ -328,11 +332,11 @@ const Settings: React.FC = () => {
                         ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
                         : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
                     }`}>
-                      {user?.isPro ? 'Pro Plan' : 'Free Plan'}
+                    {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
                     </span>
                   </div>
                 </div>
-                {!user?.isPro && (
+                {!profile?.is_pro && (
                   <button
                     onClick={() => navigate('/upgrade')}
                     className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
@@ -341,7 +345,7 @@ const Settings: React.FC = () => {
                   </button>
                 )}
               </div>
-            </div>
+                <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
           )}
 
           {/* Appearance Settings */}
@@ -477,8 +481,8 @@ const Settings: React.FC = () => {
                   timeOfDay.period === 'morning'
                     ? 'bg-white/20 hover:bg-white/30 text-gray-800'
                     : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
+                }`}>
+                  {profile?.is_pro && (
                 Sign Out
               </button>
             </div>

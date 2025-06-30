@@ -16,7 +16,7 @@ import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkl
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +32,12 @@ const MainSession: React.FC = () => {
     morningCompleted: false,
     eveningCompleted: false,
     messagesUsed: 0,
-    maxMessages: user?.isPro ? 999 : 4,
+    maxMessages: profile?.is_pro ? 999 : 4,
     lastInsightGeneratedDate: undefined,
   });
 
-  const timeOfDay = getTimeOfDay(user?.name);
-  const sessionTimeLimit = getSessionTimeLimit(user?.isPro || false);
+  const timeOfDay = getTimeOfDay(profile?.name);
+  const sessionTimeLimit = getSessionTimeLimit(profile?.is_pro || false);
   
   // Determine which session type to use based on time
   const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
@@ -107,7 +107,7 @@ const MainSession: React.FC = () => {
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
           lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
           lastInsightGeneratedDate: parsed.lastInsightGeneratedDate ? new Date(parsed.lastInsightGeneratedDate) : undefined,
-          maxMessages: user?.isPro ? 999 : 4,
+          maxMessages: profile?.is_pro ? 999 : 4,
         });
       }
     } else {
@@ -178,7 +178,7 @@ const MainSession: React.FC = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (isLoading || (!user?.isPro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+    if (isLoading || (!profile?.is_pro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
 
     // Start session timer if not already started
     if (!sessionStartTime) {
@@ -270,7 +270,7 @@ const MainSession: React.FC = () => {
 
   const generateInsightCard = async (sessionMessages: Message[]) => {
     // Check if free user has already generated insight today
-    if (!user?.isPro && sessionLimits.lastInsightGeneratedDate && hasCompletedTodaysInsight(sessionLimits.lastInsightGeneratedDate)) {
+    if (!profile?.is_pro && sessionLimits.lastInsightGeneratedDate && hasCompletedTodaysInsight(sessionLimits.lastInsightGeneratedDate)) {
       alert('You can only generate one insight per day on the free plan. Upgrade to Pro for unlimited insights!');
       setShowGenerateInsightButton(true);
       return;
@@ -517,7 +517,7 @@ const MainSession: React.FC = () => {
   };
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
-  if (user && !user.isPro && hasCompletedBothToday) {
+  if (user && !profile?.is_pro && hasCompletedBothToday) {
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -651,7 +651,7 @@ const MainSession: React.FC = () => {
               Your {sessionTimeLimit}-minute session has ended.
             </p>
 
-            {!user?.isPro && (
+            {!profile?.is_pro && (
               <div className={`p-6 rounded-2xl backdrop-blur-sm mb-8 ${
                 sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
               } border border-white/20 max-w-md mx-auto`}>
@@ -825,7 +825,7 @@ const MainSession: React.FC = () => {
                   </button>
                 )}
                 
-                {user && !user.isPro && (
+                {user && !profile?.is_pro && (
                   <button
                     onClick={handleUpgrade}
                     className={`w-11 h-11 md:w-10 md:h-10 p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
@@ -929,7 +929,7 @@ const MainSession: React.FC = () => {
             isLoading={isLoading}
             timeOfDay={sessionType}
             isImmersive={!showControls}
-            messagesRemaining={user?.isPro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+            messagesRemaining={profile?.is_pro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Insight Generation Button */}
