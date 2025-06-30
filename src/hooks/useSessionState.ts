@@ -122,6 +122,7 @@ export const useSessionState = ({
 
     try {
       // Convert messages to conversation history format (excluding the greeting message)
+      // Build conversation history from CURRENT messages (don't include the new user message twice)
       const conversationHistory = messages
         .filter(msg => msg.id !== 'greeting')
         .map(msg => ({
@@ -130,16 +131,26 @@ export const useSessionState = ({
         }));
 
       console.log('📝 Conversation history being sent:', conversationHistory.length, 'messages');
+      console.log('📝 Last few messages:', conversationHistory.slice(-2));
       
       // Use Supabase AI chat service
       console.log('🤖 Calling AI service...');
       
-      const response = await aiChatService.sendMessage(
-        content, 
-        sessionType, 
-        conversationHistory, 
-        profile?.name
-      );
+      // Create a timeout promise that rejects after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('AI service timeout after 30 seconds')), 30000);
+      });
+      
+      // Race the AI service call against the timeout
+      const response = await Promise.race([
+        aiChatService.sendMessage(
+          content, 
+          sessionType, 
+          conversationHistory, 
+          profile?.name
+        ),
+        timeoutPromise
+      ]);
       
       console.log('✅ Received AI response:', response);
       
@@ -160,17 +171,35 @@ export const useSessionState = ({
     } catch (error) {
       console.error('❌ Error in handleSendMessage:', error);
       
-      // Fallback error message
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: sessionType === 'morning' 
-          ? "I'm here with you this morning. What's stirring in your heart as this new day begins?"
-          : "I'm here for this evening reflection. How was your day, and what would you like to explore together?",
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      console.log('🆘 Adding emergency message:', errorMessage);
-      setMessages(prev => [...prev, errorMessage]);
+      // Final fallback - create a basic response
+      try {
+        console.log('🔄 Trying direct fallback...');
+        const fallbackResponse = aiChatService.getLocalAIResponse(content, sessionType, [], profile?.name);
+        console.log('🔄 Direct fallback response:', fallbackResponse);
+        
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: fallbackResponse.message,
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        console.log('🔄 Adding fallback message:', aiMessage);
+        setMessages(prev => [...prev, aiMessage]);
+      } catch (fallbackError) {
+        console.error('❌ Even direct fallback failed:', fallbackError);
+        
+        // Absolute last resort - hardcoded response
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: sessionType === 'morning' 
+            ? "I'm here with you this morning. What's stirring in your heart as this new day begins?"
+            : "I'm here for this evening reflection. How was your day, and what would you like to explore together?",
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        console.log('🆘 Adding emergency message:', errorMessage);
+        setMessages(prev => [...prev, errorMessage]);
+      }
     } finally {
       console.log('✨ Setting isLoading to false');
       setIsLoading(false);
