@@ -700,7 +700,7 @@ const MainSession: React.FC = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 50 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`absolute right-full mr-3 grid grid-cols-3 md:grid-cols-6 gap-4 backdrop-blur-sm border border-white/20 rounded-2xl p-4 ${
+                  className={`absolute right-full mr-4 grid grid-cols-3 md:grid-cols-6 gap-6 backdrop-blur-sm border border-white/20 rounded-2xl p-6 ${
                     sessionType === 'morning' 
                       ? 'bg-white/20' 
                       : 'bg-white/10'
@@ -710,7 +710,7 @@ const MainSession: React.FC = () => {
                   <button
                     onClick={toggleVideoBackground}
                     title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                    className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                       sessionType === 'morning'
                         ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                         : 'bg-white/10 hover:bg-white/20 text-white'
@@ -723,7 +723,7 @@ const MainSession: React.FC = () => {
                       <button
                         onClick={handleNextScene}
                         title="Next scene"
-                        className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
@@ -734,7 +734,7 @@ const MainSession: React.FC = () => {
                       <button
                         onClick={handleRandomScene}
                         title="Random scene"
-                        className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                           sessionType === 'morning'
                             ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                             : 'bg-white/10 hover:bg-white/20 text-white'
@@ -748,7 +748,7 @@ const MainSession: React.FC = () => {
                   <button
                     onClick={handleNewSession}
                     title="Start fresh session"
-                    className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                    className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
@@ -761,7 +761,7 @@ const MainSession: React.FC = () => {
                   {!user && (
                     <button
                       onClick={handleLogin}
-                      className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
@@ -775,7 +775,7 @@ const MainSession: React.FC = () => {
                   {user && !user.isPro && (
                     <button
                       onClick={handleUpgrade}
-                      className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
                           : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
@@ -789,7 +789,7 @@ const MainSession: React.FC = () => {
                   {user && (
                     <button
                       onClick={handleInsights}
-                      className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
@@ -803,7 +803,7 @@ const MainSession: React.FC = () => {
                   {user && (
                     <button
                       onClick={handleSettings}
-                      className={`p-3 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                      className={`p-4 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
@@ -820,7 +820,7 @@ const MainSession: React.FC = () => {
             {/* Universal Toggle Button */}
             <button
               onClick={() => setShowControls(!showControls)}
-              className={`p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
+             className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${
                 sessionType === 'morning'
                   ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                   : 'bg-white/10 hover:bg-white/20 text-white'
