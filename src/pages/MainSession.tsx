@@ -8,7 +8,6 @@
                     >
                       <Settings className="w-4 h-4" />
                     </button>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
