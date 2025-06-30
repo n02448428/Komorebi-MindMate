@@ -10,21 +10,21 @@
                     </button>
               </motion.div>
 
-            {/* Toggle Controls Button */}
-            <button
-              onClick={() => setShowControls(!showControls)}
-              className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-                sessionType === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-            >
-              {showControls ? (
-                <ChevronRight className="w-5 h-5" />
-              ) : (
-                <ChevronLeft className="w-5 h-5" />
-              )}
-            </button>
+              {/* Toggle Controls Button */}
+              <button
+                onClick={() => setShowControls(!showControls)}
+                className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                {showControls ? (
+                  <ChevronRight className="w-5 h-5" />
+                ) : (
+                  <ChevronLeft className="w-5 h-5" />
+                )}
+              </button>
               </>
             )}
           </AnimatePresence>
