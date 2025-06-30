@@ -9,8 +9,6 @@ import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucid
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Using profile even if TypeScript thinks it's unused (it's referenced in JSX conditionals)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showCanceledMessage, setShowCanceledMessage] = useState(false);
