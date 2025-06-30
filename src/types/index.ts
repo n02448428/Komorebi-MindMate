@@ -1,29 +1,9 @@
 export interface User {
   id: string;
   email: string;
-  // Other properties would come from Supabase Auth
-}
-
-export interface Profile {
-  id: string;
-  email: string;
   name?: string;
-  is_pro: boolean;
-  created_at?: string;
-  updated_at?: string;
-  timezone?: string;
-  last_session_type?: string;
-  preferred_scene?: string;
-}
-
-export type TimeOfDayPeriod = 'morning' | 'evening' | 'day' | 'night';
-
-export interface TimeOfDay {
-  period: TimeOfDayPeriod;
-  isSessionTime: boolean;
-  nextSessionTime?: Date;
-  greeting: string;
-  shouldAutoStart: boolean;
+  isPro: boolean;
+  createdAt: Date;
 }
 
 export interface Message {

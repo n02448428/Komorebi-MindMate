@@ -9,8 +9,8 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, logout, updateProfile } = useAuth();
-  const [userName, setUserName] = useState<string>(profile?.name || '');
-  const [userEmail, setUserEmail] = useState<string>(user?.email || '');
+  const [userName, setUserName] = useState(profile?.name || '');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
   const [emailEditMode, setEmailEditMode] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
@@ -96,7 +96,7 @@ const Settings: React.FC = () => {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user && updateProfile) {
+    if (updateProfile && user) {
       updateProfile({ name: userName });
       setNameSaved(true);
       setNameEditMode(false);

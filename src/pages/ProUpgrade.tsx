@@ -9,7 +9,7 @@ import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucid
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showCanceledMessage, setShowCanceledMessage] = useState(false);
 

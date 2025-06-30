@@ -1,7 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { Profile } from '../types';
+
+interface Profile {
+  id: string;
+  email: string;
+  name?: string;
+  is_pro?: boolean;
+  timezone?: string;
+  last_session_type?: string;
+  preferred_scene?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -87,26 +98,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // For demo purposes, allow a special dev login that works without Supabase
-      if (email === 'dev@example.com' && password === 'password') {
-        const mockUser = {
-          id: 'dev-user-id',
-          email: 'dev@example.com',
-        };
-        
-        const mockProfile = {
-          id: 'dev-user-id',
-          email: 'dev@example.com',
-          name: 'Developer',
-          is_pro: true,
-          created_at: new Date().toISOString()
-        };
-        
-        setUser(mockUser as User);
-        setProfile(mockProfile);
-        return;
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
