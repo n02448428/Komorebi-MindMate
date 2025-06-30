@@ -2,16 +2,15 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
+import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
 
 const ProUpgrade: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const location = useLocation();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [showCanceledMessage, setShowCanceledMessage] = useState(false);
   const [showCanceledMessage, setShowCanceledMessage] = useState(false);
 
   const timeOfDay = getTimeOfDay();
@@ -31,19 +30,6 @@ const ProUpgrade: React.FC = () => {
     }
   }, [location.search]);
 
-  // Check for canceled payment
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    if (urlParams.get('canceled') === 'true') {
-      setShowCanceledMessage(true);
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-      
-      // Hide message after 5 seconds
-      setTimeout(() => setShowCanceledMessage(false), 5000);
-    }
-  }, [location.search]);
   const plans = [
     {
       id: 'monthly',
@@ -183,18 +169,6 @@ const ProUpgrade: React.FC = () => {
               </div>
             )}
             
-            {/* Canceled Payment Message */}
-            {showCanceledMessage && (
-              <div className={`mb-6 p-4 rounded-2xl backdrop-blur-sm border border-yellow-400/50 ${
-                timeOfDay.period === 'morning' ? 'bg-yellow-100/80' : 'bg-yellow-900/50'
-              }`}>
-                <p className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-yellow-800' : 'text-yellow-200'
-                }`}>
-                  Payment was canceled. You can try again anytime!
-                </p>
-              </div>
-            )}
             
             <div className="flex items-center justify-center gap-3 mb-3">
               <Crown className={`w-10 h-10 ${

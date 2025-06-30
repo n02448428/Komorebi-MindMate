@@ -10,7 +10,6 @@ interface SubscriptionCreateRequest {
   userId: string
   planId: string
   userEmail: string
-  userEmail: string
 }
 
 serve(async (req) => {
@@ -41,20 +40,11 @@ serve(async (req) => {
       'yearly': 'price_1RfZPrBCN5mG3pauUhrThsAY',   // Replace with your actual yearly price ID
     }
 
-    // Map plan IDs to Stripe Price IDs
-    // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
-    const priceMapping: Record<string, string> = {
-      'monthly': 'price_1RfZPrBCN5mG3pauaN7vrQf1', // Replace with your actual monthly price ID
-      'yearly': 'price_1RfZPrBCN5mG3pauUhrThsAY',   // Replace with your actual yearly price ID
-    }
-
     const priceId = priceMapping[planId]
     if (!priceId) {
       throw new Error(`Invalid plan ID: ${planId}`)
     }
-    const session = await stripe.checkout.sessions.create({
-    }
-    )
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -74,8 +64,7 @@ serve(async (req) => {
         planId: planId,
       },
     })
-      line_items: [
-      ]
+
     return new Response(
       JSON.stringify({
         url: session.url,
@@ -85,11 +74,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
-          userId: userId,
-      JSON.stringify({
-        url: session.url,
-        sessionId: session.id,
-      }),
   } catch (error) {
     console.error('Subscription Creation Error:', error)
     return new Response(

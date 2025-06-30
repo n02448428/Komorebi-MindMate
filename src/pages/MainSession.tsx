@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
@@ -17,7 +16,6 @@ import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkl
 
 const MainSession: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const location = useLocation();
   const { user } = useAuth();
   const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
