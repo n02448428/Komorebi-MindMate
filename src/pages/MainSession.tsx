@@ -664,172 +664,171 @@ const MainSession: React.FC = () => {
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6">
-        <div className="flex items-center justify-between w-full">
-          {/* Left side - Title (only shown when controls are visible) */}
+        {/* Left side - Title (only shown when controls are visible) */}
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="absolute left-6 top-6"
+            >
+              <div className={`text-2xl font-bold ${
+                sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Komorebi
+              </div>
+              {videoEnabled && (
+                <div className={`text-sm font-medium mt-0.5 ${
+                  sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                }`}>
+                  {getSceneDisplayName(currentScene)}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Right side - Controls (always in top right) */}
+        <div className="absolute right-6 top-6 flex items-center gap-3">
+          {/* Animated Controls Panel */}
           <AnimatePresence>
             {showControls && (
               <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
+                initial={{ width: 0, opacity: 0, padding: 0 }}
+                animate={{ width: 'auto', opacity: 1, padding: '0.5rem' }}
+                exit={{ width: 0, opacity: 0, padding: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`flex flex-wrap gap-x-2 gap-y-2 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden ${
+                  sessionType === 'morning' 
+                    ? 'bg-white/20' 
+                    : 'bg-white/10'
+                } max-w-[calc(100vw-8rem)]`}
               >
-                <div className={`text-2xl font-bold ${
-                  sessionType === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Komorebi
-                </div>
-                {videoEnabled && (
-                  <div className={`text-sm font-medium mt-0.5 ${
-                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                  }`}>
-                    {getSceneDisplayName(currentScene)}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Right side - Controls Container */}
-          <div className="relative flex items-center gap-3">
-            {/* Animated Controls Panel */}
-            <AnimatePresence>
-              {showControls && (
-                <motion.div
-                  initial={{ width: 0, opacity: 0, padding: 0 }}
-                  animate={{ width: 'auto', opacity: 1, padding: '0.5rem' }}
-                  exit={{ width: 0, opacity: 0, padding: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`mr-4 flex flex-wrap gap-x-2 gap-y-2 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden ${
-                    sessionType === 'morning' 
-                      ? 'bg-white/20' 
-                      : 'bg-white/10'
-                  } max-w-[calc(100vw-8rem)]`}
-                >
-                  {/* Background Controls */}
-                  <button
-                    onClick={toggleVideoBackground}
-                    title={videoEnabled ? 'Hide video background' : 'Show video background'}
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                      sessionType === 'morning'
-                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                        : 'bg-white/10 hover:bg-white/20 text-white'
-                    }`}
-                  >
-                    {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                  {videoEnabled && (
-                    <>
-                      <button
-                        onClick={handleNextScene}
-                        title="Next scene"
-                        className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={handleRandomScene}
-                        title="Random scene"
-                        className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                          sessionType === 'morning'
-                            ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                            : 'bg-white/10 hover:bg-white/20 text-white'
-                        }`}
-                      >
-                        <Shuffle className="w-4 h-4" />
-                      </button>
-                    </>
-                  )}
-
-                  <button
-                    onClick={handleNewSession}
-                    title="Start fresh session"
-                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                {/* Background Controls */}
+                <button
+                  onClick={toggleVideoBackground}
+                  title={videoEnabled ? 'Hide video background' : 'Show video background'}
+                  className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                     sessionType === 'morning'
                       ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                       : 'bg-white/10 hover:bg-white/20 text-white'
                   }`}
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  {videoEnabled ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
-
-                  {/* User Controls */}
-                  {!user && (
+                {videoEnabled && (
+                  <>
                     <button
-                      onClick={handleLogin}
+                      onClick={handleNextScene}
+                      title="Next scene"
                       className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
-                      title="Sign In"
                     >
-                      <LogIn className="w-4 h-4" />
+                      <SkipForward className="w-4 h-4" />
                     </button>
-                  )}
-                  
-                  {user && !user.isPro && (
                     <button
-                      onClick={handleUpgrade}
-                      className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
-                          : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
-                      }`}
-                      title="Upgrade to Pro"
-                    >
-                      <Crown className="w-4 h-4" />
-                    </button>
-                  )}
-
-                  {user && (
-                    <button
-                      onClick={handleInsights}
+                      onClick={handleRandomScene}
+                      title="Random scene"
                       className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
                         sessionType === 'morning'
                           ? 'bg-white/20 hover:bg-white/30 text-gray-700'
                           : 'bg-white/10 hover:bg-white/20 text-white'
                       }`}
-                      title="Your Journey"
                     >
-                      <User className="w-4 h-4" />
+                      <Shuffle className="w-4 h-4" />
                     </button>
-                  )}
-                  
-                  {user && (
-                    <button
-                      onClick={handleSettings}
-                      className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-                        sessionType === 'morning'
-                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                          : 'bg-white/10 hover:bg-white/20 text-white'
-                      }`}
-                      title="Settings"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </>
+                )}
 
-            {/* Universal Toggle Button */}
-            <button
-              onClick={() => setShowControls(!showControls)}
-             className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center ${
-                sessionType === 'morning'
-                  ? 'bg-white/20 hover:bg-white/30 text-gray-700'
-                  : 'bg-white/10 hover:bg-white/20 text-white'
-              }`}
-              title={showControls ? 'Hide controls' : 'Show controls'}
-            >
-              {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
-          </div>
+                <button
+                  onClick={handleNewSession}
+                  title="Start fresh session"
+                  className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                  sessionType === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
+                {/* User Controls */}
+                {!user && (
+                  <button
+                    onClick={handleLogin}
+                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                    title="Sign In"
+                  >
+                    <LogIn className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {user && !user.isPro && (
+                  <button
+                    onClick={handleUpgrade}
+                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-700'
+                        : 'bg-amber-600/20 hover:bg-amber-600/30 text-amber-300'
+                    }`}
+                    title="Upgrade to Pro"
+                  >
+                    <Crown className="w-4 h-4" />
+                  </button>
+                )}
+
+                {user && (
+                  <button
+                    onClick={handleInsights}
+                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                    title="Your Journey"
+                  >
+                    <User className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {user && (
+                  <button
+                    onClick={handleSettings}
+                    className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                      sessionType === 'morning'
+                        ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Universal Toggle Button - Always in top right corner */}
+          <button
+            onClick={() => setShowControls(!showControls)}
+           className={`w-10 h-10 p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center justify-center ${
+              sessionType === 'morning'
+                ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                : 'bg-white/10 hover:bg-white/20 text-white'
+            }`}
+            title={showControls ? 'Hide controls' : 'Show controls'}
+          >
+            {showControls ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
