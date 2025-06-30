@@ -37,10 +37,26 @@ serve(async (req) => {
   try {
     const { message, sessionType, conversationHistory, userName }: ChatRequest = await req.json()
 
+    console.log('AI Chat function called with:', { 
+      messageLength: message.length, 
+      sessionType, 
+      historyLength: conversationHistory.length,
+      userName: userName || 'anonymous'
+    });
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured')
+      console.error('OpenAI API key not configured');
+      return new Response(
+        JSON.stringify({
+          error: 'OpenAI API key not configured',
+          details: 'The AI service is not properly configured. Please contact support.'
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      );
     }
 
     // Prepare system prompt based on session type

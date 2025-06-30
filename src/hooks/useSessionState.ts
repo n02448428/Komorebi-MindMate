@@ -118,8 +118,11 @@ export const useSessionState = ({
           content: msg.content
         }));
 
+      console.log('Conversation history being sent:', conversationHistory);
       // Use Supabase AI chat service
       const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, profile?.name);
+      
+      console.log('Received AI response:', response);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -132,13 +135,27 @@ export const useSessionState = ({
 
     } catch (error) {
       console.error('Error getting AI response:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "I'm having trouble connecting right now. Let's try again in a moment.",
-        role: 'assistant',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      
+      // This should not happen now with the fallback system, but just in case
+      try {
+        const fallbackResponse = await aiChatService.getLocalAIResponse(content, sessionType, [], profile?.name);
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: fallbackResponse.message,
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      } catch (fallbackError) {
+        console.error('Even fallback failed:', fallbackError);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: "I'm here with you. Let's continue our conversation. What would you like to explore?",
+          role: 'assistant',
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
     } finally {
       setIsLoading(false);
     }
