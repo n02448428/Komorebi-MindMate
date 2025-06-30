@@ -177,10 +177,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           if (session?.user) {
             await loadUserData(session.user);
+          } else {
+            // If no user session is found, automatically start a guest session
+            // This ensures everyone can use the app immediately
+            setIsGuest(true);
           }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // On any error, still allow guest access
+        setIsGuest(true);
       } finally {
         setLoading(false);
       }
@@ -195,8 +201,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
+          // User logged in, disable guest mode
+          setIsGuest(false);
           await loadUserData(session.user);
         } else {
+          // No user session, enable guest mode
+          setIsGuest(true);
           setProfile(null);
           setSubscription(null);
           setPreferences(null);

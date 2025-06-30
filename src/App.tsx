@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import LandingPage from './pages/LandingPage';
 import MainSession from './pages/MainSession';
 import InsightsGallery from './pages/InsightsGallery';
 import ChatArchive from './pages/ChatArchive';
@@ -20,50 +19,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  return user ? <>{children}</> : <Navigate to="/" replace />;
+  return user ? <>{children}</> : <Navigate to="/session" replace />;
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
-
   return (
     <Routes>
-      <Route 
-        path="/" 
-        element={user ? <Navigate to="/session" replace /> : <LandingPage />} 
-      />
-      <Route
-        path="/session"
-        element={
-          <ProtectedRoute>
-            <MainSession />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/insights"
-        element={
-          <ProtectedRoute>
-            <InsightsGallery />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/all-insights"
-        element={
-          <ProtectedRoute>
-            <AllInsights />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/archive"
-        element={
-          <ProtectedRoute>
-            <ChatArchive />
-          </ProtectedRoute>
-        }
-      />
+      {/* Root route always goes to session - no landing page */}
+      <Route path="/" element={<Navigate to="/session" replace />} />
+      
+      {/* Main session - accessible to everyone (logged in users and guests) */}
+      <Route path="/session" element={<MainSession />} />
+      
+      {/* Insights pages - accessible to everyone */}
+      <Route path="/insights" element={<InsightsGallery />} />
+      <Route path="/all-insights" element={<AllInsights />} />
+      <Route path="/archive" element={<ChatArchive />} />
+      
+      {/* These routes still require authentication */}
       <Route
         path="/upgrade"
         element={
@@ -80,7 +53,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      
+      {/* Redirect any unknown routes to session */}
+      <Route path="*" element={<Navigate to="/session" replace />} />
     </Routes>
   );
 }
