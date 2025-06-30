@@ -1,6 +1,5 @@
 /**
  * Performance utilities and monitoring
- * Performance: Provides tools for measuring and optimizing app performance
  */
 
 // Performance monitoring utilities
@@ -21,7 +20,7 @@ export class PerformanceMonitor {
     const duration = performance.now() - startTime;
     this.measurements.delete(name);
     
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`🎯 Performance: ${name} took ${duration.toFixed(2)}ms`);
     }
     
@@ -84,24 +83,10 @@ export function throttle<T extends (...args: any[]) => any>(
   };
 }
 
-// Lazy component loader with error boundary
-export function createLazyComponent<T extends React.ComponentType<any>>(
-  importFunc: () => Promise<{ default: T }>,
-  fallback: React.ComponentType = () => <div>Loading...</div>
-) {
-  const LazyComponent = React.lazy(importFunc);
-  
-  return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => (
-    <React.Suspense fallback={<fallback />}>
-      <LazyComponent {...props} ref={ref} />
-    </React.Suspense>
-  ));
-}
-
 // Memory usage monitoring (development only)
 export const memoryMonitor = {
   logUsage: () => {
-    if (process.env.NODE_ENV === 'development' && 'memory' in performance) {
+    if (import.meta.env.DEV && 'memory' in performance) {
       const memory = (performance as any).memory;
       console.log('📊 Memory Usage:', {
         used: `${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`,
@@ -112,20 +97,10 @@ export const memoryMonitor = {
   },
   
   startMonitoring: (intervalMs: number = 10000) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       const interval = setInterval(() => memoryMonitor.logUsage(), intervalMs);
       return () => clearInterval(interval);
     }
     return () => {};
-  }
-};
-
-// Bundle size analysis helper
-export const bundleAnalyzer = {
-  logComponentSize: (componentName: string, Component: React.ComponentType) => {
-    if (process.env.NODE_ENV === 'development') {
-      const size = JSON.stringify(Component).length;
-      console.log(`📦 Component ${componentName}: ~${size} bytes`);
-    }
   }
 };
