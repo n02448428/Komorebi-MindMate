@@ -3,27 +3,51 @@ import { useAuth } from '../context/AuthContext';
 import { Sparkles, Play, ArrowRight } from 'lucide-react';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
+import { useState, useEffect } from 'react';
 
 const LandingPage: React.FC = () => {
   const { login, signup, loading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: ''
+  });
   const [error, setError] = useState('');
   const [showLogin, setShowLogin] = useState(false);
+  const [isSignUpMode, setIsSignUpMode] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const timeOfDay = getTimeOfDay();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Reset form errors when switching modes
+  useEffect(() => {
+    setError('');
+  }, [isSignUpMode]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await login(email, password);
+      if (isSignUpMode) {
+        await signup(formData.email, formData.password, formData.name);
+      } else {
+        await login(formData.email, formData.password);
+      }
     } catch (err) {
-      setError('Login failed. Please check your credentials and try again.');
+      const message = isSignUpMode
+        ? 'Sign up failed. Please try a different email or password.'
+        : 'Login failed. Please check your credentials and try again.';
+      setError(message);
     }
   };
 
   const handleQuickLogin = async () => {
     setError('');
+    setDemoLoading(true);
     try {
       // Create a temporary demo user with a unique email
       const timestamp = Date.now();
@@ -33,7 +57,13 @@ const LandingPage: React.FC = () => {
       await signup(demoEmail, demoPassword, 'Demo User');
     } catch (err) {
       setError('Quick login failed. Please try again.');
+      setDemoLoading(false);
     }
+  };
+
+  const toggleAuthMode = () => {
+    setIsSignUpMode(!isSignUpMode);
+    setError('');
   };
 
   return (
@@ -111,10 +141,10 @@ const LandingPage: React.FC = () => {
               <button
                 onClick={handleQuickLogin}
                 disabled={loading}
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50"
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold text-lg transition-all duration-200 flex items-center justify-center gap-2 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Play className="w-5 h-5" />
-                {loading ? 'Starting...' : 'Try Demo'}
+                {demoLoading ? 'Starting...' : 'Try Demo'}
               </button>
               <button
                 onClick={() => setShowLogin(true)}
@@ -133,51 +163,86 @@ const LandingPage: React.FC = () => {
           /* Login Form */
           <div className="w-full max-w-md mx-auto">
             <div className="backdrop-blur-md bg-white/20 rounded-3xl p-8 border border-white/20">
+              {/* Form Header */}
               <div className="text-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                  Welcome to Komorebi
+                  {isSignUpMode ? "Create Your Account" : "Welcome Back"}
                 </h2>
                 <p className="text-gray-700">
-                  Sign in to begin your mindful journey
+                  {isSignUpMode ? "Sign up to start your mindful journey" : "Sign in to continue your mindful journey"}
                 </p>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              {/* Auth Form */}
+              <form onSubmit={handleAuth} className="space-y-4">
+                {/* Name Field (only for signup) */}
+                {isSignUpMode && (
+                  <div>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
+                      placeholder="Your name"
+                    />
+                  </div>
+                )}
+
+                {/* Email Field */}
                 <div>
                   <input
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                    placeholder="Enter your email"
+                    placeholder="Email address"
                     required
                   />
                 </div>
 
+                {/* Password Field */}
                 <div>
                   <input
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
                     className="w-full p-4 rounded-2xl border-0 bg-white/20 text-gray-800 placeholder-gray-600 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm"
-                    placeholder="Enter your password"
+                    placeholder="Password"
                     required
                   />
                 </div>
 
+                {/* Error Message */}
                 {error && (
                   <div className="p-3 rounded-2xl bg-red-100/80 border border-red-300/50 text-red-700 text-sm backdrop-blur-sm">
                     {error}
                   </div>
                 )}
 
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={loading}
                   className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Signing In...' : 'Sign In'}
+                  {loading ? (isSignUpMode ? 'Creating Account...' : 'Signing In...') : (isSignUpMode ? 'Sign Up' : 'Sign In')}
                 </button>
+                
+                {/* Auth Mode Toggle */}
+                <div className="text-center mt-4">
+                  <button 
+                    type="button"
+                    onClick={toggleAuthMode}
+                    className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
+                  >
+                    {isSignUpMode 
+                      ? "Already have an account? Sign In" 
+                      : "Don't have an account? Sign Up"}
+                  </button>
+                </div>
               </form>
 
               <div className="mt-6 pt-6 border-t border-white/20">
