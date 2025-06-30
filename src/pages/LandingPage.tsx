@@ -5,7 +5,7 @@ import NatureVideoBackground from '../components/NatureVideoBackground';
 import { getTimeOfDay } from '../utils/timeUtils';
 
 const LandingPage: React.FC = () => {
-  const { login, loading } = useAuth();
+  const { login, signup, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +25,12 @@ const LandingPage: React.FC = () => {
   const handleQuickLogin = async () => {
     setError('');
     try {
-      await login('demo@komorebi.app', 'password123');
+      // Create a temporary demo user with a unique email
+      const timestamp = Date.now();
+      const demoEmail = `demo-${timestamp}@komorebi.app`;
+      const demoPassword = 'password123';
+      
+      await signup(demoEmail, demoPassword, 'Demo User');
     } catch (err) {
       setError('Quick login failed. Please try again.');
     }
