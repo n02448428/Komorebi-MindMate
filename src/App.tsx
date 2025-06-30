@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import AuthPage from './pages/AuthPage';
 import MainSession from './pages/MainSession';
 import InsightsGallery from './pages/InsightsGallery';
 import ChatArchive from './pages/ChatArchive';
@@ -19,7 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  return user ? <>{children}</> : <Navigate to="/session" replace />;
+  return user ? <>{children}</> : <Navigate to="/auth" replace />;
 }
 
 function AppRoutes() {
@@ -27,6 +28,9 @@ function AppRoutes() {
     <Routes>
       {/* Root route always goes to session - no landing page */}
       <Route path="/" element={<Navigate to="/session" replace />} />
+      
+      {/* Authentication page for sign up/sign in */}
+      <Route path="/auth" element={<AuthPage />} />
       
       {/* Main session - accessible to everyone (logged in users and guests) */}
       <Route path="/session" element={<MainSession />} />
