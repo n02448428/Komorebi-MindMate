@@ -53,6 +53,8 @@ serve(async (req) => {
       throw new Error(`Invalid plan ID: ${planId}`)
     }
     const session = await stripe.checkout.sessions.create({
+    }
+    )
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -73,6 +75,7 @@ serve(async (req) => {
       },
     })
       line_items: [
+      ]
     return new Response(
       JSON.stringify({
         url: session.url,
