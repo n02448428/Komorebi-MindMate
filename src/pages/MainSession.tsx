@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { aiChatService } from '../lib/supabase';
+import { PerformanceMonitor } from '../utils/performanceUtils';
 import { Message, InsightCard as InsightCardType, SessionLimits, NatureScene, ArchivedChatSession } from '../types';
 import { getTimeOfDay, hasCompletedTodaysSession, getNextAvailableSession, getSessionTimeLimit } from '../utils/timeUtils';
 import { hasCompletedTodaysInsight } from '../utils/timeUtils';
@@ -14,9 +15,11 @@ import SessionLimitReached from '../components/SessionLimitReached';
 import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const MainSession: React.FC = () => {
+  console.log('MainSession rendering');
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile } = useAuth();
+  console.log('Auth state:', { user: !!user, profile: !!profile, isPro: profile?.is_pro });
   const videoBackgroundRef = useRef<NatureVideoBackgroundRef>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +35,15 @@ const MainSession: React.FC = () => {
     morningCompleted: false,
     eveningCompleted: false,
     messagesUsed: 0,
-    maxMessages: profile?.is_pro ? 999 : 4,
+    maxMessages: 4, // Default value before profile loads
     lastInsightGeneratedDate: undefined,
   });
 
   const timeOfDay = getTimeOfDay(profile?.name);
-  const sessionTimeLimit = getSessionTimeLimit(profile?.is_pro || false);
+  const sessionTimeLimit = useMemo(() => 
+    getSessionTimeLimit(profile?.is_pro || false), 
+    [profile?.is_pro]
+  );
   
   // Determine which session type to use based on time
   const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
@@ -49,7 +55,7 @@ const MainSession: React.FC = () => {
   ) : false;
 
   // Check if session time has expired (only for non-Pro users)
-  const isSessionExpired = !user?.isPro && sessionStartTime && 
+  const isSessionExpired = !profile?.is_pro && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
   // Check for successful payment redirect
@@ -81,6 +87,13 @@ const MainSession: React.FC = () => {
     }
   }, [location.search, setMessages]);
   useEffect(() => {
+    console.log('Main useEffect running', { 
+      hasUser: !!user, 
+      hasProfile: !!profile,
+      isPro: profile?.is_pro, 
+      sessionType 
+    });
+    
     // Load settings from localStorage
     const savedVideoEnabled = localStorage.getItem('video-background-enabled');
     if (savedVideoEnabled !== null) {
@@ -107,9 +120,20 @@ const MainSession: React.FC = () => {
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
           lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
           lastInsightGeneratedDate: parsed.lastInsightGeneratedDate ? new Date(parsed.lastInsightGeneratedDate) : undefined,
-          maxMessages: profile?.is_pro ? 999 : 4,
+          maxMessages: profile?.is_pro ? 999 : 4, // Update max messages based on pro status
+        });
+        console.log('Loaded session limits:', { 
+          limits: parsed, 
+          maxMessages: profile?.is_pro ? 999 : 4 
         });
       }
+    } else if (profile) {
+      // Update max messages when profile loads but no saved limits exist
+      setSessionLimits(prev => ({
+        ...prev,
+        maxMessages: profile?.is_pro ? 999 : 4
+      }));
+      console.log('Reset session limits for logged in user with maxMessages:', profile?.is_pro ? 999 : 4);
     } else {
       // Reset session limits for non-logged in users
       setSessionLimits({
@@ -119,6 +143,7 @@ const MainSession: React.FC = () => {
         maxMessages: 4,
         lastInsightGeneratedDate: undefined,
       });
+      console.log('Reset session limits for non-logged in user');
     }
 
     // Load session start time
@@ -178,7 +203,10 @@ const MainSession: React.FC = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (isLoading || (!profile?.is_pro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+    if (isLoading || (!profile?.is_pro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) {
+      console.log('Send message blocked:', { isLoading, messagesUsed: sessionLimits.messagesUsed, maxMessages: sessionLimits.maxMessages, isSessionExpired });
+      return;
+    }
 
     // Start session timer if not already started
     if (!sessionStartTime) {
@@ -225,6 +253,7 @@ const MainSession: React.FC = () => {
       // Use Supabase AI chat service
       const response = await aiChatService.sendMessage(content, sessionType, conversationHistory, user?.name || undefined);
       
+      console.log('Received AI response');
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: response.message,
@@ -485,14 +514,16 @@ const MainSession: React.FC = () => {
     }
 
     // Reset to just the greeting message
+    console.log('Resetting session to greeting message');
     const greetingMessage: Message = {
       id: 'greeting',
       content: timeOfDay.greeting,
       role: 'assistant',
       timestamp: new Date(),
     };
+    console.log('Setting initial greeting message');
     setMessages([greetingMessage]);
-    setInsightCard(null);
+  }, [user, profile, sessionType, timeOfDay.greeting]);
     setUserMessagesSinceLastInsight(0);
     setShowGenerateInsightButton(false);
     const startTime = new Date();
@@ -517,7 +548,15 @@ const MainSession: React.FC = () => {
   };
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
+  console.log('Rendering decision:', { 
+    hasUser: !!user, 
+    isPro: profile?.is_pro,
+    hasCompletedBoth: hasCompletedBothToday,
+    isExpired: isSessionExpired
+  });
+
   if (user && !profile?.is_pro && hasCompletedBothToday) {
+    console.log('Rendering SessionLimitReached component');
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -577,6 +616,7 @@ const MainSession: React.FC = () => {
 
   // Show session expired message
   if (sessionStartTime && isSessionExpired) {
+    console.log('Rendering session expired view');
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -694,7 +734,8 @@ const MainSession: React.FC = () => {
   }
 
   return (
-    <div className="h-screen relative overflow-hidden flex flex-col">
+    <div className="h-screen relative overflow-hidden flex flex-col"  
+      ref={(el) => el && console.log('Main component rendered successfully')}>
       {videoEnabled && (
         <NatureVideoBackground 
           ref={videoBackgroundRef}
@@ -926,7 +967,7 @@ const MainSession: React.FC = () => {
           <ChatInterface
             messages={messages}
             onSendMessage={handleSendMessage}
-            isLoading={isLoading}
+            isLoading={isLoading || false}
             timeOfDay={sessionType}
             isImmersive={!showControls}
             messagesRemaining={profile?.is_pro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
