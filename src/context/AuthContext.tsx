@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import { getStorageItem, setStorageItem, getSessionStorageItem, setSessionStorageItem } from '../utils/storageUtils';
 
 interface Profile {
   id: string;
@@ -17,10 +18,12 @@ interface Profile {
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  isGuest: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name?: string) => Promise<void>;
   logout: () => Promise<void>;
+  startGuestSession: () => void;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
 }
 
@@ -41,6 +44,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -60,6 +64,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getInitialSession().then(() => {
       // Listen for auth changes after initial session check
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setIsGuest(false); // Reset guest state on any auth change
         const newUser = session?.user ?? null;
         setUser(newUser);
         newUser ? await fetchProfile(newUser.id) : setProfile(null);
@@ -143,8 +148,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Logout error:', error);
       throw error;
     } finally {
+      setIsGuest(false);
       setLoading(false);
     }
+  };
+
+  const startGuestSession = () => {
+    setIsGuest(true);
+    setUser(null);
+    setProfile(null);
+    setLoading(false);
   };
 
   const updateProfile = async (updates: Partial<Profile>): Promise<void> => {
@@ -173,10 +186,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     profile,
+    isGuest,
     loading,
     login,
     signup,
     logout,
+    startGuestSession,
     updateProfile,
   };
 
