@@ -1,7 +1,12 @@
-Here's the fixed version with all missing closing brackets added:
-
-```typescript
-                    <Settings className="w-4 h-4" />
+                    <button
+                      onClick={handleSettingsClick}
+                      className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
+                        sessionType === 'morning'
+                          ? 'bg-white/20 hover:bg-white/30 text-gray-700'
+                          : 'bg-white/10 hover:bg-white/20 text-white'
+                      }`}
+                    >
+                      <Settings className="w-4 h-4" />
                     </button>
                   </>
                 )}
