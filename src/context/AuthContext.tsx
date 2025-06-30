@@ -55,131 +55,33 @@ const LandingPage: React.FC = () => {
         await login(demoEmail, demoPassword);
       } else if (checkError) {
         // Other error
-        
-        if (session) {
-          // Get user profile data
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (error) {
-            console.error('Error fetching user profile:', error);
-            throw error;
-          }
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: profile?.name || undefined,
-            isPro: profile?.is_pro || false,
-            createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
-          });
-        }
-      } catch (error) {
-        console.error('Session fetch error:', error);
-      } finally {
-        setLoading(false);
+        throw checkError;
+      } else {
+        // User exists, just login
+        await login(demoEmail, demoPassword);
       }
-    };
-
-    fetchSession();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          // Get user profile after sign-in
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: profile?.name || undefined,
-            isPro: profile?.is_pro || false,
-            createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
-          });
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
-      }
-    );
-
-    // Cleanup subscription on unmount
-    return () => {
-    if (!user || !name.trim()) return;
-
-    // Update in Supabase
-    supabase
-      .from('profiles')
-      .update({ name: name.trim() })
-      .eq('id', user.id)
-      .then(({ error }) => {
-      setLoading(false);
-          console.error('Error updating user name:', error);
-          return;
-        }
-  const logout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        throw error;
-      }
-      setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch (err) {
+      setError('Demo login failed. Please try again.');
     }
-      .then(({ error }) => {
-        if (error) {
-          console.error('Error updating user email:', error);
-          return;
-        }
-
-        // Update local state
-        setUser({ ...user, email });
-    loading,
   };
 
   return (
-    setLoading(true);
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Video */}
+      <NatureVideoBackground timeOfDay={timeOfDay} />
 
-      if (error) {
+      {/* Floating Sparkles */}
+      <div className="absolute top-4 right-4 z-10">
+        <Sparkles className="w-6 h-6 text-amber-500" />
+      </div>
+
+      {/* Login Button - Top Right */}
+      <div className="absolute top-4 right-16 z-10">
+        {!showLogin && (
+          <button
+            onClick={() => setShowLogin(true)}
             className="px-4 py-2 rounded-2xl backdrop-blur-sm bg-white/20 hover:bg-white/30 text-gray-800 font-medium transition-all duration-200 border border-white/20"
           >
-
-      if (data.user) {
-        // Get user profile data
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-          console.error('Error fetching user profile:', profileError);
-        }
-
-        // Set user data
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          name: profile?.name || undefined,
-          isPro: profile?.is_pro || false,
-          createdAt: profile?.created_at ? new Date(profile.created_at) : new Date(),
-        });
-      } else {
-        throw new Error('Invalid credentials');
-      }
             Sign In
           </button>
         )}
