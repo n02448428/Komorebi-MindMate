@@ -696,15 +696,15 @@ const MainSession: React.FC = () => {
             <AnimatePresence>
               {showControls && (
                 <motion.div
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 50 }}
+                  initial={{ width: 0, opacity: 0, padding: 0 }}
+                  animate={{ width: 'auto', opacity: 1, padding: '0.5rem' }}
+                  exit={{ width: 0, opacity: 0, padding: 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                  className={`absolute right-full mr-4 grid grid-cols-3 md:grid-cols-6 gap-x-2 gap-y-4 backdrop-blur-sm border border-white/20 rounded-2xl p-4 ${
+                  className={`mr-4 flex flex-wrap gap-x-2 gap-y-2 backdrop-blur-sm border border-white/20 rounded-2xl overflow-hidden ${
                     sessionType === 'morning' 
                       ? 'bg-white/20' 
                       : 'bg-white/10'
-                  }`}
+                  } max-w-[calc(100vw-8rem)]`}
                 >
                   {/* Background Controls */}
                   <button
