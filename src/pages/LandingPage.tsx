@@ -15,18 +15,17 @@ const LandingPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     try {
       await login(email, password);
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError('Login failed. Please check your credentials and try again.');
     }
   };
 
   const handleQuickLogin = async () => {
     setError('');
     try {
-      await login('dev@example.com', 'password');
+      await login('demo@komorebi.app', 'password123');
     } catch (err) {
       setError('Quick login failed. Please try again.');
     }
@@ -185,7 +184,7 @@ const LandingPage: React.FC = () => {
                   Quick Demo Access
                 </button>
                 <p className="text-xs text-center mt-2 text-gray-600">
-                  Try the experience with demo@komorebi.app
+                  Try the experience with demo@komorebi.app/password123
                 </p>
               </div>
 

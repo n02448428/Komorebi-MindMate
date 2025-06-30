@@ -34,7 +34,6 @@ serve(async (req) => {
     const stripe = new Stripe(stripeSecretKey)
 
     // Map plan IDs to Stripe Price IDs
-    // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
     const priceMapping: Record<string, string> = {
       'monthly': 'price_1RfaIqBGpVuNZeuZm5jNUGNU', 
       'yearly': 'price_1RfaJHBGpVuNZeuZpWeAuc6J'
