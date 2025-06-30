@@ -279,13 +279,6 @@ const MainSession: React.FC = () => {
         videoEnabled={videoEnabled}
         showControls={showControls}
         onToggleControls={() => setShowControls(!showControls)}
-      />
-
-      {/* Controls Panel */}
-      <SessionControlsPanel
-        sessionType={sessionType}
-        showControls={showControls}
-        videoEnabled={videoEnabled}
         user={user}
         profile={profile}
         onToggleVideo={toggleVideoBackground}
@@ -299,7 +292,7 @@ const MainSession: React.FC = () => {
       />
 
       {/* Main Content */}
-      <div className="relative z-10 pt-32 pb-2 px-6 flex-1 flex flex-col min-h-0">
+      <div className="relative z-10 pt-24 pb-2 px-6 flex-1 flex flex-col min-h-0">
         <div className="w-full flex-1 flex flex-col min-h-0">
           <ChatInterface
             messages={messages}

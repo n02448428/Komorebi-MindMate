@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { getSceneDisplayName } from '../utils/sceneUtils';
+import SessionControlsPanel from './SessionControlsPanel';
 
 interface SessionHeaderProps {
   sessionType: 'morning' | 'evening';
@@ -9,6 +10,16 @@ interface SessionHeaderProps {
   videoEnabled: boolean;
   showControls: boolean;
   onToggleControls: () => void;
+  user: any;
+  profile: any;
+  onToggleVideo: () => void;
+  onNextScene: () => void;
+  onRandomScene: () => void;
+  onNewSession: () => void;
+  onLogin: () => void;
+  onUpgrade: () => void;
+  onInsights: () => void;
+  onSettings: () => void;
 }
 
 const SessionHeader: React.FC<SessionHeaderProps> = ({
@@ -16,7 +27,17 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
   currentScene,
   videoEnabled,
   showControls,
-  onToggleControls
+  onToggleControls,
+  user,
+  profile,
+  onToggleVideo,
+  onNextScene,
+  onRandomScene,
+  onNewSession,
+  onLogin,
+  onUpgrade,
+  onInsights,
+  onSettings
 }) => {
   return (
     <div className="absolute top-0 left-0 right-0 z-50 p-6">
@@ -46,8 +67,26 @@ const SessionHeader: React.FC<SessionHeaderProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Right side - Universal Toggle Button */}
-      <div className="absolute right-6 top-6">
+      {/* Right side - Controls Container */}
+      <div className="absolute right-6 top-6 flex items-center gap-3">
+        {/* Animated Controls Panel */}
+        <SessionControlsPanel
+          sessionType={sessionType}
+          showControls={showControls}
+          videoEnabled={videoEnabled}
+          user={user}
+          profile={profile}
+          onToggleVideo={onToggleVideo}
+          onNextScene={onNextScene}
+          onRandomScene={onRandomScene}
+          onNewSession={onNewSession}
+          onLogin={onLogin}
+          onUpgrade={onUpgrade}
+          onInsights={onInsights}
+          onSettings={onSettings}
+        />
+        
+        {/* Universal Toggle Button */}
         <button
           onClick={onToggleControls}
           className={`p-2 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 z-[60] ${

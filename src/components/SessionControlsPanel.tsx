@@ -58,20 +58,19 @@ const SessionControlsPanel: React.FC<SessionControlsPanelProps> = ({
   };
 
   return (
-    <div className="absolute right-20 top-6">
-      <AnimatePresence>
-        {showControls && (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            variants={controlsVariants}
-            className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
-              sessionType === 'morning' 
-                ? 'bg-white/20' 
-                : 'bg-white/10'
-            }`}
-          >
+    <AnimatePresence>
+      {showControls && (
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+          variants={controlsVariants}
+          className={`flex items-center gap-2 backdrop-blur-sm border border-white/20 rounded-2xl p-2 ${
+            sessionType === 'morning' 
+              ? 'bg-white/20' 
+              : 'bg-white/10'
+          }`}
+        >
             {/* Background Controls */}
             <div className="flex gap-2">
               <button
@@ -191,10 +190,9 @@ const SessionControlsPanel: React.FC<SessionControlsPanelProps> = ({
                 </button>
               </>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
