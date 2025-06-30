@@ -1094,16 +1094,19 @@ const MainSession: React.FC = () => {
               <div className={`p-4 rounded-2xl backdrop-blur-sm border border-white/20 max-w-md mx-auto ${
                 sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
               }`}>
-                <p className={`text-sm mb-3 ${
+                <p className="text-sm mb-3">
+                  <strong>Guest Mode:</strong> Your data will be lost when you close the browser. 
+                  Create a free account to save your insights and conversations.
+                </p>
                   sessionType === 'morning' ? 'text-gray-700' : 'text-white'
                 }`}>
                   Sign in to save your insights and track your progress
                 </p>
                 <button
-                  onClick={handleLogin}
+                  onClick={() => navigate('/auth')}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
                 >
-                  Sign In to Save
+                  Sign Up to Save
                 </button>
               </div>
             </motion.div>

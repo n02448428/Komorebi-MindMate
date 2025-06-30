@@ -102,7 +102,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                 </button>
               ) : (
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/session')}
                   className={`p-2 rounded-xl backdrop-blur-sm border ${
                     isHome ? 'border-amber-400/50' : 'border-white/20'
                   } transition-all duration-200 ${getButtonStyle()}`}
@@ -204,63 +204,8 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
               transition={{ duration: 0.3, delay: 0.2 }}
               className="flex items-center gap-2"
             >
-              <button
-                onClick={() => navigate('/settings')}
-                className={`p-2 rounded-xl backdrop-blur-sm border ${
-                  isSettings ? 'border-amber-400/50' : 'border-white/20'
-                } transition-all duration-200 ${getButtonStyle()}`}
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-
-              {user || isGuest ? (
-                <div className="flex items-center gap-2">
-                  {user && profile?.is_pro !== true && (
-                    <button
-                      onClick={() => navigate('/upgrade')}
-                      className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
-                      title="Upgrade to Pro"
-                    >
-                      <Crown className="w-4 h-4" />
-                      <span className="hidden sm:inline">Pro</span>
-                    </button>
-                  )}
-                    
-                    {isGuest && (
-                      <button
-                        onClick={() => navigate('/')}
-                        className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
-                        title="Create free account to save your data">Sign Up</button>
-                    )}
-
-                  <div className="relative group">
-                    <button
-                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
-                      title={user?.email || 'User menu'}
-                    >
-                      <User className="w-5 h-5" />
-                    </button>
-                    
-                    {user && (
-                      /* Dropdown menu - only for logged in users */
-                      <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-                        <div className="p-2">
-                          <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
-                            {user?.email}
-                          </div>
-                          <button
-                            onClick={handleLogout}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:bg-white/10 ${getTextColor()}`}
-                          >
-                            Sign Out
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
+              {/* Guest User - Show Sign In/Sign Up button only */}
+              {!user && !isGuest && (
                 <button
                   onClick={() => navigate('/auth')}
                   className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 ${getButtonStyle()}`}
@@ -270,10 +215,74 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
                   <span className="hidden sm:inline text-sm font-medium">Sign In</span>
                 </button>
               )}
+
+              {/* Guest User - Show Sign Up prompt */}
+              {isGuest && (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
+                  title="Create free account to save your data"
+                >
+                  Sign Up
+                </button>
+              )}
+
+              {/* Logged In User - Show full navigation */}
+              {user && (
+                <div className="flex items-center gap-2">
+                  {/* Settings Button - Always visible for logged in users */}
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className={`p-2 rounded-xl backdrop-blur-sm border ${
+                      isSettings ? 'border-amber-400/50' : 'border-white/20'
+                    } transition-all duration-200 ${getButtonStyle()}`}
+                    title="Settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+
+                  {/* Pro Upgrade Button - Only for free users */}
+                  {profile?.is_pro !== true && (
+                    <button
+                      onClick={() => navigate('/upgrade')}
+                      className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
+                      title="Upgrade to Pro"
+                    >
+                      <Crown className="w-4 h-4" />
+                      <span className="hidden sm:inline">Pro</span>
+                    </button>
+                  )}
+
+                  {/* User Profile Dropdown */}
+                  <div className="relative group">
+                    <button
+                      className={`p-2 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 ${getButtonStyle()}`}
+                      title={user?.email || 'User menu'}
+                    >
+                      <User className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Dropdown menu */}
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-xl backdrop-blur-sm border border-white/20 bg-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                      <div className="p-2">
+                        <div className={`px-3 py-2 text-xs ${getTextColor()}/80`}>
+                          {user?.email}
+                        </div>
+                        <button
+                          onClick={handleLogout}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 hover:bg-white/10 ${getTextColor()}`}
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
-          
-          {/* Loading indicator while auth state is being determined */}
+
+          {/* Loading state */}
           {showControls && loading && (
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -282,17 +291,6 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
               transition={{ duration: 0.3, delay: 0.2 }}
               className="flex items-center gap-2"
             >
-              <button
-                onClick={() => navigate('/settings')}
-                className={`p-2 rounded-xl backdrop-blur-sm border ${
-                  isSettings ? 'border-amber-400/50' : 'border-white/20'
-                } transition-all duration-200 ${getButtonStyle()}`}
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              
-              {/* Loading placeholder for user controls */}
               <div className={`px-3 py-2 rounded-xl backdrop-blur-sm border border-white/20 ${getButtonStyle()}`}>
                 <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
               </div>
