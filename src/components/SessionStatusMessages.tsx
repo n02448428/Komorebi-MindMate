@@ -147,13 +147,13 @@ const SessionExpiredMessage: React.FC<{
 
 const SessionStatusMessages: React.FC<SessionStatusMessagesProps> = ({
   sessionType,
-  user,
+  user: _user, // Renamed to indicate it's not used in this component but kept for interface compatibility
   profile,
   nextSessionTime,
   sessionTimeLimit,
   onUpgrade,
-  onInsights,
-  onSettings,
+  onInsights: _onInsights, // Renamed to indicate it's not used
+  onSettings: _onSettings, // Renamed to indicate it's not used
   onNewSession
 }) => {
   if (nextSessionTime) {

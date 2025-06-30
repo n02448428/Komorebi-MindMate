@@ -259,13 +259,13 @@ const MainSession: React.FC = () => {
       {videoEnabled && (
         <NatureVideoBackground 
           ref={videoBackgroundRef}
-          scene={currentScene} 
-          timeOfDay={sessionType} 
+          scene={currentScene}
+          timeOfDay={sessionType as 'morning' | 'evening'}
         />
       )}
       {!videoEnabled && (
         <div className={`absolute inset-0 bg-gradient-to-br ${
-          sessionType === 'morning' 
+          (sessionType as 'morning' | 'evening') === 'morning'
             ? 'from-amber-100 via-orange-50 to-yellow-100'
             : 'from-indigo-900 via-purple-900 to-blue-900'
         }`} />
@@ -273,7 +273,7 @@ const MainSession: React.FC = () => {
       
       {/* Header */}
       <SessionHeader
-        sessionType={sessionType}
+        sessionType={sessionType as 'morning' | 'evening'}
         currentScene={currentScene}
         videoEnabled={videoEnabled}
         showControls={showControls}
@@ -297,14 +297,14 @@ const MainSession: React.FC = () => {
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            timeOfDay={sessionType}
+            timeOfDay={sessionType as 'morning' | 'evening'}
             isImmersive={!showControls}
             messagesRemaining={profile?.is_pro === true ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Session Prompts */}
           <SessionPrompts
-            sessionType={sessionType}
+            sessionType={sessionType as 'morning' | 'evening'}
             showControls={showControls}
             user={user}
             isGuest={isGuest}
@@ -327,12 +327,12 @@ const MainSession: React.FC = () => {
               >
                 <div className="text-center mb-4">
                   <h2 className={`text-xl md:text-2xl font-semibold mb-2 ${
-                    sessionType === 'morning' ? 'text-gray-800' : 'text-white'
+                    (sessionType as 'morning' | 'evening') === 'morning' ? 'text-gray-800' : 'text-white'
                   }`}>
-                    Your {sessionType === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
+                    Your {(sessionType as 'morning' | 'evening') === 'morning' ? 'Morning Intention' : 'Evening Reflection'}
                   </h2>
                   <p className={`text-sm ${
-                    sessionType === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                    (sessionType as 'morning' | 'evening') === 'morning' ? 'text-gray-600' : 'text-gray-300'
                   }`}>
                     A reflection from our conversation
                   </p>
@@ -349,7 +349,7 @@ const MainSession: React.FC = () => {
       {/* Privacy Notice */}
       <div className="fixed bottom-2 left-1/2 transform -translate-x-1/2 z-[5]">
         <p className={`text-[10px] sm:text-xs whitespace-nowrap ${
-          sessionType === 'morning' 
+          (sessionType as 'morning' | 'evening') === 'morning'
             ? 'text-gray-900' 
             : 'text-white'
         }`}>

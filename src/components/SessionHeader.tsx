@@ -6,7 +6,7 @@ import SessionControlsPanel from './SessionControlsPanel';
 
 interface SessionHeaderProps {
   sessionType: 'morning' | 'evening';
-  currentScene: string;
+  currentScene: NatureScene;
   videoEnabled: boolean;
   showControls: boolean;
   onToggleControls: () => void;
