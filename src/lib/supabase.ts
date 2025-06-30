@@ -117,14 +117,14 @@ export const aiChatService = {
       }
     }
     
-    const response = {
+    const responseData = {
       message: response,
       timestamp: new Date().toISOString(),
       source: 'local_fallback'
     };
     
-    console.log('🏠 Local AI response generated:', response);
-    return response;
+    console.log('🏠 Local AI response generated:', responseData);
+    return responseData;
   },
 
   async generateInsightCard(sessionMessages: any[], sessionType: 'morning' | 'evening') {
