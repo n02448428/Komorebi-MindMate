@@ -34,8 +34,14 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Declare sessionType outside try block for catch block access
+  let sessionType: 'morning' | 'evening' = 'morning'
+
   try {
-    const { message, sessionType, conversationHistory, userName }: ChatRequest = await req.json()
+    const { message, sessionType: requestSessionType, conversationHistory, userName }: ChatRequest = await req.json()
+    
+    // Assign the actual sessionType from request
+    sessionType = requestSessionType
 
     console.log('[EdgeFunction] AI Chat called:', { 
       messageLength: message.length, 
@@ -143,7 +149,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[EdgeFunction] AI Chat Error:', error)
     
-    // Return fallback response instead of error
+    // Return fallback response instead of error (sessionType is now accessible)
     return new Response(
       JSON.stringify({
         message: sessionType === 'morning' 
