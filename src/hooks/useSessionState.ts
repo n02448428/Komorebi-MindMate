@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Message, SessionLimits } from '../types';
 import { aiChatService } from '../lib/supabase';
 import { getTimeOfDay } from '../utils/timeUtils';
@@ -29,7 +29,7 @@ export const useSessionState = ({
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
 
   const timeOfDay = getTimeOfDay(profile?.name);
-  const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
+  const sessionType: 'morning' | 'evening' = timeOfDay.period === 'morning' ? 'morning' : 'evening';
 
   useEffect(() => {
     // Load session start time

@@ -17,7 +17,6 @@ import NatureVideoBackground, { NatureVideoBackgroundRef } from '../components/N
 import ChatInterface from '../components/ChatInterface';
 import InsightCard from '../components/InsightCard';
 import SessionHeader from '../components/SessionHeader';
-import SessionControlsPanel from '../components/SessionControlsPanel';
 import SessionPrompts from '../components/SessionPrompts';
 import SessionStatusMessages from '../components/SessionStatusMessages';
 
@@ -114,7 +113,7 @@ const MainSession: React.FC = () => {
 
       archiveCurrentSession(
         Date.now().toString(),
-        sessionType,
+        sessionType as 'morning' | 'evening',
         messages,
         sessionStartTime,
         currentScene,
@@ -124,8 +123,8 @@ const MainSession: React.FC = () => {
         storage
       );
 
-      // Mark current session type as completed for today
-      completeSession(sessionType, sessionLimits, saveSessionLimits);
+      // Mark current session type as completed for today  
+      completeSession(sessionType as 'morning' | 'evening', sessionLimits, saveSessionLimits);
     }
 
     resetSession();
