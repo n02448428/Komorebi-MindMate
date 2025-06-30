@@ -22,24 +22,24 @@ export const PerformanceMonitor = {
     }
     
     return duration;
-  }
+  },
   
-  static measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
-    this.startMeasurement(name);
+  measureAsync<T>(name: string, fn: () => Promise<T>): Promise<T> {
+    PerformanceMonitor.startMeasurement(name);
     return fn().finally(() => {
       PerformanceMonitor.endMeasurement(name);
     });
-  }
+  },
   
-  static measure<T>(name: string, fn: () => T): T {
-    this.startMeasurement(name);
+  measure<T>(name: string, fn: () => T): T {
+    PerformanceMonitor.startMeasurement(name);
     try {
       return fn();
     } finally {
-      this.endMeasurement(name);
-    };
+      PerformanceMonitor.endMeasurement(name);
+    }
   }
-}
+};
 
 // Debounce utility for expensive operations
 export function debounce<T extends (...args: any[]) => any>(
