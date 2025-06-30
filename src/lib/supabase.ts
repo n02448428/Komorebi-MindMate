@@ -23,23 +23,69 @@ export const aiChatService = {
     try {
       console.log('🌐 Attempting Supabase function call...');
       
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
-        body: {
-          message,
-          sessionType,
-          conversationHistory,
-          userName: userName || undefined,
-        },
-      })
+      // Check Supabase client configuration
+      console.log('🔧 Supabase config check:', {
+        url: supabaseUrl,
+        hasAnonKey: !!supabaseAnonKey,
+        keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING'
+      });
+      
+      // Prepare request body
+      const requestBody = {
+        message,
+        sessionType,
+        conversationHistory,
+        userName: userName || undefined,
+      };
+      
+      console.log('📤 Function request:', {
+        functionName: 'ai-chat',
+        bodyKeys: Object.keys(requestBody),
+        bodySize: JSON.stringify(requestBody).length
+      });
+      
+      // Call Supabase function with timeout
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Function call timeout after 30 seconds')), 30000);
+      });
+      
+      const functionCallPromise = supabase.functions.invoke('ai-chat', {
+        body: requestBody,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('⏳ Waiting for function response...');
+      const { data, error } = await Promise.race([functionCallPromise, timeoutPromise]);
+      
+      console.log('📥 Function call completed:', {
+        hasData: !!data,
+        hasError: !!error,
+        errorType: error?.name,
+        errorMessage: error?.message,
+        dataKeys: data ? Object.keys(data) : []
+      });
 
       if (error) {
-        console.error('❌ Supabase function error:', error);
+        console.error('❌ Supabase function error:', {
+          name: error.name,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         // If Supabase function fails, use local fallback
         console.warn('🔄 Using local fallback AI response');
         return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
       }
       
-      console.log('✅ Supabase AI response received:', data);
+      console.log('✅ Supabase AI response received:', {
+        hasMessage: !!(data && data.message),
+        messageLength: data?.message?.length,
+        responseKeys: data ? Object.keys(data) : [],
+        timestamp: data?.timestamp
+      });
       
       // Validate response
       if (!data || !data.message) {
@@ -49,7 +95,13 @@ export const aiChatService = {
       
       return data
     } catch (error) {
-      console.error('❌ AI Chat Service Error:', error);
+      console.error('❌ AI Chat Service Error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        isNetworkError: error.message?.includes('fetch'),
+        isTimeoutError: error.message?.includes('timeout')
+      });
       console.warn('🔄 AI service failed completely, using local fallback');
       return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
     }
