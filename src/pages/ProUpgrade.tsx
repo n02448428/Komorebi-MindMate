@@ -1,116 +1,85 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTimeOfDay } from '../utils/timeUtils';
 import { getSceneForSession } from '../utils/sceneUtils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
-import { Crown, Check, Sparkles, Heart, Brain, ArrowLeft, Infinity } from 'lucide-react';
+import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, Edit3, Check } from 'lucide-react';
 
-const ProUpgrade: React.FC = () => {
+const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user, profile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showCanceledMessage, setShowCanceledMessage] = useState(false);
+  const { user, profile, logout, updateProfile } = useAuth();
+  const [userName, setUserName] = useState(profile?.name || '');
+  const [userEmail, setUserEmail] = useState(user?.email || '');
+  const [nameEditMode, setNameEditMode] = useState(false);
+  const [emailEditMode, setEmailEditMode] = useState(false);
+  const [nameSaved, setNameSaved] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const timeOfDay = getTimeOfDay();
-  const currentScene = getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening');
+  // Stabilize timeOfDay and currentScene to prevent background changes while typing
+  const [timeOfDay] = useState(() => getTimeOfDay(profile?.name));
+  const [currentScene] = useState(() => getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening'));
 
-  // Check for canceled payment
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    if (urlParams.get('canceled') === 'true') {
-      setShowCanceledMessage(true);
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-      
-      // Hide message after 5 seconds
-      setTimeout(() => setShowCanceledMessage(false), 5000);
+  // Get video background setting
+  const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleClearData = () => {
+    if (confirm('Are you sure you want to clear all your data? This action cannot be undone.')) {
+      localStorage.removeItem('insight-cards');
+      localStorage.removeItem('komorebi-chat-sessions');
+      localStorage.removeItem('session-limits');
+      localStorage.removeItem('session-start-time');
+      localStorage.removeItem('current-session-messages');
+      alert('All data has been cleared.');
     }
-  }, [location.search]);
+  };
 
-  const plans = [
-    {
-      id: 'monthly',
-      name: 'Monthly Pro',
-      price: 9.99,
-      period: 'month',
-      features: [
-        'Unlimited daily sessions',
-        'Advanced AI insights & personalized guidance',
-        'All nature scenes unlocked',
-        'Permanent insight history',
-        'Custom session themes',
-        'Priority support',
-      ],
-      isPopular: false,
-    },
-    {
-      id: 'yearly',
-      name: 'Yearly Pro',
-      price: 79.99,
-      period: 'year',
-      originalPrice: 119.88,
-      features: [
-        'Everything in Monthly Pro',
-        'Save 33% with annual billing',
-        'Exclusive yearly subscriber perks',
-        'Voice session recording (coming soon)',
-        'Advanced mood tracking & trends',
-        'Early access to new features',
-      ],
-      isPopular: true,
-    },
-  ];
-
-  const freeFeatures = [
-    '1 morning + 1 evening session daily',
-    '4 AI responses per session',
-    '7-day insight history',
-    'Basic nature scenes',
-  ];
-
-  const handleUpgrade = async (planId: string) => {
-    if (!user) {
-      alert('You need to sign in before upgrading to Pro. Please sign in and try again.');
-      return navigate('/');
-    }
+  const handleDownloadAllData = async () => {
+    setIsDownloading(true);
     
-    setIsLoading(true);
     try {
-      // Call Supabase Edge Function to create Stripe Checkout Session
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-subscription`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
+      // Gather all user data
+      const userData = {
+        user: {
+          name: profile?.name,
+          email: user?.email,
+          isPro: profile?.is_pro,
+          exportDate: new Date().toISOString()
         },
-        body: JSON.stringify({
-          userId: user.id,
-          planId: planId,
-          userEmail: user.email || '',
-        }),
-      });
+        insights: JSON.parse(localStorage.getItem('insight-cards') || '[]'),
+        chatSessions: JSON.parse(localStorage.getItem('komorebi-chat-sessions') || '[]'),
+        sessionLimits: JSON.parse(localStorage.getItem('session-limits') || '{}'),
+        settings: {
+          videoBackgroundEnabled: JSON.parse(localStorage.getItem('video-background-enabled') || 'true'),
+          currentScene: localStorage.getItem('current-scene') || 'ocean'
+        }
+      };
+
+      // Create downloadable content
+      const dataString = JSON.stringify(userData, null, 2);
+      const blob = new Blob([dataString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `komorebi-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       
-      const result = await response.json();
-      
-      if (result.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.url;
-      } else {
-        throw new Error('No checkout URL received');
-      }
     } catch (error) {
-      console.error('Subscription error:', error);
-      alert(`Failed to start checkout: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      console.error('Download failed:', error);
+      alert('Failed to download data. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsDownloading(false);
     }
   };
 
@@ -118,12 +87,62 @@ const ProUpgrade: React.FC = () => {
     navigate('/');
   };
 
+  const toggleVideoBackground = () => {
+    const newVideoEnabled = !videoEnabled;
+    localStorage.setItem('video-background-enabled', JSON.stringify(newVideoEnabled));
+    // Refresh the page to apply the change
+    window.location.reload();
+  };
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (updateProfile && user) {
+      updateProfile({ name: userName });
+      setNameSaved(true);
+      setNameEditMode(false);
+      setTimeout(() => setNameSaved(false), 3000);
+    }
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (user && updateProfile) {
+      // Note: This is typically handled by Supabase Auth directly, not through profile updates.
+      // For now, just update the local state and inform user this would require auth change
+      alert("Email changes require authentication verification. This feature isn't fully implemented yet.");
+      
+      // For now, just confirm the action visually
+      setEmailSaved(true);
+      setEmailEditMode(false);
+      setTimeout(() => setEmailSaved(false), 3000);
+    }
+  };
+
+  const handleNameEdit = () => {
+    setNameEditMode(true);
+    setNameSaved(false);
+  };
+
+  const handleEmailEdit = () => {
+    setEmailEditMode(true);
+    setEmailSaved(false);
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <NatureVideoBackground 
-        scene={currentScene} 
-        timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
-      />
+      {videoEnabled && (
+        <NatureVideoBackground 
+          scene={currentScene} 
+          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+        />
+      )}
+      {!videoEnabled && (
+        <div className={`absolute inset-0 bg-gradient-to-br ${
+          timeOfDay.period === 'morning' 
+            ? 'from-amber-100 via-orange-50 to-yellow-100'
+            : 'from-indigo-900 via-purple-900 to-blue-900'
+        }`} />
+      )}
       
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 p-6 flex justify-between items-center">
@@ -141,7 +160,7 @@ const ProUpgrade: React.FC = () => {
         <div className={`text-2xl font-bold ${
           timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
-          Upgrade to Pro
+          Settings
         </div>
         
         <div className="w-11" /> {/* Spacer */}
@@ -149,237 +168,336 @@ const ProUpgrade: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10 pt-20 pb-16 px-4 md:px-6 h-screen overflow-y-auto">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="text-center">
-            {/* Canceled Payment Message */}
-            {showCanceledMessage && (
-              <div className={`mb-6 p-4 rounded-2xl backdrop-blur-sm border border-yellow-400/50 ${
-                timeOfDay.period === 'morning' ? 'bg-yellow-100/80' : 'bg-yellow-900/50'
-              }`}>
-                <p className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-yellow-800' : 'text-yellow-200'
-                }`}>
-                  Payment was canceled. You can try again anytime!
-                </p>
-              </div>
-            )}
-            
-            
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <Crown className={`w-10 h-10 ${
-                timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
-              }`} />
-              <Sparkles className={`w-10 h-10 ${
-                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-              }`} />
-            </div>
-            <h1 className={`text-3xl md:text-4xl font-bold mb-3 ${
-              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-            }`}>
-              Unlock Your Full Potential
-            </h1>
-            <p className={`text-lg ${
-              timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-            }`}>
-              Experience unlimited conversations and deeper insights with Komorebi Pro
-            </p>
-          </div>
-
-          {/* Feature Comparison */}
-          <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
-            {/* Free Plan */}
+        <div className="max-w-2xl mx-auto space-y-4">
+          {/* Profile Section */}
+          {user && (
             <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              <div className="text-center mb-4">
-                <h3 className={`text-lg md:text-xl font-semibold ${
+              <div className="flex items-center gap-3 mb-4">
+                <User className={`w-6 h-6 ${
+                  timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
+                }`} />
+                <h2 className={`text-xl font-semibold ${
                   timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
                 }`}>
-                  Free Plan
-                </h3>
-                <div className={`text-2xl md:text-3xl font-bold mt-2 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  $0
+                  Profile
+                </h2>
+              </div>
+              <div className="space-y-4">
+                {/* Name Field */}
+                <form onSubmit={handleNameSubmit}>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Name
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      placeholder="Enter your name"
+                      readOnly={!nameEditMode}
+                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                        nameEditMode
+                          ? (timeOfDay.period === 'morning'
+                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
+                          : (timeOfDay.period === 'morning'
+                              ? 'bg-white/10 text-gray-700 cursor-pointer'
+                              : 'bg-black/10 text-gray-300 cursor-pointer')
+                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                      onClick={!nameEditMode ? handleNameEdit : undefined}
+                    />
+                    {!nameEditMode ? (
+                      <button
+                        type="button"
+                        onClick={handleNameEdit}
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
+                          timeOfDay.period === 'morning'
+                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
+                            : 'text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
+                        title="Edit name"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
+                          timeOfDay.period === 'morning'
+                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
+                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
+                        }`}
+                        title="Save name"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {nameSaved && (
+                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
+                      timeOfDay.period === 'morning'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-green-900/50 text-green-300'
+                    } animate-fade-in`}>
+                      Saved!
+                    </div>
+                  )}
+                </form>
+
+                {/* Email Field */}
+                <form onSubmit={handleEmailSubmit}>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Email
+                  </label>
+                  <div className="relative group">
+                    <input
+                      type="email"
+                      value={userEmail}
+                      onChange={(e) => setUserEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      readOnly={!emailEditMode}
+                      className={`w-full p-3 pr-12 rounded-2xl border border-white/20 backdrop-blur-sm transition-all duration-200 ${
+                        emailEditMode
+                          ? (timeOfDay.period === 'morning'
+                              ? 'bg-white/30 text-gray-800 placeholder-gray-600 focus:bg-white/40'
+                              : 'bg-black/20 text-white placeholder-gray-300 focus:bg-black/30')
+                          : (timeOfDay.period === 'morning'
+                              ? 'bg-white/10 text-gray-700 cursor-pointer'
+                              : 'bg-black/10 text-gray-300 cursor-pointer')
+                      } focus:outline-none focus:ring-2 focus:ring-white/30`}
+                      onClick={!emailEditMode ? handleEmailEdit : undefined}
+                    />
+                    {!emailEditMode ? (
+                      <button
+                        type="button"
+                        onClick={handleEmailEdit}
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-70 group-focus-within:opacity-70 ${
+                          timeOfDay.period === 'morning'
+                            ? 'text-gray-600 hover:text-gray-800 hover:bg-white/20'
+                            : 'text-gray-400 hover:text-white hover:bg-white/10'
+                        }`}
+                        title="Edit email"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-lg transition-all duration-200 ${
+                          timeOfDay.period === 'morning'
+                            ? 'text-green-600 hover:text-green-700 hover:bg-green-100/20'
+                            : 'text-green-400 hover:text-green-300 hover:bg-green-500/20'
+                        }`}
+                        title="Save email"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {emailSaved && (
+                    <div className={`mt-2 px-3 py-1 rounded-xl text-sm font-medium text-center ${
+                      timeOfDay.period === 'morning'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-green-900/50 text-green-300'
+                    } animate-fade-in`}>
+                      Saved!
+                    </div>
+                  )}
+                </form>
+
+                <div>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300'
+                  }`}>
+                    Plan
+                  </label>
+                  <div className={`p-3 rounded-2xl border border-white/20 backdrop-blur-sm flex items-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-white/20'
+                      : 'bg-white/10'
+                  }`}>
+                    {profile?.is_pro && (
+                      <Crown className={`w-4 h-4 ${
+                        timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
+                      }`} />
+                    )}
+                    <span className={`font-medium ${
+                      profile?.is_pro 
+                        ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
+                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
+                    }`}>
+                      {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
+                    </span>
+                  </div>
                 </div>
+                {!profile?.is_pro && (
+                  <button
+                    onClick={() => navigate('/upgrade')}
+                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium transition-all duration-200"
+                  >
+                    Upgrade to Pro
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Appearance Settings */}
+          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <Eye className={`w-6 h-6 ${
+                timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
+              }`} />
+              <h2 className={`text-xl font-semibold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Appearance
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className={`font-medium ${
+                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                  }`}>
+                    Video Backgrounds
+                  </div>
+                  <div className={`text-sm ${
+                    timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
+                  }`}>
+                    Show nature video backgrounds during sessions
+                  </div>
+                </div>
+                <button
+                  onClick={toggleVideoBackground}
+                  className={`p-3 rounded-2xl transition-all duration-200 ${
+                    videoEnabled
+                      ? (timeOfDay.period === 'morning'
+                          ? 'bg-green-500/20 text-green-700 border border-green-500/30'
+                          : 'bg-green-600/20 text-green-300 border border-green-600/30')
+                      : (timeOfDay.period === 'morning'
+                          ? 'bg-gray-500/20 text-gray-700 border border-gray-500/30'
+                          : 'bg-gray-600/20 text-gray-300 border border-gray-600/30')
+                  } backdrop-blur-sm`}
+                >
+                  {videoEnabled ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy Section */}
+          <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+          }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className={`w-6 h-6 ${
+                timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
+              }`} />
+              <h2 className={`text-xl font-semibold ${
+                timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+              }`}>
+                Privacy & Data
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className={`p-4 rounded-2xl border border-white/20 backdrop-blur-sm ${
+                timeOfDay.period === 'morning' ? 'bg-white/10' : 'bg-black/10'
+              }`}>
                 <div className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
+                  timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
                 }`}>
-                  Forever
+                  Your conversations and insights are stored locally on your device and are completely private. 
+                  We never share your personal reflections with anyone.
                 </div>
               </div>
               
-              <ul className="space-y-2">
-                {freeFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className={`w-5 h-5 mt-0.5 ${
-                      timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                    <span className={`text-sm ${
-                      timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                    }`}>
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Pro Plans */}
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative p-4 md:p-6 rounded-3xl backdrop-blur-sm border ${
-                  plan.isPopular
-                    ? 'border-amber-400/50 bg-gradient-to-br from-amber-500/20 to-orange-500/20'
-                    : 'border-white/20 bg-white/10'
-                }`}
-              >
-                {plan.isPopular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 px-4 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                    Most Popular
-                  </div>
-                )}
-
-                <div className="text-center mb-4">
-                  <h3 className={`text-lg md:text-xl font-semibold ${
-                    timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                  }`}>
-                    {plan.name}
-                  </h3>
-                  <div className="mt-2">
-                    {plan.originalPrice && (
-                      <div className={`text-base line-through ${
-                        timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                      }`}>
-                        ${plan.originalPrice}
-                      </div>
-                    )}
-                    <div className={`text-2xl md:text-3xl font-bold ${
-                      timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                    }`}>
-                      ${plan.price}
-                    </div>
-                    <div className={`text-sm ${
-                      timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-400'
-                    }`}>
-                      per {plan.period}
-                    </div>
-                  </div>
-                </div>
-
-                <ul className="space-y-2 mb-4">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <Check className={`w-5 h-5 mt-0.5 ${
-                        timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
-                      }`} />
-                      <span className={`text-sm ${
-                        timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-200'
-                      }`}>
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleUpgrade(plan.id)}
-                  disabled={isLoading}
-                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 ${
-                    plan.isPopular
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' 
-                      : (timeOfDay.period === 'morning'
-                          ? 'bg-gray-800 hover:bg-gray-900 text-white'
-                          : 'bg-white/20 hover:bg-white/30 text-white')
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+              <div className="grid gap-3">
+                {/* Download All Data Button */}
+                <button 
+                  onClick={handleDownloadAllData}
+                  disabled={isDownloading}
+                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-green-500/20 hover:bg-green-500/30 text-green-700 border border-green-500/30'
+                      : 'bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-600/30'
+                  } backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {isLoading ? 'Processing...' : `Upgrade to ${plan.name}`}
+                  {isDownloading ? (
+                    <>
+                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Preparing Download...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Download All Data
+                    </>
+                  )}
+                </button>
+
+                {/* Clear All Data Button */}
+                <button 
+                  onClick={handleClearData}
+                  className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                    timeOfDay.period === 'morning'
+                      ? 'bg-red-500/20 hover:bg-red-500/30 text-red-700 border border-red-500/30'
+                      : 'bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-600/30'
+                  } backdrop-blur-sm`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear All Data
                 </button>
               </div>
-            ))}
-          </div>
-
-          {/* Benefits Section */}
-          <div className={`p-4 md:p-8 rounded-3xl backdrop-blur-sm border border-white/20 ${
-            timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
-          }`}>
-            <h2 className={`text-xl md:text-2xl font-bold text-center mb-6 ${
-              timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-            }`}>
-              Why upgrade to Pro?
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-4 md:gap-6">
-              <div className="text-center">
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-sm ${
-                  timeOfDay.period === 'morning' ? 'bg-blue-500/20' : 'bg-blue-600/20'
-                }`}>
-                  <Infinity className={`w-8 h-8 ${
-                    timeOfDay.period === 'morning' ? 'text-blue-600' : 'text-blue-400'
-                  }`} />
-                </div>
-                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Unlimited Sessions
-                </h3>
-                <p className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  Reflect as often as you need without daily limits. Your mental wellness shouldn't have boundaries.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-sm ${
-                  timeOfDay.period === 'morning' ? 'bg-purple-500/20' : 'bg-purple-600/20'
-                }`}>
-                  <Brain className={`w-8 h-8 ${
-                    timeOfDay.period === 'morning' ? 'text-purple-600' : 'text-purple-400'
-                  }`} />
-                </div>
-                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Deeper Insights
-                </h3>
-                <p className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  Advanced AI analysis provides more nuanced and personalized guidance for your growth journey.
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center backdrop-blur-sm ${
-                  timeOfDay.period === 'morning' ? 'bg-green-500/20' : 'bg-green-600/20'
-                }`}>
-                  <Heart className={`w-8 h-8 ${
-                    timeOfDay.period === 'morning' ? 'text-green-600' : 'text-green-400'
-                  }`} />
-                </div>
-                <h3 className={`text-base md:text-lg font-semibold mb-2 ${
-                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
-                }`}>
-                  Premium Experience
-                </h3>
-                <p className={`text-sm ${
-                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'
-                }`}>
-                  Access all nature scenes, custom themes, and upcoming features like voice sessions.
-                </p>
-              </div>
             </div>
           </div>
 
-          {/* Money Back Guarantee */}
-          <div className="text-center">
+          {/* Account Actions */}
+          {user && (
+            <div className={`p-4 md:p-6 rounded-3xl backdrop-blur-sm border border-white/20 ${
+              timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
+            }`}>
+              <div className="flex items-center gap-3 mb-4">
+                <LogOut className={`w-6 h-6 ${
+                  timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
+                }`} />
+                <h2 className={`text-xl font-semibold ${
+                  timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+                }`}>
+                  Account
+                </h2>
+              </div>
+              <button
+                onClick={handleLogout}
+                className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 ${
+                  timeOfDay.period === 'morning'
+                    ? 'bg-white/20 hover:bg-white/30 text-gray-800'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}>
+                Sign Out
+              </button>
+            </div>
+          )}
+
+          {/* App Info */}
+          <div className="text-center pb-4">
             <p className={`text-sm ${
               timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-400'
             }`}>
-              30-day money-back guarantee • Cancel anytime • Secure payment processing
+              Komorebi MindMate v1.0.0
+            </p>
+            <p className={`text-xs mt-1 ${
+              timeOfDay.period === 'morning' ? 'text-gray-500' : 'text-gray-500'
+            }`}>
+              Your AI companion for mindful reflection
             </p>
           </div>
         </div>
@@ -399,4 +517,4 @@ const ProUpgrade: React.FC = () => {
   );
 };
 
-export default ProUpgrade;
+export default Settings;

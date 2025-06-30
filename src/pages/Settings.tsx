@@ -96,7 +96,7 @@ const Settings: React.FC = () => {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (updateProfile && user) {
+    if (user) {
       updateProfile({ name: userName });
       setNameSaved(true);
       setNameEditMode(false);
@@ -383,7 +383,7 @@ const Settings: React.FC = () => {
                       ? (timeOfDay.period === 'morning'
                           ? 'bg-green-500/20 text-green-700 border border-green-500/30'
                           : 'bg-green-600/20 text-green-300 border border-green-600/30')
-                      : (timeOfDay.period === 'morning'
+                      : (timeOfDay.period === 'morning' 
                           ? 'bg-gray-500/20 text-gray-700 border border-gray-500/30'
                           : 'bg-gray-600/20 text-gray-300 border border-gray-600/30')
                   } backdrop-blur-sm`}
