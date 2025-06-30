@@ -30,6 +30,22 @@ export const aiChatService = {
         keyPreview: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING'
       });
       
+      // First, test if we can reach Supabase at all
+      try {
+        console.log('🔍 Testing Supabase connection...');
+        const { data: connectionTest, error: connectionError } = await supabase
+          .from('profiles')
+          .select('count', { count: 'exact', head: true });
+        
+        console.log('🔍 Connection test result:', {
+          success: !connectionError,
+          error: connectionError?.message,
+          canReachSupabase: true
+        });
+      } catch (connectionErr) {
+        console.error('🔍 Cannot reach Supabase:', connectionErr);
+      }
+      
       // Prepare request body
       const requestBody = {
         message,
@@ -44,17 +60,31 @@ export const aiChatService = {
         bodySize: JSON.stringify(requestBody).length
       });
       
-      // Call Supabase function with timeout
+      // Call Supabase function with shorter timeout for better debugging
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Function call timeout after 30 seconds')), 30000);
+        setTimeout(() => reject(new Error('Function call timeout after 15 seconds')), 15000);
       });
       
-      const functionCallPromise = supabase.functions.invoke('ai-chat', {
-        body: requestBody,
-        headers: {
-          'Content-Type': 'application/json',
+      const functionCallPromise = (async () => {
+        try {
+          console.log('📞 Invoking function...');
+          const result = await supabase.functions.invoke('ai-chat', {
+            body: requestBody,
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+          console.log('📞 Function invocation completed');
+          return result;
+        } catch (invokeError) {
+          console.error('📞 Function invocation failed:', {
+            error: invokeError.message,
+            name: invokeError.name,
+            stack: invokeError.stack
+          });
+          throw invokeError;
         }
-      });
+      })();
       
       console.log('⏳ Waiting for function response...');
       const { data, error } = await Promise.race([functionCallPromise, timeoutPromise]);
@@ -64,7 +94,8 @@ export const aiChatService = {
         hasError: !!error,
         errorType: error?.name,
         errorMessage: error?.message,
-        dataKeys: data ? Object.keys(data) : []
+        dataKeys: data ? Object.keys(data) : [],
+        rawError: error
       });
 
       if (error) {
@@ -73,8 +104,21 @@ export const aiChatService = {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          code: error.code
+          code: error.code,
+          status: error.status,
+          statusText: error.statusText
         });
+        
+        // Check for specific error types
+        if (error.message?.includes('Function not found') || error.status === 404) {
+          console.error('🚨 FUNCTION NOT FOUND: The ai-chat function is not deployed to Supabase!');
+          console.error('🚨 Please deploy the function by running: supabase functions deploy ai-chat');
+        } else if (error.message?.includes('timeout') || error.message?.includes('TIMEOUT')) {
+          console.error('🚨 FUNCTION TIMEOUT: The function exists but is taking too long to respond');
+        } else if (error.status === 401 || error.status === 403) {
+          console.error('🚨 AUTHENTICATION ERROR: Check your Supabase anon key permissions');
+        }
+        
         // If Supabase function fails, use local fallback
         console.warn('🔄 Using local fallback AI response');
         return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
@@ -100,8 +144,17 @@ export const aiChatService = {
         message: error.message,
         stack: error.stack,
         isNetworkError: error.message?.includes('fetch'),
-        isTimeoutError: error.message?.includes('timeout')
+        isTimeoutError: error.message?.includes('timeout'),
+        isDeploymentError: error.message?.includes('Function not found')
       });
+      
+      // Provide specific guidance based on error type
+      if (error.message?.includes('Function not found')) {
+        console.error('🚨 DEPLOYMENT ISSUE: Run `supabase functions deploy ai-chat` to deploy the function');
+      } else if (error.message?.includes('timeout')) {
+        console.error('🚨 TIMEOUT ISSUE: Function deployed but not responding - check Supabase function logs');
+      }
+      
       console.warn('🔄 AI service failed completely, using local fallback');
       return this.getLocalAIResponse(message, sessionType, conversationHistory, userName);
     }
