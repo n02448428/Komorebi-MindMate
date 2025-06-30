@@ -96,7 +96,7 @@ const Settings: React.FC = () => {
 
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
+    if (user && updateProfile) {
       updateProfile({ name: userName });
       setNameSaved(true);
       setNameEditMode(false);
@@ -106,7 +106,7 @@ const Settings: React.FC = () => {
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
+    if (user && updateProfile) {
       // Note: This is typically handled by Supabase Auth directly, not through profile updates.
       // For now, just update the local state and inform user this would require auth change
       alert("Email changes require authentication verification. This feature isn't fully implemented yet.");
