@@ -44,7 +44,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
   const location = useLocation();
   const { user, logout } = useAuth();
   const [showControls, setShowControls] = useState(false);
-  const timeOfDay = getTimeOfDay(user?.name);
+  const timeOfDay = getTimeOfDay();
   
   // Use sessionType prop if provided, otherwise derive from timeOfDay
   const currentSessionType = sessionType || (timeOfDay.period === 'morning' ? 'morning' : 'evening');
@@ -59,9 +59,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
       await logout();
       navigate('/');
     } catch (error) {
-      if (!user?.name && user?.email) {
-        console.error('Error signing out:', error);
-      }
+      console.error('Error signing out:', error);
     }
   };
 
