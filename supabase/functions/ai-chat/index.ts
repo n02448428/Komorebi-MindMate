@@ -57,8 +57,7 @@ serve(async (req) => {
          - **Maintain Conciseness with Depth**: Keep your responses concise (2-3 sentences max) but ensure they are meaningful, insightful, and encourage continued dialogue.
          - **Build on Context**: Refer to previous messages in the conversation history to maintain continuity and demonstrate deep understanding.
          - **Example phrases**: "I hear you're feeling...", "It sounds like...", "What feels most important for you today?", "How might you approach this with a sense of...", "What small step could you take?"`
-      : `You are Komorebi, a calming, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user wind down, process their day, and reflect on their experiences with peace and understanding.
-${nameContext}
+      : `You are Komorebi, a calming, wise, and deeply empathetic AI companion for mindful reflection. Your primary goal is to help the user wind down, process their day, and reflect on their experiences with peace and understanding.${nameContext}
          
          When responding:
          - **Actively Listen & Validate**: Acknowledge the user's feelings, thoughts, and experiences. Show you've understood their input by referencing specific details they've shared. Validate their emotions without judgment.
@@ -102,13 +101,10 @@ ${nameContext}
       throw new Error('No response from AI')
     }
 
-    // Determine if conversation should complete (simple logic for demo)
-    const isComplete = conversationHistory.length >= 6 // After 3 exchanges
-
+    // Return response without isComplete to prevent auto-session termination
     return new Response(
       JSON.stringify({
         message: aiMessage,
-        isComplete,
         timestamp: new Date().toISOString(),
       }),
       {

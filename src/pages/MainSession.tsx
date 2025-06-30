@@ -26,7 +26,7 @@ const MainSession: React.FC = () => {
   const [userMessagesSinceLastInsight, setUserMessagesSinceLastInsight] = useState(0);
   const [showGenerateInsightButton, setShowGenerateInsightButton] = useState(false);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
-  const [showControls, setShowControls] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [sessionLimits, setSessionLimits] = useState<SessionLimits>({
     morningCompleted: false,
     eveningCompleted: false,
@@ -205,13 +205,6 @@ const MainSession: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Check if AI indicates session should complete and auto-end session
-      if (response.isComplete && !showGenerateInsightButton) {
-        // Give user a moment to read the final message, then end session
-        setTimeout(() => {
-          handleNewSession();
-        }, 2000);
-      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage: Message = {
@@ -924,7 +917,7 @@ const MainSession: React.FC = () => {
                   <p className={`text-sm mb-3 ${
                     sessionType === 'morning' ? 'text-gray-700' : 'text-white'
                   }`}>
-                    You've shared 3 messages! Ready to capture an insight from our conversation?
+                    Ready to capture an insight from our conversation?
                   </p>
                   <button
                     onClick={handleGenerateInsightClick}
@@ -972,7 +965,7 @@ const MainSession: React.FC = () => {
             )}
           </AnimatePresence>
           
-          {/* Login prompt for non-logged in users */}
+          {/* Login prompt for non-logged in users - only show if controls are visible */}
           <AnimatePresence>
             {!user && messages.length > 1 && showControls && ( // Show after greeting + at least one user message
               <motion.div
