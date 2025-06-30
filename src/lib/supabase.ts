@@ -25,7 +25,7 @@ export const aiChatService = {
       
       // Create a timeout for the function call
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000);
+        setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 30000);
       });
       
       // Race the function call against timeout
