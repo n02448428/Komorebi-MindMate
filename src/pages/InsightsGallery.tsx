@@ -191,7 +191,7 @@ const InsightsGallery: React.FC = () => {
             <div className={`p-4 md:p-6 rounded-2xl text-center backdrop-blur-sm border border-white/20 ${
               timeOfDay.period === 'morning' ? 'bg-white/20' : 'bg-white/10'
             }`}>
-              {profile?.is_pro ? (
+              {profile?.is_pro === true ? (
                 <Crown className={`w-8 h-8 mx-auto mb-2 ${
                   timeOfDay.period === 'morning' ? 'text-amber-600' : 'text-amber-400'
                 }`} />
@@ -203,7 +203,7 @@ const InsightsGallery: React.FC = () => {
               <div className={`text-lg md:text-xl font-bold ${
                 timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
               }`}>
-                {profile?.is_pro ? 'Pro' : 'Free'}
+                {profile?.is_pro === true ? 'Pro' : 'Free'}
               </div>
               <div className={`text-sm ${
                 timeOfDay.period === 'morning' ? 'text-gray-600' : 'text-gray-300'

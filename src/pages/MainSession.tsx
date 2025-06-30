@@ -30,11 +30,11 @@ const MainSession: React.FC = () => {
     morningCompleted: false,
     eveningCompleted: false,
     messagesUsed: 0,
-    maxMessages: profile?.is_pro ? 999 : 4,
+    maxMessages: profile?.is_pro === true ? 999 : 4,
   });
 
   const timeOfDay = getTimeOfDay(profile?.name);
-  const sessionTimeLimit = getSessionTimeLimit(profile?.is_pro || false);
+  const sessionTimeLimit = getSessionTimeLimit(profile?.is_pro === true);
   
   // Determine which session type to use based on time
   const sessionType = timeOfDay.period === 'morning' ? 'morning' : 'evening';
@@ -46,7 +46,7 @@ const MainSession: React.FC = () => {
   ) : false;
 
   // Check if session time has expired (only for non-Pro users)
-  const isSessionExpired = !profile?.is_pro && sessionStartTime && 
+  const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
     (new Date().getTime() - sessionStartTime.getTime()) > (sessionTimeLimit * 60 * 1000);
 
   // Framer Motion variants for control panel animation
@@ -97,7 +97,7 @@ const MainSession: React.FC = () => {
           ...parsed,
           lastMorningSession: parsed.lastMorningSession ? new Date(parsed.lastMorningSession) : undefined,
           lastEveningSession: parsed.lastEveningSession ? new Date(parsed.lastEveningSession) : undefined,
-          maxMessages: profile?.is_pro ? 999 : 4,
+          maxMessages: profile?.is_pro === true ? 999 : 4,
         });
       }
     } else {
@@ -143,7 +143,7 @@ const MainSession: React.FC = () => {
       };
       setMessages([greetingMessage]);
     }
-  }, [profile?.is_pro, user, sessionType]);
+  }, [profile?.is_pro === true, user, sessionType]);
 
   // Save messages when they change
   useEffect(() => {
@@ -191,7 +191,7 @@ const MainSession: React.FC = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (isLoading || (!profile?.is_pro && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
+    if (isLoading || (profile?.is_pro !== true && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) return;
 
     // Start session timer if not already started
     if (!sessionStartTime) {
@@ -552,7 +552,7 @@ const MainSession: React.FC = () => {
   };
 
   // Show session limit reached only if user has completed BOTH sessions today (for non-Pro users)
-  if (user && !profile?.is_pro && hasCompletedBothToday) {
+  if (user && profile?.is_pro !== true && hasCompletedBothToday) {
     return (
       <div className="h-screen relative overflow-hidden">
         {videoEnabled && (
@@ -686,7 +686,7 @@ const MainSession: React.FC = () => {
               Your {sessionTimeLimit}-minute session has ended.
             </p>
 
-            {!profile?.is_pro && (
+            {profile?.is_pro !== true && (
               <div className={`p-6 rounded-2xl backdrop-blur-sm mb-8 ${
                 sessionType === 'morning' ? 'bg-white/20' : 'bg-white/10'
               } border border-white/20 max-w-md mx-auto`}>
@@ -870,7 +870,7 @@ const MainSession: React.FC = () => {
                   </button>
                 )}
                 
-                {user && !profile?.is_pro && (
+                {user && profile?.is_pro !== true && (
                   <button
                     onClick={handleUpgrade}
                     className={`px-3 py-1 rounded-xl backdrop-blur-sm border border-white/20 transition-all duration-200 flex items-center gap-1 cursor-pointer ${
@@ -967,7 +967,7 @@ const MainSession: React.FC = () => {
             isLoading={isLoading}
             timeOfDay={sessionType}
             isImmersive={!showControls}
-            messagesRemaining={profile?.is_pro ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+            messagesRemaining={profile?.is_pro === true ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
           />
 
           {/* Insight Generation Button */}

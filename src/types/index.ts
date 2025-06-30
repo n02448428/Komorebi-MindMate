@@ -1,9 +1,18 @@
 export interface User {
   id: string;
   email: string;
+}
+
+export interface Profile {
+  id: string;
+  email: string;
   name?: string;
-  isPro: boolean;
-  createdAt: Date;
+  is_pro?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  timezone?: string;
+  last_session_type?: string;
+  preferred_scene?: string;
 }
 
 export interface Message {

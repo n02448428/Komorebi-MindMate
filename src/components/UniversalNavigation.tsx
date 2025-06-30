@@ -216,7 +216,7 @@ const UniversalNavigation: React.FC<UniversalNavigationProps> = ({
 
               {user ? (
                 <div className="flex items-center gap-2">
-                  {!profile?.is_pro && (
+                  {profile?.is_pro !== true && (
                     <button
                       onClick={() => navigate('/upgrade')}
                       className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-medium transition-all duration-200 flex items-center gap-1"
