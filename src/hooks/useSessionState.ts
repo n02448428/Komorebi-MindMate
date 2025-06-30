@@ -78,13 +78,23 @@ export const useSessionState = ({
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    console.log('🚀 Starting handleSendMessage with:', { content, messagesCount: messages.length });
+    console.log('🚀 [Session] Starting handleSendMessage:', { 
+      content: content.substring(0, 50) + '...', 
+      messagesCount: messages.length,
+      sessionType,
+      timestamp: new Date().toISOString()
+    });
     
     const isSessionExpired = profile?.is_pro !== true && sessionStartTime && 
       (new Date().getTime() - sessionStartTime.getTime()) > (15 * 60 * 1000);
 
     if (isLoading || (profile?.is_pro !== true && sessionLimits.messagesUsed >= sessionLimits.maxMessages) || isSessionExpired) {
-      console.log('❌ Message blocked:', { isLoading, messagesUsed: sessionLimits.messagesUsed, maxMessages: sessionLimits.maxMessages, isSessionExpired });
+      console.log('❌ [Session] Message blocked:', { 
+        isLoading, 
+        messagesUsed: sessionLimits.messagesUsed, 
+        maxMessages: sessionLimits.maxMessages, 
+        isSessionExpired 
+      });
       return;
     }
 
@@ -93,7 +103,7 @@ export const useSessionState = ({
       const startTime = new Date();
       setSessionStartTime(startTime);
       storage.set('session-start-time', startTime.toISOString());
-      console.log('⏱️ Started session timer');
+      console.log('⏱️ [Session] Started session timer:', startTime.toISOString());
     }
 
     // Add user message
@@ -104,7 +114,7 @@ export const useSessionState = ({
       timestamp: new Date(),
     };
 
-    console.log('👤 Adding user message:', userMessage);
+    console.log('👤 [Session] Adding user message:', { id: userMessage.id, contentLength: userMessage.content.length });
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
@@ -118,7 +128,7 @@ export const useSessionState = ({
       messagesUsed: newMessagesUsed,
     });
 
-    console.log('📊 Updated counters:', { newMessagesUsed, newUserMessagesSinceLastInsight });
+    console.log('📊 [Session] Updated counters:', { newMessagesUsed, newUserMessagesSinceLastInsight });
 
     try {
       // Convert messages to conversation history format (excluding the greeting message)
@@ -130,32 +140,29 @@ export const useSessionState = ({
           content: msg.content
         }));
 
-      console.log('📝 Conversation history being sent:', conversationHistory.length, 'messages');
-      console.log('📝 Last few messages:', conversationHistory.slice(-2));
-      
-      // Use Supabase AI chat service
-      console.log('🤖 Calling AI service...');
-      
-      // Create a timeout promise that rejects after 15 seconds
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('AI service timeout after 30 seconds')), 30000);
+      console.log('📝 [Session] Conversation history:', { 
+        historyLength: conversationHistory.length,
+        lastMessage: conversationHistory[conversationHistory.length - 1]?.content?.substring(0, 50) + '...' || 'none'
       });
       
-      // Race the AI service call against the timeout
-      const response = await Promise.race([
-        aiChatService.sendMessage(
-          content, 
-          sessionType, 
-          conversationHistory, 
-          profile?.name
-        ),
-        timeoutPromise
-      ]);
+      // Use Supabase AI chat service
+      console.log('🤖 [Session] Calling AI service...');
       
-      console.log('✅ Received AI response:', response);
+      const response = await aiChatService.sendMessage(
+        content, 
+        sessionType, 
+        conversationHistory, 
+        profile?.name
+      );
+      
+      console.log('✅ [Session] Received AI response:', { 
+        hasMessage: !!response?.message,
+        messageLength: response?.message?.length || 0,
+        source: response?.source || 'unknown'
+      });
       
       if (!response || !response.message) {
-        throw new Error('Invalid response format from AI service');
+        throw new Error('No valid response received from AI service');
       }
       
       const aiMessage: Message = {
@@ -165,43 +172,25 @@ export const useSessionState = ({
         timestamp: new Date(),
       };
 
-      console.log('🤖 Adding AI message:', aiMessage);
+      console.log('🤖 [Session] Adding AI message:', { id: aiMessage.id, contentLength: aiMessage.content.length });
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
-      console.error('❌ Error in handleSendMessage:', error);
+      console.error('❌ [Session] Critical error in handleSendMessage:', error);
       
-      // Final fallback - create a basic response
-      try {
-        console.log('🔄 Trying direct fallback...');
-        const fallbackResponse = aiChatService.getLocalAIResponse(content, sessionType, [], profile?.name);
-        console.log('🔄 Direct fallback response:', fallbackResponse);
-        
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: fallbackResponse.message,
-          role: 'assistant',
-          timestamp: new Date(),
-        };
-        console.log('🔄 Adding fallback message:', aiMessage);
-        setMessages(prev => [...prev, aiMessage]);
-      } catch (fallbackError) {
-        console.error('❌ Even direct fallback failed:', fallbackError);
-        
-        // Absolute last resort - hardcoded response
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: sessionType === 'morning' 
-            ? "I'm here with you this morning. What's stirring in your heart as this new day begins?"
-            : "I'm here for this evening reflection. How was your day, and what would you like to explore together?",
-          role: 'assistant',
-          timestamp: new Date(),
-        };
-        console.log('🆘 Adding emergency message:', errorMessage);
-        setMessages(prev => [...prev, errorMessage]);
-      }
+      // Emergency fallback - create a basic response
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: sessionType === 'morning' 
+          ? "I'm here with you this morning. What's stirring in your heart as this new day begins?"
+          : "I'm here for this evening reflection. How was your day, and what would you like to explore together?",
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      console.log('🆘 [Session] Adding emergency fallback message');
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
-      console.log('✨ Setting isLoading to false');
+      console.log('✨ [Session] Request completed, setting isLoading to false');
       setIsLoading(false);
     }
   };

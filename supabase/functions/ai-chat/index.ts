@@ -37,23 +37,29 @@ serve(async (req) => {
   try {
     const { message, sessionType, conversationHistory, userName }: ChatRequest = await req.json()
 
-    console.log('AI Chat function called with:', { 
+    console.log('[EdgeFunction] AI Chat called:', { 
       messageLength: message.length, 
       sessionType, 
       historyLength: conversationHistory.length,
       userName: userName || 'anonymous'
     });
+    
     // Get OpenAI API key from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
-      console.error('OpenAI API key not configured');
+      console.error('[EdgeFunction] OpenAI API key not configured');
+      
+      // Return a proper fallback response instead of error
       return new Response(
         JSON.stringify({
-          error: 'OpenAI API key not configured',
-          details: 'The AI service is not properly configured. Please contact support.'
+          message: sessionType === 'morning' 
+            ? "I'm here with you this morning. What intentions would you like to explore today?"
+            : "Welcome to this evening's reflection. What's been on your mind today?",
+          timestamp: new Date().toISOString(),
+          source: 'fallback'
         }),
         {
-          status: 500,
+          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         },
       );
@@ -92,6 +98,7 @@ serve(async (req) => {
     ]
 
     // Call OpenAI API
+    console.log('[EdgeFunction] Calling OpenAI API...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -107,6 +114,7 @@ serve(async (req) => {
     })
 
     if (!response.ok) {
+      console.error('[EdgeFunction] OpenAI API error:', response.status, response.statusText);
       throw new Error(`OpenAI API error: ${response.statusText}`)
     }
 
@@ -114,14 +122,18 @@ serve(async (req) => {
     const aiMessage = data.choices[0]?.message?.content
 
     if (!aiMessage) {
+      console.error('[EdgeFunction] No AI message in response');
       throw new Error('No response from AI')
     }
 
+    console.log('[EdgeFunction] Success - AI response received');
+    
     // Return response without isComplete to prevent auto-session termination
     return new Response(
       JSON.stringify({
         message: aiMessage,
         timestamp: new Date().toISOString(),
+        source: 'openai'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -129,14 +141,19 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('AI Chat Error:', error)
+    console.error('[EdgeFunction] AI Chat Error:', error)
+    
+    // Return fallback response instead of error
     return new Response(
       JSON.stringify({
-        error: 'Failed to process chat message',
-        details: error.message
+        message: sessionType === 'morning' 
+          ? "I'm here to help you set intentions for your day. What would you like to explore?"
+          : "Let's take a moment to reflect on your day together. What comes to mind?",
+        timestamp: new Date().toISOString(),
+        source: 'error_fallback'
       }),
       {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     )
