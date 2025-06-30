@@ -106,7 +106,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4', // Consider using gpt-4o for better conversational flow if available and cost-effective
+        model: 'gpt-4o', // Faster and more efficient for conversational AI
         messages: messages,
         max_tokens: 150, // Keep this reasonable to encourage conciseness
         temperature: 0.7, // A good balance for creativity and coherence
