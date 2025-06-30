@@ -8,7 +8,7 @@ import { ArrowLeft, User, Crown, Shield, LogOut, Trash2, Eye, EyeOff, Download, 
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, logout, updateProfile } = useAuth();
   const [userName, setUserName] = useState(profile?.name || '');
   const [userEmail, setUserEmail] = useState(user?.email || '');
   const [nameEditMode, setNameEditMode] = useState(false);
@@ -18,8 +18,8 @@ const Settings: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Stabilize timeOfDay and currentScene to prevent background changes while typing
-  const [timeOfDay] = useState(() => getTimeOfDay(profile?.name));
-  const [currentScene] = useState(() => getSceneForSession(timeOfDay.period === 'morning' ? 'morning' : 'evening'));
+  const [stableTimeOfDay] = useState(() => getTimeOfDay(profile?.name));
+  const [currentScene] = useState(() => getSceneForSession(stableTimeOfDay.period === 'morning' ? 'morning' : 'evening'));
 
   // Get video background setting
   const videoEnabled = JSON.parse(localStorage.getItem('video-background-enabled') || 'true');
@@ -137,12 +137,12 @@ const Settings: React.FC = () => {
       {videoEnabled && (
         <NatureVideoBackground 
           scene={currentScene} 
-          timeOfDay={timeOfDay.period === 'morning' ? 'morning' : 'evening'} 
+          timeOfDay={stableTimeOfDay.period === 'morning' ? 'morning' : 'evening'} 
         />
       )}
       {!videoEnabled && (
         <div className={`absolute inset-0 bg-gradient-to-br ${
-          timeOfDay.period === 'morning' 
+          stableTimeOfDay.period === 'morning' 
             ? 'from-amber-100 via-orange-50 to-yellow-100'
             : 'from-indigo-900 via-purple-900 to-blue-900'
         }`} />
@@ -153,7 +153,7 @@ const Settings: React.FC = () => {
         <button
           onClick={handleBack}
           className={`relative z-[999] p-3 rounded-2xl backdrop-blur-sm border border-white/20 transition-all duration-200 cursor-pointer ${
-            timeOfDay.period === 'morning'
+            stableTimeOfDay.period === 'morning'
               ? 'bg-white/20 hover:bg-white/30 text-gray-700'
               : 'bg-white/10 hover:bg-white/20 text-white'
           }`}
@@ -162,7 +162,7 @@ const Settings: React.FC = () => {
         </button>
         
         <div className={`text-2xl font-bold ${
-          timeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
+          stableTimeOfDay.period === 'morning' ? 'text-gray-800' : 'text-white'
         }`}>
           Settings
         </div>
