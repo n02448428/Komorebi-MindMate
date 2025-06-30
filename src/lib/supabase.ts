@@ -14,6 +14,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const aiChatService = {
   async sendMessage(message: string, sessionType: 'morning' | 'evening', conversationHistory: any[], userName?: string) {
     try {
+      console.log('Sending message to AI:', { message, sessionType, conversationHistory: conversationHistory.length });
+      
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message,
@@ -23,7 +25,12 @@ export const aiChatService = {
         },
       })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      console.log('AI response received:', data);
       return data
     } catch (error) {
       console.error('AI Chat Error:', error)

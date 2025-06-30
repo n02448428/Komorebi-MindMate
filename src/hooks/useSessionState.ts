@@ -110,7 +110,8 @@ export const useSessionState = ({
 
     try {
       // Convert messages to conversation history format (excluding the greeting message)
-      const conversationHistory = messages
+      // Include the current user message that was just added
+      const conversationHistory = [...messages, userMessage]
         .filter(msg => msg.id !== 'greeting')
         .map(msg => ({
           role: msg.role,
