@@ -46,9 +46,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    console.log('💬 ChatInterface handleSubmit called:', { inputValue: inputValue.trim(), isLoading, disabled });
     if (inputValue.trim() && !isLoading && !disabled) {
-      console.log('💬 Calling onSendMessage with:', inputValue.trim());
       onSendMessage(inputValue.trim());
       setInputValue('');
       
@@ -56,15 +54,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setTimeout(() => {
         if (inputRef.current) inputRef.current.style.height = 'auto';
       }, 0);
-    } else {
-      console.log('💬 Submit blocked:', { hasInput: !!inputValue.trim(), isLoading, disabled });
     }
   }, [inputValue, isLoading, disabled, onSendMessage]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      console.log('💬 Enter key pressed, calling handleSubmit');
       handleSubmit(e);
     }
   };
