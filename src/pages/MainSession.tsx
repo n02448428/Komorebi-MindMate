@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTimeOfDay } from '../utils/timeUtils';
-import { getSceneForSession } from '../utils/sceneUtils';
+import { getTimeOfDay, getSceneForSession, getNextScene } from '../utils';
 import NatureVideoBackground from '../components/NatureVideoBackground';
 import ChatInterface from '../components/ChatInterface';
 import { Message, NatureScene } from '../types';
@@ -34,7 +33,7 @@ const MainSession: React.FC = () => {
 
     // Initialize session
     initializeSession();
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, profile]);
 
   useEffect(() => {
     // Auto-hide controls after 3 seconds of inactivity
@@ -69,35 +68,39 @@ const MainSession: React.FC = () => {
   }, []);
 
   const initializeSession = () => {
-    // Load saved video setting
-    const savedVideoEnabled = localStorage.getItem('video-background-enabled');
-    if (savedVideoEnabled !== null) {
-      setVideoEnabled(JSON.parse(savedVideoEnabled));
+    try {
+      // Load saved video setting
+      const savedVideoEnabled = localStorage.getItem('video-background-enabled');
+      if (savedVideoEnabled !== null) {
+        setVideoEnabled(JSON.parse(savedVideoEnabled));
+      }
+
+      // Set scene based on session type
+      const savedScene = localStorage.getItem('current-scene') as NatureScene;
+      if (savedScene && ['ocean', 'forest', 'desert', 'mountain', 'lake', 'meadow'].includes(savedScene)) {
+        setCurrentScene(savedScene);
+      } else {
+        const initialScene = getSceneForSession(sessionType);
+        setCurrentScene(initialScene);
+        localStorage.setItem('current-scene', initialScene);
+      }
+
+      // Add initial greeting message
+      const greetingMessage: Message = {
+        id: 'greeting',
+        content: timeOfDay.greeting,
+        role: 'assistant',
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+
+      // Set session start time
+      const startTime = new Date();
+      setSessionStartTime(startTime);
+      localStorage.setItem('session-start-time', startTime.toISOString());
+    } catch (error) {
+      console.error('Error initializing session:', error);
     }
-
-    // Set scene based on session type
-    const savedScene = localStorage.getItem('current-scene') as NatureScene;
-    if (savedScene) {
-      setCurrentScene(savedScene);
-    } else {
-      const initialScene = getSceneForSession(sessionType);
-      setCurrentScene(initialScene);
-      localStorage.setItem('current-scene', initialScene);
-    }
-
-    // Add initial greeting message
-    const greetingMessage: Message = {
-      id: 'greeting',
-      content: timeOfDay.greeting,
-      role: 'assistant',
-      timestamp: new Date(),
-    };
-    setMessages([greetingMessage]);
-
-    // Set session start time
-    const startTime = new Date();
-    setSessionStartTime(startTime);
-    localStorage.setItem('session-start-time', startTime.toISOString());
   };
 
   const handleSendMessage = async (content: string) => {
@@ -117,15 +120,22 @@ const MainSession: React.FC = () => {
     try {
       // Simulate AI response for now
       setTimeout(() => {
+        const responses = [
+          `Thank you for sharing that. I appreciate your openness and would love to explore this further with you. What feels most important to focus on right now?`,
+          `I hear you saying ${content.slice(0, 20)}... That sounds meaningful. Can you tell me more about what that brings up for you?`,
+          `It takes courage to share something like that. What would it feel like to approach this with gentleness toward yourself?`,
+          `I'm grateful you're taking this time for reflection. What insights are emerging as you sit with these thoughts?`
+        ];
+        
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: `Thank you for sharing that. I appreciate your openness and would love to explore this further with you. What feels most important to focus on right now?`,
+          content: responses[Math.floor(Math.random() * responses.length)],
           role: 'assistant',
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, aiMessage]);
         setIsLoading(false);
-      }, 1000);
+      }, 1000 + Math.random() * 1000); // Add some variation
     } catch (error) {
       console.error('Error getting AI response:', error);
       setIsLoading(false);
@@ -139,19 +149,25 @@ const MainSession: React.FC = () => {
   };
 
   const handleNextScene = () => {
-    const scenes = Object.keys({ ocean: true, forest: true, desert: true, mountain: true, lake: true, meadow: true }) as NatureScene[];
-    const currentIndex = scenes.indexOf(currentScene);
-    const nextScene = scenes[(currentIndex + 1) % scenes.length];
-    setCurrentScene(nextScene);
-    localStorage.setItem('current-scene', nextScene);
+    try {
+      const nextScene = getNextScene(currentScene, sessionType);
+      setCurrentScene(nextScene);
+      localStorage.setItem('current-scene', nextScene);
+    } catch (error) {
+      console.error('Error changing scene:', error);
+    }
   };
 
   const handleRandomScene = () => {
-    const scenes = Object.keys({ ocean: true, forest: true, desert: true, mountain: true, lake: true, meadow: true }) as NatureScene[];
-    const otherScenes = scenes.filter(scene => scene !== currentScene);
-    const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
-    setCurrentScene(randomScene);
-    localStorage.setItem('current-scene', randomScene);
+    try {
+      const scenes: NatureScene[] = ['ocean', 'forest', 'desert', 'mountain', 'lake', 'meadow'];
+      const otherScenes = scenes.filter(scene => scene !== currentScene);
+      const randomScene = otherScenes[Math.floor(Math.random() * otherScenes.length)];
+      setCurrentScene(randomScene);
+      localStorage.setItem('current-scene', randomScene);
+    } catch (error) {
+      console.error('Error changing to random scene:', error);
+    }
   };
 
   const handleSettings = () => {
@@ -172,7 +188,7 @@ const MainSession: React.FC = () => {
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading your session...</p>
         </div>
       </div>
     );
