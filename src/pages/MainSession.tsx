@@ -299,7 +299,7 @@ const MainSession: React.FC = () => {
             isLoading={isLoading}
             timeOfDay={sessionType as 'morning' | 'evening'}
             isImmersive={!showControls}
-            messagesRemaining={profile?.is_pro === true ? undefined : sessionLimits.maxMessages - sessionLimits.messagesUsed}
+            messagesUntilInsight={userMessagesSinceLastInsight > 0 ? 5 - (userMessagesSinceLastInsight % 5) : 5}
           />
 
           {/* Session Prompts */}

@@ -12,7 +12,7 @@ interface ChatInterfaceProps {
   disabled?: boolean;
   timeOfDay: 'morning' | 'evening';
   isImmersive?: boolean;
-  messagesRemaining?: number;
+  messagesUntilInsight?: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -23,7 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   disabled = false,
   timeOfDay,
   isImmersive = false,
-  messagesRemaining
+  messagesUntilInsight
 }) => {
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -111,11 +111,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className={`flex-shrink-0 backdrop-blur-md bg-white/10 border border-white/20 p-3 md:p-4 ${
         isImmersive ? 'rounded-3xl mt-4' : 'rounded-b-3xl border-x border-b'
       }`}>
-        {messagesRemaining !== undefined && messagesRemaining <= 2 && (
+        {messagesUntilInsight !== undefined && messagesUntilInsight > 0 && (
           <div className={`text-xs text-center mb-2 ${
             timeOfDay === 'morning' ? 'text-amber-700' : 'text-amber-300'
           }`}>
-            {messagesRemaining} messages remaining in free session
+            {messagesUntilInsight} messages until insight card generation available
           </div>
         )}
         
