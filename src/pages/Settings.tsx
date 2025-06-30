@@ -47,9 +47,9 @@ const Settings: React.FC = () => {
       // Gather all user data
       const userData = {
         user: {
-          name: user?.name,
+          name: profile?.name,
           email: user?.email,
-          isPro: user?.isPro,
+          isPro: profile?.is_pro,
           exportDate: new Date().toISOString()
         },
         insights: JSON.parse(localStorage.getItem('insight-cards') || '[]'),
@@ -330,7 +330,7 @@ const Settings: React.FC = () => {
                     <span className={`font-medium ${
                       profile?.is_pro 
                         ? (timeOfDay.period === 'morning' ? 'text-amber-700' : 'text-amber-300')
-                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300')
+                        : (timeOfDay.period === 'morning' ? 'text-gray-700' : 'text-gray-300') 
                     }`}>
                       {profile?.is_pro ? 'Pro Plan' : 'Free Plan'}
                     </span>
