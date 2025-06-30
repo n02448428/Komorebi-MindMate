@@ -36,13 +36,14 @@ serve(async (req) => {
     // Map plan IDs to Stripe Price IDs
     // TODO: Replace these with your actual Stripe Price IDs from your Stripe Dashboard
     const priceMapping: Record<string, string> = {
-      'monthly': 'price_1RfaIqBGpVuNZeuZm5jNUGNU', // Replace with your actual monthly price ID
-      'yearly': 'price_1RfaJHBGpVuNZeuZpWeAuc6J',   // Replace with your actual yearly price ID
+      'monthly': 'price_1RfaIqBGpVuNZeuZm5jNUGNU', 
+      'yearly': 'price_1RfaJHBGpVuNZeuZpWeAuc6J'
     }
 
     const priceId = priceMapping[planId]
     if (!priceId) {
-      throw new Error(`Invalid plan ID: ${planId}`)
+      console.error(`Plan ID "${planId}" doesn't match any known price. Valid options are "monthly" or "yearly".`)
+      throw new Error(`Invalid plan ID: ${planId}. Valid options are "monthly" or "yearly".`)
     }
 
     // Create Stripe Checkout Session
@@ -59,10 +60,7 @@ serve(async (req) => {
       client_reference_id: userId,
       success_url: `${req.headers.get('origin') || 'http://localhost:5173'}/session?success=true`,
       cancel_url: `${req.headers.get('origin') || 'http://localhost:5173'}/upgrade?canceled=true`,
-      metadata: {
-        userId: userId,
-        planId: planId,
-      },
+      metadata: { userId, planId }
     })
 
     return new Response(

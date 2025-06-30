@@ -74,8 +74,9 @@ const ProUpgrade: React.FC = () => {
   const handleUpgrade = async (planId: string) => {
     if (!user) {
       alert('You need to sign in before upgrading to Pro. Please sign in and try again.');
-      navigate('/');
+      return navigate('/');
     }
+    
     setIsLoading(true);
     try {
       // Call Supabase Edge Function to create Stripe Checkout Session
@@ -91,11 +92,6 @@ const ProUpgrade: React.FC = () => {
           userEmail: user.email,
         }),
       });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -293,7 +289,7 @@ const ProUpgrade: React.FC = () => {
                   disabled={isLoading}
                   className={`w-full p-3 rounded-2xl font-medium transition-all duration-200 ${
                     plan.isPopular
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' 
                       : (timeOfDay.period === 'morning'
                           ? 'bg-gray-800 hover:bg-gray-900 text-white'
                           : 'bg-white/20 hover:bg-white/30 text-white')
