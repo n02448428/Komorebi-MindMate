@@ -221,7 +221,6 @@ const LandingPage: React.FC = () => {
               <div className="mt-6 text-center">
                 <button
                   onClick={backToLanding}
-                  onClick={() => setShowLogin(false)}
                   className="text-gray-700 hover:text-gray-900 text-sm transition-colors"
                 >
                   Back to home
