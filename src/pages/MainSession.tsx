@@ -14,7 +14,7 @@ import SessionLimitReached from '../components/SessionLimitReached';
 import { Settings, User, Crown, LogIn, SkipForward, Eye, EyeOff, Shuffle, Sparkles, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 
 const MainSession: React.FC = () => {
-  // ... [rest of the code remains exactly the same]
+  // ... [rest of the code remains unchanged]
 }; // Added closing brace
 
-export default MainSession; // Added closing brace
+export default MainSession;
