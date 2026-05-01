@@ -3,13 +3,14 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/Komorebi-MindMate/',
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
-        manualChunks: { 
-          vendor: ['react', 'react-dom', 'framer-motion'] 
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'framer-motion']
         }
       }
     }
