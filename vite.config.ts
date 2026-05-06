@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Komorebi-MindMate/',
+    base: '/session/',
   build: {
     sourcemap: false,
     chunkSizeWarningLimit: 2000,
